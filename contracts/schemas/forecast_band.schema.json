@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:forecast_band:v0.1.0",
+  "title": "Forecast Band",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "band_id",
+    "station",
+    "forecast_date",
+    "valid_from",
+    "valid_until",
+    "lead_time_hours",
+    "parameter",
+    "value",
+    "unit",
+    "source_model",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "band_id": {
+      "type": "string"
+    },
+    "station": {
+      "type": "string"
+    },
+    "river": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "forecast_date": {
+      "type": "string"
+    },
+    "horizon_hours": {
+      "type": "integer"
+    },
+    "lead_time_hours": {
+      "type": "integer"
+    },
+    "parameter": {
+      "type": "string"
+    },
+    "value": {
+      "type": "number"
+    },
+    "unit": {
+      "type": "string"
+    },
+    "source_model": {
+      "type": "string"
+    },
+    "nearest_station_to": {
+      "type": "string"
+    },
+    "distance_km": {
+      "type": "number"
+    },
+    "band_type": {
+      "type": "string"
+    },
+    "proxy_scope": {
+      "type": "string"
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

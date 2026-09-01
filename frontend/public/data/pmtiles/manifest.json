@@ -1,0 +1,418 @@
+{
+  "generated": "2026-08-29",
+  "count": 51,
+  "total_size_bytes": 8053964,
+  "source_dir": "/mnt/data/kalopathor-gcs/tiles/temporal",
+  "tile_format": "PNG",
+  "tiles": [
+    {
+      "id": "prediction_t1_2024-06-18",
+      "lead_time": "prediction_t1",
+      "date": "2024-06-18",
+      "file": "prediction_t1_2024-06-18.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-06-18.pmtiles",
+      "size_bytes": 96239
+    },
+    {
+      "id": "prediction_t1_2024-06-19",
+      "lead_time": "prediction_t1",
+      "date": "2024-06-19",
+      "file": "prediction_t1_2024-06-19.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-06-19.pmtiles",
+      "size_bytes": 101223
+    },
+    {
+      "id": "prediction_t1_2024-06-20",
+      "lead_time": "prediction_t1",
+      "date": "2024-06-20",
+      "file": "prediction_t1_2024-06-20.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-06-20.pmtiles",
+      "size_bytes": 115102
+    },
+    {
+      "id": "prediction_t1_2024-06-29",
+      "lead_time": "prediction_t1",
+      "date": "2024-06-29",
+      "file": "prediction_t1_2024-06-29.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-06-29.pmtiles",
+      "size_bytes": 159920
+    },
+    {
+      "id": "prediction_t1_2024-06-30",
+      "lead_time": "prediction_t1",
+      "date": "2024-06-30",
+      "file": "prediction_t1_2024-06-30.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-06-30.pmtiles",
+      "size_bytes": 136287
+    },
+    {
+      "id": "prediction_t1_2024-07-01",
+      "lead_time": "prediction_t1",
+      "date": "2024-07-01",
+      "file": "prediction_t1_2024-07-01.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-07-01.pmtiles",
+      "size_bytes": 125161
+    },
+    {
+      "id": "prediction_t1_2024-07-02",
+      "lead_time": "prediction_t1",
+      "date": "2024-07-02",
+      "file": "prediction_t1_2024-07-02.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-07-02.pmtiles",
+      "size_bytes": 143616
+    },
+    {
+      "id": "prediction_t1_2024-07-11",
+      "lead_time": "prediction_t1",
+      "date": "2024-07-11",
+      "file": "prediction_t1_2024-07-11.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-07-11.pmtiles",
+      "size_bytes": 125826
+    },
+    {
+      "id": "prediction_t1_2024-07-13",
+      "lead_time": "prediction_t1",
+      "date": "2024-07-13",
+      "file": "prediction_t1_2024-07-13.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-07-13.pmtiles",
+      "size_bytes": 178318
+    },
+    {
+      "id": "prediction_t1_2024-08-04",
+      "lead_time": "prediction_t1",
+      "date": "2024-08-04",
+      "file": "prediction_t1_2024-08-04.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-08-04.pmtiles",
+      "size_bytes": 176545
+    },
+    {
+      "id": "prediction_t1_2024-08-05",
+      "lead_time": "prediction_t1",
+      "date": "2024-08-05",
+      "file": "prediction_t1_2024-08-05.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-08-05.pmtiles",
+      "size_bytes": 170742
+    },
+    {
+      "id": "prediction_t1_2024-08-14",
+      "lead_time": "prediction_t1",
+      "date": "2024-08-14",
+      "file": "prediction_t1_2024-08-14.pmtiles",
+      "path": "/pmtiles/prediction_t1_2024-08-14.pmtiles",
+      "size_bytes": 200769
+    },
+    {
+      "id": "prediction_t3_2024-06-18",
+      "lead_time": "prediction_t3",
+      "date": "2024-06-18",
+      "file": "prediction_t3_2024-06-18.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-06-18.pmtiles",
+      "size_bytes": 99191
+    },
+    {
+      "id": "prediction_t3_2024-06-19",
+      "lead_time": "prediction_t3",
+      "date": "2024-06-19",
+      "file": "prediction_t3_2024-06-19.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-06-19.pmtiles",
+      "size_bytes": 98778
+    },
+    {
+      "id": "prediction_t3_2024-06-20",
+      "lead_time": "prediction_t3",
+      "date": "2024-06-20",
+      "file": "prediction_t3_2024-06-20.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-06-20.pmtiles",
+      "size_bytes": 111277
+    },
+    {
+      "id": "prediction_t3_2024-06-29",
+      "lead_time": "prediction_t3",
+      "date": "2024-06-29",
+      "file": "prediction_t3_2024-06-29.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-06-29.pmtiles",
+      "size_bytes": 141120
+    },
+    {
+      "id": "prediction_t3_2024-06-30",
+      "lead_time": "prediction_t3",
+      "date": "2024-06-30",
+      "file": "prediction_t3_2024-06-30.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-06-30.pmtiles",
+      "size_bytes": 144954
+    },
+    {
+      "id": "prediction_t3_2024-07-01",
+      "lead_time": "prediction_t3",
+      "date": "2024-07-01",
+      "file": "prediction_t3_2024-07-01.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-07-01.pmtiles",
+      "size_bytes": 123917
+    },
+    {
+      "id": "prediction_t3_2024-07-02",
+      "lead_time": "prediction_t3",
+      "date": "2024-07-02",
+      "file": "prediction_t3_2024-07-02.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-07-02.pmtiles",
+      "size_bytes": 143433
+    },
+    {
+      "id": "prediction_t3_2024-07-11",
+      "lead_time": "prediction_t3",
+      "date": "2024-07-11",
+      "file": "prediction_t3_2024-07-11.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-07-11.pmtiles",
+      "size_bytes": 169023
+    },
+    {
+      "id": "prediction_t3_2024-07-13",
+      "lead_time": "prediction_t3",
+      "date": "2024-07-13",
+      "file": "prediction_t3_2024-07-13.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-07-13.pmtiles",
+      "size_bytes": 177399
+    },
+    {
+      "id": "prediction_t3_2024-08-04",
+      "lead_time": "prediction_t3",
+      "date": "2024-08-04",
+      "file": "prediction_t3_2024-08-04.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-08-04.pmtiles",
+      "size_bytes": 165018
+    },
+    {
+      "id": "prediction_t3_2024-08-05",
+      "lead_time": "prediction_t3",
+      "date": "2024-08-05",
+      "file": "prediction_t3_2024-08-05.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-08-05.pmtiles",
+      "size_bytes": 178207
+    },
+    {
+      "id": "prediction_t3_2024-08-14",
+      "lead_time": "prediction_t3",
+      "date": "2024-08-14",
+      "file": "prediction_t3_2024-08-14.pmtiles",
+      "path": "/pmtiles/prediction_t3_2024-08-14.pmtiles",
+      "size_bytes": 216503
+    },
+    {
+      "id": "prediction_t5_2024-06-18",
+      "lead_time": "prediction_t5",
+      "date": "2024-06-18",
+      "file": "prediction_t5_2024-06-18.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-06-18.pmtiles",
+      "size_bytes": 109357
+    },
+    {
+      "id": "prediction_t5_2024-06-19",
+      "lead_time": "prediction_t5",
+      "date": "2024-06-19",
+      "file": "prediction_t5_2024-06-19.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-06-19.pmtiles",
+      "size_bytes": 133611
+    },
+    {
+      "id": "prediction_t5_2024-06-20",
+      "lead_time": "prediction_t5",
+      "date": "2024-06-20",
+      "file": "prediction_t5_2024-06-20.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-06-20.pmtiles",
+      "size_bytes": 138930
+    },
+    {
+      "id": "prediction_t5_2024-06-29",
+      "lead_time": "prediction_t5",
+      "date": "2024-06-29",
+      "file": "prediction_t5_2024-06-29.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-06-29.pmtiles",
+      "size_bytes": 148664
+    },
+    {
+      "id": "prediction_t5_2024-06-30",
+      "lead_time": "prediction_t5",
+      "date": "2024-06-30",
+      "file": "prediction_t5_2024-06-30.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-06-30.pmtiles",
+      "size_bytes": 168227
+    },
+    {
+      "id": "prediction_t5_2024-07-01",
+      "lead_time": "prediction_t5",
+      "date": "2024-07-01",
+      "file": "prediction_t5_2024-07-01.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-07-01.pmtiles",
+      "size_bytes": 150835
+    },
+    {
+      "id": "prediction_t5_2024-07-02",
+      "lead_time": "prediction_t5",
+      "date": "2024-07-02",
+      "file": "prediction_t5_2024-07-02.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-07-02.pmtiles",
+      "size_bytes": 150384
+    },
+    {
+      "id": "prediction_t5_2024-07-11",
+      "lead_time": "prediction_t5",
+      "date": "2024-07-11",
+      "file": "prediction_t5_2024-07-11.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-07-11.pmtiles",
+      "size_bytes": 171542
+    },
+    {
+      "id": "prediction_t5_2024-07-13",
+      "lead_time": "prediction_t5",
+      "date": "2024-07-13",
+      "file": "prediction_t5_2024-07-13.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-07-13.pmtiles",
+      "size_bytes": 179846
+    },
+    {
+      "id": "prediction_t5_2024-08-04",
+      "lead_time": "prediction_t5",
+      "date": "2024-08-04",
+      "file": "prediction_t5_2024-08-04.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-08-04.pmtiles",
+      "size_bytes": 175842
+    },
+    {
+      "id": "prediction_t5_2024-08-05",
+      "lead_time": "prediction_t5",
+      "date": "2024-08-05",
+      "file": "prediction_t5_2024-08-05.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-08-05.pmtiles",
+      "size_bytes": 182625
+    },
+    {
+      "id": "prediction_t5_2024-08-14",
+      "lead_time": "prediction_t5",
+      "date": "2024-08-14",
+      "file": "prediction_t5_2024-08-14.pmtiles",
+      "path": "/pmtiles/prediction_t5_2024-08-14.pmtiles",
+      "size_bytes": 209021
+    },
+    {
+      "id": "prediction_t7_2024-06-18",
+      "lead_time": "prediction_t7",
+      "date": "2024-06-18",
+      "file": "prediction_t7_2024-06-18.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-06-18.pmtiles",
+      "size_bytes": 161809
+    },
+    {
+      "id": "prediction_t7_2024-06-19",
+      "lead_time": "prediction_t7",
+      "date": "2024-06-19",
+      "file": "prediction_t7_2024-06-19.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-06-19.pmtiles",
+      "size_bytes": 173135
+    },
+    {
+      "id": "prediction_t7_2024-06-20",
+      "lead_time": "prediction_t7",
+      "date": "2024-06-20",
+      "file": "prediction_t7_2024-06-20.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-06-20.pmtiles",
+      "size_bytes": 189655
+    },
+    {
+      "id": "prediction_t7_2024-06-29",
+      "lead_time": "prediction_t7",
+      "date": "2024-06-29",
+      "file": "prediction_t7_2024-06-29.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-06-29.pmtiles",
+      "size_bytes": 172855
+    },
+    {
+      "id": "prediction_t7_2024-06-30",
+      "lead_time": "prediction_t7",
+      "date": "2024-06-30",
+      "file": "prediction_t7_2024-06-30.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-06-30.pmtiles",
+      "size_bytes": 172030
+    },
+    {
+      "id": "prediction_t7_2024-07-01",
+      "lead_time": "prediction_t7",
+      "date": "2024-07-01",
+      "file": "prediction_t7_2024-07-01.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-07-01.pmtiles",
+      "size_bytes": 179334
+    },
+    {
+      "id": "prediction_t7_2024-07-02",
+      "lead_time": "prediction_t7",
+      "date": "2024-07-02",
+      "file": "prediction_t7_2024-07-02.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-07-02.pmtiles",
+      "size_bytes": 175463
+    },
+    {
+      "id": "prediction_t7_2024-07-11",
+      "lead_time": "prediction_t7",
+      "date": "2024-07-11",
+      "file": "prediction_t7_2024-07-11.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-07-11.pmtiles",
+      "size_bytes": 209173
+    },
+    {
+      "id": "prediction_t7_2024-07-13",
+      "lead_time": "prediction_t7",
+      "date": "2024-07-13",
+      "file": "prediction_t7_2024-07-13.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-07-13.pmtiles",
+      "size_bytes": 221305
+    },
+    {
+      "id": "prediction_t7_2024-08-04",
+      "lead_time": "prediction_t7",
+      "date": "2024-08-04",
+      "file": "prediction_t7_2024-08-04.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-08-04.pmtiles",
+      "size_bytes": 191088
+    },
+    {
+      "id": "prediction_t7_2024-08-05",
+      "lead_time": "prediction_t7",
+      "date": "2024-08-05",
+      "file": "prediction_t7_2024-08-05.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-08-05.pmtiles",
+      "size_bytes": 194977
+    },
+    {
+      "id": "prediction_t7_2024-08-14",
+      "lead_time": "prediction_t7",
+      "date": "2024-08-14",
+      "file": "prediction_t7_2024-08-14.pmtiles",
+      "path": "/pmtiles/prediction_t7_2024-08-14.pmtiles",
+      "size_bytes": 205043
+    },
+    {
+      "id": "prediction_t1",
+      "lead_time": "prediction_t1",
+      "date": null,
+      "file": "prediction_t1.pmtiles",
+      "path": "/pmtiles/prediction_t1.pmtiles",
+      "size_bytes": 127552
+    },
+    {
+      "id": "prediction_t5",
+      "lead_time": "prediction_t5",
+      "date": null,
+      "file": "prediction_t5.pmtiles",
+      "path": "/pmtiles/prediction_t5.pmtiles",
+      "size_bytes": 152564
+    },
+    {
+      "id": "uncertainty_t5",
+      "lead_time": "uncertainty_t5",
+      "date": null,
+      "file": "uncertainty_t5.pmtiles",
+      "path": "/pmtiles/uncertainty_t5.pmtiles",
+      "size_bytes": 110529
+    }
+  ],
+  "failures": []
+}

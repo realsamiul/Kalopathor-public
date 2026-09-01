@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:route:v0.1.0",
+  "title": "Route",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "route_id",
+    "from_area_id",
+    "to_shelter_id",
+    "distance_km",
+    "travel_time_minutes",
+    "mode",
+    "passability",
+    "is_safe_for_recommendation",
+    "reason_codes",
+    "source",
+    "geometry",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "route_id": {
+      "type": "string"
+    },
+    "from_area_id": {
+      "type": "string"
+    },
+    "to_shelter_id": {
+      "type": "string"
+    },
+    "distance_km": {
+      "type": "number"
+    },
+    "travel_time_minutes": {
+      "type": "integer"
+    },
+    "mode": {
+      "type": "string"
+    },
+    "passability": {
+      "type": "string"
+    },
+    "is_safe_for_recommendation": {
+      "type": "boolean"
+    },
+    "reason_codes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "blocked_segments": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "geometry": {
+      "type": "object",
+      "required": [
+        "type",
+        "coordinates"
+      ]
+    },
+    "geometry_source": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

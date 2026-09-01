@@ -1,0 +1,186 @@
+{
+  "nav": {
+    "story": "গল্প",
+    "operations": "অপারেশনস",
+    "title": "কালপাথর · Kalopathor"
+  },
+  "common": {
+    "loading": "লোড হচ্ছে",
+    "close": "বন্ধ",
+    "error": "ত্রুটি",
+    "offline": "অফলাইন",
+    "interpolated": "ইন্টারপোলেটেড"
+  },
+  "ops": {
+    "title": "বন্যা গোয়েন্দা অপারেশনস",
+    "subtitle": "বাংলাদেশ বন্যা পর্যবেক্ষণ ও পূর্বাভাস কনসোল",
+    "nextPass": "পরবর্তী S1 পাস",
+    "lastObs": "সর্বশেষ পর্যবেক্ষণ",
+    "freshness": {
+      "title": "তথ্যের গুণমান",
+      "serverTime": "সার্ভার",
+      "age": "{age} আগে",
+      "estimated": "আনুমানিক",
+      "staleAfter": "{s} পরে পুরনো",
+      "nextPass": "পরবর্তী পাস",
+      "region": "অঞ্চল",
+      "version": "সংস্করণ",
+      "frozen": "হিমায়িত",
+      "provenance": "উৎস",
+      "staleStations": "বিপদসীমার উপরে স্টেশন",
+      "staleStationsNone": "এখনো ট্র্যাক হয়নি — স্লট সংরক্ষিত",
+      "fresh": "তাজা",
+      "stale": "পুরনো",
+      "failed": "ব্যর্থ",
+      "unknown": "অজানা",
+      "offline": "গুণমান API অফলাইন",
+      "prov": {
+        "official": "সরকারি",
+        "proxy": "প্রক্সি",
+        "mixed": "মিশ্র"
+      },
+      "seededBannerTitle": "সিড করা / ডেমো ডেটা",
+      "seededBannerBody": "লাইভ মনিটরিং নয়",
+      "seededDate": "সিড করা {date}",
+      "seededAsOf": "{date} অনুযায়ী",
+      "sarComputed": "অ্যাক্঵িশিশন {date} থেকে গণনা"
+    },
+    "systemNominal": "সিস্টেম স্বাভাবিক",
+    "degraded": "অবনমিত",
+    "noData": "এই তারিখে কোনো SAR পাস নেই",
+    "utc": "ইউটিসি",
+    "status": "অবস্থা",
+    "rail": {
+      "title": "ওয়ার্কফ্লো",
+      "layers": "লেয়ার",
+      "now_flooding": "এখন বন্যা",
+      "next_72h": "পরবর্তী ৭২ ঘণ্টা",
+      "people_at_risk": "ঝুঁকিতে মানুষ",
+      "routes_shelters": "রুট ও আশ্রয়কেন্দ্র",
+      "gauges": "গেজ",
+      "alerts": "সতর্কতা",
+      "data_quality": "তথ্যের গুণমান"
+    },
+    "lists": {
+      "incidents": "বন্যা এলাকা",
+      "noIncidents": "এই অবস্থায় কোনো বন্যা এলাকা নেই",
+      "forecast": "পূর্বাভাস ব্যান্ড",
+      "noForecast": "এই অবস্থায় কোনো পূর্বাভাস ব্যান্ড নেই",
+      "lead": "T+{h} ঘণ্টা",
+      "peopleAtRisk": "ঝুঁকিতে মানুষ",
+      "noExposure": "এই অবস্থায় কোনো এক্সপোজার নেই",
+      "shelters": "আশ্রয়কেন্দ্র",
+      "noShelters": "এই অবস্থায় কোনো আশ্রয়কেন্দ্র নেই",
+      "capacityUnknown": "ধারণক্ষমতা অজানা",
+      "routes": "রুট",
+      "passable": "চলাচলযোগ্য",
+      "blocked": "বন্ধ",
+      "gauges": "গেজ স্টেশন",
+      "noGauges": "এই অবস্থায় কোনো গেজ নেই",
+      "gaugeStatus": {
+        "danger": "বিপদ",
+        "warning": "সতর্কতা",
+        "normal": "স্বাভাবিক"
+      },
+      "alertQueue": "সতর্কতা সারি",
+      "status": "অবস্থা"
+    }
+  },
+  "layers": {
+    "basemap": "স্যাটেলাইট বেসম্যাপ",
+    "hillshade": "পাহাড়-ছায়া",
+    "rivers": "নদী নেটওয়ার্ক",
+    "flood": "SAR-নিশ্চিত বন্যা",
+    "erosion": "ভাঙন ট্রান্সেক্ট",
+    "prediction": "বন্যা পূর্বাভাস",
+    "globe": "গ্লোব",
+    "legend": "লিজেন্ড",
+    "switcher": "লেয়ার"
+  },
+  "legend": {
+    "confirmed": "নিশ্চিত বন্যা (SAR)",
+    "predicted": "পূর্বাভাসিত বন্যা",
+    "receding": "পানি কমছে",
+    "erosion": "নদী ভাঙন",
+    "highRisk": "উচ্চ ঝুঁকি",
+    "lowRisk": "নিম্ন ঝুঁকি"
+  },
+  "timeline": {
+    "past30d": "বিগত ৩০ দিন",
+    "now": "এখন",
+    "forecast7d": "+৭ দিন পূর্বাভাস",
+    "horizon": "পূর্বাভাস হরাইজন",
+    "lead1": "T+১ দিন",
+    "lead3": "T+৩ দিন",
+    "lead5": "T+৫ দিন",
+    "lead7": "T+৭ দিন",
+    "sarTick": "SAR অর্জন",
+    "speed": "গতি"
+  },
+  "prediction": {
+    "title": "বন্যা পূর্বাভাস",
+    "prob": "বন্যার সম্ভাবনা",
+    "peak": "সর্বোচ্চ ঝুঁকি"
+  },
+  "approval": {
+    "stub": "অনুমোদন ফ্লো · স্টাব",
+    "title": "CAP সতর্কতা অনুমোদন",
+    "description": "CAP প্রচারের জন্য বিশ্লেষক পর্যালোচনা কর্মপ্রবাহ এখনো তৈরি হয়নি। এটি সেই স্টাব যেখানে অ্যাকশন কার্ড যায়। এক-ক্লিকে কিছুই প্রেরণ হয় না।"
+  },
+  "ops.card": {
+    "title": "অ্যাকশন কার্ড",
+    "selectState": "অবস্থা",
+    "state": {
+      "feni": "ফেনী (বাস্তব)",
+      "observed_high": "পর্যবেক্ষণ · উচ্চ",
+      "possible": "সম্ভাব্য",
+      "review_required": "পর্যালোচনা প্রয়োজন",
+      "gauge_absent": "গেজ অনুপস্থিত"
+    },
+    "clickHint": "বিস্তারিত দেখতে বন্যা এলাকায় ক্লিক করুন",
+    "voiceMode": "ভয়েস",
+    "confidence": {
+      "observed_high": "পর্যবেক্ষণ · উচ্চ",
+      "observed_medium": "পর্যবেক্ষণ · মাঝারি",
+      "possible": "সম্ভাব্য",
+      "forecast_only": "শুধু পূর্বাভাস",
+      "review_required": "পর্যালোচনা প্রয়োজন"
+    },
+    "criticalWindow": "{time} BDT-এর আগে রওনা হোন",
+    "affectedPeople": "ক্ষতিগ্রস্ত জনসংখ্যা",
+    "people": "জন",
+    "recommendedAction": "প্রস্তাবিত পদক্ষেপ",
+    "nearestShelter": "নিকটতম আশ্রয়কেন্দ্র",
+    "noShelter": "এই এলাকার জন্য কোনো আশ্রয়কেন্দ্র শনাক্ত করা যায়নি।",
+    "shelterDistance": "{distance} কিমি দূরে",
+    "shelterTravelTime": "হেঁটে {minutes} মিনিট",
+    "capacityKnown": "ধারণক্ষমতা: {capacity}",
+    "capacityUnknown": "ধারণক্ষমতা: অজানা — স্থানীয়ভাবে যাচাই করুন",
+    "provisional": "অস্থায়ী",
+    "route": "রুট",
+    "passability": {
+      "open": "চলাচলযোগ্য",
+      "caution": "সাবধানে চলাচলযোগ্য",
+      "blocked": "বন্ধ",
+      "unknown": "চলাচলযোগ্যতা অজানা"
+    },
+    "validUntil": "{date} পর্যন্ত বৈধ",
+    "backupRoute": "বিকল্প: {name} · {distance} কিমি",
+    "noSafeRoute": "বর্তমানে কোনো নিরাপদ রুট শনাক্ত করা যায়নি",
+    "shelterInPlace": "ঘরে অবস্থান করুন এবং উদ্ধারের অপেক্ষায় থাকুন।",
+    "gaugeSignal": "গেজ সংকেত",
+    "gaugeStatus": {
+      "normal": "স্বাভাবিক",
+      "warning": "সতর্কতা",
+      "danger": "বিপদ"
+    },
+    "direction": {
+      "rising": "বাড়ছে",
+      "falling": "কমছে"
+    },
+    "capDraft": "CAP খসড়া",
+    "openApproval": "অনুমোদন ফ্লো খুলুন",
+    "evidenceTrail": "কেন এই সতর্কতা",
+    "sarPass": "SAR পাস {date}"
+  }
+}

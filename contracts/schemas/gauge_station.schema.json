@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:gauge_station:v0.1.0",
+  "title": "Gauge Station",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "gauge_id",
+    "station",
+    "river",
+    "water_level_m",
+    "danger_level_m",
+    "date",
+    "source",
+    "as_of",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "gauge_id": {
+      "type": "string"
+    },
+    "station": {
+      "type": "string"
+    },
+    "river": {
+      "type": "string"
+    },
+    "location": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "location_accuracy": {
+      "type": "string"
+    },
+    "water_level_m": {
+      "type": "number"
+    },
+    "danger_level_m": {
+      "type": "number"
+    },
+    "difference_m": {
+      "type": "number"
+    },
+    "status": {
+      "type": "string"
+    },
+    "direction": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "source": {
+      "enum": [
+        "observed",
+        "forecast"
+      ]
+    },
+    "as_of": {
+      "type": "string"
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

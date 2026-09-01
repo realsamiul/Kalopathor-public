@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:bundle:v0.1.0",
+  "title": "Bundle",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "pipeline_version",
+    "model_version",
+    "event",
+    "data_flags",
+    "flood_polygons",
+    "forecast_bands",
+    "gauges",
+    "exposure",
+    "shelters",
+    "routes",
+    "data_freshness",
+    "alert_draft"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "event": {
+      "type": "object"
+    },
+    "data_flags": {
+      "type": "object"
+    },
+    "flood_polygons": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "forecast_bands": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "gauges": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "exposure": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "shelters": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "data_freshness": {
+      "type": "object"
+    },
+    "alert_draft": {
+      "type": "object"
+    }
+  }
+}

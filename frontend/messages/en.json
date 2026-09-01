@@ -1,0 +1,186 @@
+{
+  "nav": {
+    "story": "The Story",
+    "operations": "Operations",
+    "title": "কালপাথর · Kalopathor"
+  },
+  "common": {
+    "loading": "Loading",
+    "close": "Close",
+    "error": "Error",
+    "offline": "Offline",
+    "interpolated": "Interpolated"
+  },
+  "ops": {
+    "title": "Flood Intelligence Operations",
+    "subtitle": "Bangladesh flood monitoring & forecast console",
+    "nextPass": "Next S1 pass",
+    "lastObs": "Last observation",
+    "freshness": {
+      "title": "Data quality",
+      "serverTime": "Server",
+      "age": "{age} ago",
+      "estimated": "est.",
+      "staleAfter": "stale after {s}",
+      "nextPass": "Next pass",
+      "region": "region",
+      "version": "Version",
+      "frozen": "Frozen",
+      "provenance": "Provenance",
+      "staleStations": "Stations above danger",
+      "staleStationsNone": "not yet tracked — slot reserved",
+      "fresh": "fresh",
+      "stale": "stale",
+      "failed": "failed",
+      "unknown": "unknown",
+      "offline": "Quality API offline",
+      "prov": {
+        "official": "official",
+        "proxy": "proxy",
+        "mixed": "mixed"
+      },
+      "seededBannerTitle": "SEEDED / DEMO DATA",
+      "seededBannerBody": "not live monitoring",
+      "seededDate": "seeded {date}",
+      "seededAsOf": "as-of {date}",
+      "sarComputed": "computed from acquisition {date}"
+    },
+    "systemNominal": "SYSTEM NOMINAL",
+    "degraded": "DEGRADED",
+    "noData": "No SAR pass on this date",
+    "utc": "UTC",
+    "status": "Status",
+    "rail": {
+      "title": "Workflow",
+      "layers": "Layers",
+      "now_flooding": "Now Flooding",
+      "next_72h": "Next 72h",
+      "people_at_risk": "People at Risk",
+      "routes_shelters": "Routes & Shelters",
+      "gauges": "Gauges",
+      "alerts": "Alerts",
+      "data_quality": "Data Quality"
+    },
+    "lists": {
+      "incidents": "Flood incidents",
+      "noIncidents": "No flood polygons in this state",
+      "forecast": "Forecast bands",
+      "noForecast": "No forecast bands in this state",
+      "lead": "T+{h}h",
+      "peopleAtRisk": "People at risk",
+      "noExposure": "No exposure estimates in this state",
+      "shelters": "Shelters",
+      "noShelters": "No shelters in this state",
+      "capacityUnknown": "capacity unknown",
+      "routes": "Routes",
+      "passable": "Passable",
+      "blocked": "Blocked",
+      "gauges": "Gauge stations",
+      "noGauges": "No gauges in this state",
+      "gaugeStatus": {
+        "danger": "Danger",
+        "warning": "Warning",
+        "normal": "Normal"
+      },
+      "alertQueue": "Alert queue",
+      "status": "Status"
+    }
+  },
+  "layers": {
+    "basemap": "Satellite basemap",
+    "hillshade": "Hillshade",
+    "rivers": "River network",
+    "flood": "SAR-confirmed flood",
+    "erosion": "Erosion transects",
+    "prediction": "Flood prediction",
+    "globe": "Globe",
+    "legend": "Legend",
+    "switcher": "Layers"
+  },
+  "legend": {
+    "confirmed": "Confirmed flood (SAR)",
+    "predicted": "Predicted flood",
+    "receding": "Receding",
+    "erosion": "Bank erosion",
+    "highRisk": "High risk",
+    "lowRisk": "Low risk"
+  },
+  "timeline": {
+    "past30d": "PAST 30 DAYS",
+    "now": "NOW",
+    "forecast7d": "+7D FORECAST",
+    "horizon": "Forecast horizon",
+    "lead1": "T+1 day",
+    "lead3": "T+3 days",
+    "lead5": "T+5 days",
+    "lead7": "T+7 days",
+    "sarTick": "SAR acquisition",
+    "speed": "Speed"
+  },
+  "prediction": {
+    "title": "Flood prediction",
+    "prob": "flood probability",
+    "peak": "Peak risk"
+  },
+  "approval": {
+    "stub": "Approval flow · stub",
+    "title": "CAP advisory approval",
+    "description": "Analyst review workflow for CAP emission is not built yet. This is the stub the action card routes to. Nothing is emitted one-click."
+  },
+  "ops.card": {
+    "title": "Action card",
+    "selectState": "State",
+    "state": {
+      "feni": "Feni (honest)",
+      "observed_high": "Observed high",
+      "possible": "Possible",
+      "review_required": "Review required",
+      "gauge_absent": "Gauge absent"
+    },
+    "clickHint": "Click a flooded area to refine",
+    "voiceMode": "Voice",
+    "confidence": {
+      "observed_high": "Observed · High",
+      "observed_medium": "Observed · Medium",
+      "possible": "Possible",
+      "forecast_only": "Forecast only",
+      "review_required": "Review required"
+    },
+    "criticalWindow": "Move before {time} BDT",
+    "affectedPeople": "Affected people",
+    "people": "people",
+    "recommendedAction": "Recommended action",
+    "nearestShelter": "Nearest shelter",
+    "noShelter": "No shelter identified for this area.",
+    "shelterDistance": "{distance} km away",
+    "shelterTravelTime": "{minutes} min walking",
+    "capacityKnown": "Capacity: {capacity}",
+    "capacityUnknown": "Capacity: unknown — verify locally",
+    "provisional": "Provisional",
+    "route": "Route",
+    "passability": {
+      "open": "Passable",
+      "caution": "Passable with caution",
+      "blocked": "Blocked",
+      "unknown": "Passability unknown"
+    },
+    "validUntil": "Valid until {date}",
+    "backupRoute": "Backup: {name} · {distance} km",
+    "noSafeRoute": "No safe route currently identified",
+    "shelterInPlace": "Shelter in place and await rescue.",
+    "gaugeSignal": "Gauge signal",
+    "gaugeStatus": {
+      "normal": "Normal",
+      "warning": "Warning",
+      "danger": "Danger"
+    },
+    "direction": {
+      "rising": "rising",
+      "falling": "falling"
+    },
+    "capDraft": "CAP draft",
+    "openApproval": "Open approval flow",
+    "evidenceTrail": "Why this advisory",
+    "sarPass": "SAR pass {date}"
+  }
+}

@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:exposure_summary:v0.1.0",
+  "title": "Exposure Summary",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "polygon_id",
+    "district",
+    "division",
+    "area_km2",
+    "affected_people",
+    "population_source",
+    "sar_pass_date",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "polygon_id": {
+      "type": "integer"
+    },
+    "district": {
+      "type": "string"
+    },
+    "division": {
+      "type": "string"
+    },
+    "area_km2": {
+      "type": "number"
+    },
+    "affected_people": {
+      "type": "integer"
+    },
+    "population_source": {
+      "type": "string"
+    },
+    "sar_pass_date": {
+      "type": "string"
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

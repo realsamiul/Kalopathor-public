@@ -1,0 +1,75 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0e17;
+  --card: #111827;
+  --card-border: #1f2937;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --safe: #2dd4bf;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --active: #818cf8;
+  --water: #1e3a5f;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), var(--font-bengali), system-ui, sans-serif;
+}
+
+.font-mono {
+  font-family: var(--font-mono), monospace;
+}
+
+.bn {
+  font-family: var(--font-bengali), var(--font-inter), sans-serif;
+}
+
+/* MapLibre overrides for dark console */
+.maplibregl-map {
+  font-family: var(--font-inter), sans-serif;
+}
+
+.maplibregl-canvas-container.maplibregl-interactive,
+.maplibregl-ctrl-group,
+.maplibregl-ctrl-attrib {
+  background: rgba(17, 24, 39, 0.85) !important;
+  color: var(--text) !important;
+  backdrop-filter: blur(4px);
+}
+
+.maplibregl-ctrl-attrib a {
+  color: var(--muted) !important;
+}
+
+.maplibregl-ctrl-group button {
+  filter: invert(1);
+}
+
+/* Scrollbars */
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: #374151;
+  border-radius: 3px;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

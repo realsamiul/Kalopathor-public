@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:event:v0.1.0",
+  "title": "Event",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "event_id",
+    "name",
+    "type",
+    "division",
+    "district",
+    "status",
+    "severity"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string"
+    },
+    "division": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "ended_at": {
+      "type": "string"
+    },
+    "sar_pass_date": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string"
+    },
+    "confidence_class": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "affected_people_total": {
+      "type": "number"
+    },
+    "description": {
+      "type": "string"
+    },
+    "languages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

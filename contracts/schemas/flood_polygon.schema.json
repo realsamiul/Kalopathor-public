@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:flood_polygon:v0.1.0",
+  "title": "Flood Polygon",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "polygon_id",
+    "event_id",
+    "district",
+    "division",
+    "area_km2",
+    "confidence",
+    "label_source",
+    "sar_pass_date",
+    "geometry",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "polygon_id": {
+      "type": "integer"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "area_km2": {
+      "type": "number"
+    },
+    "bbox": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "confidence_class": {
+      "type": "string"
+    },
+    "label_source": {
+      "type": "string"
+    },
+    "iou_score": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "urban_doublebounce_corrected": {
+      "type": "boolean"
+    },
+    "region": {
+      "type": "string"
+    },
+    "district": {
+      "type": "string"
+    },
+    "division": {
+      "type": "string"
+    },
+    "sar_pass_date": {
+      "type": "string"
+    },
+    "sar_sensor": {
+      "type": "string"
+    },
+    "polarization": {
+      "type": "string"
+    },
+    "geometry": {
+      "type": "object",
+      "required": [
+        "type",
+        "coordinates"
+      ]
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "source": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}

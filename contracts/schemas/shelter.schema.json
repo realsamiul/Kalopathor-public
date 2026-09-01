@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kalopathor:shelter:v0.1.0",
+  "title": "Shelter",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "model_version",
+    "pipeline_version",
+    "shelter_id",
+    "name",
+    "location",
+    "shelter_source",
+    "official_status",
+    "capacity_status",
+    "data_flag"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "model_version": {
+      "type": "string"
+    },
+    "pipeline_version": {
+      "type": "string"
+    },
+    "shelter_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "location": {
+      "type": "object",
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "type": {
+      "type": "string"
+    },
+    "shelter_source": {
+      "type": "string"
+    },
+    "official_status": {
+      "type": "string"
+    },
+    "capacity_status": {
+      "type": "string"
+    },
+    "capacity": {
+      "type": [
+        "integer",
+        "null"
+      ]
+    },
+    "elevation_m": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "source_detail": {
+      "type": "string"
+    },
+    "data_flag": {
+      "enum": [
+        "real",
+        "derived",
+        "proxy",
+        "missing"
+      ]
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "valid_from": {
+      "type": "string"
+    },
+    "valid_until": {
+      "type": "string"
+    },
+    "crs": {
+      "type": "string"
+    },
+    "provenance": {
+      "type": "object"
+    },
+    "review_status": {
+      "type": "string"
+    }
+  }
+}
