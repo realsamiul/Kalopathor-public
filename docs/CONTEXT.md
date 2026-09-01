@@ -1,80 +1,70 @@
-# KALOPATHOR — Current State Context
+# KALOPATHOR — Current State Context (snapshot)
 
-Extracted from the session snapshot (BigDeepseekFlashSwar_CLEANED.md).
-
-## 2. Currently Active Resources (LIVE state)
-
-## 3. Working Dev Techniques Snapshot (how it works TODAY)
-
-- **6ch prep normalization:** 6 channels per chip with per-channel normalization; strong-labeled chips get 2× loss weighting (`strong_weight=2.0`, weak=1.0). Prep pipeline: `d3_6ch_prep_v2.py` → verify with `d3_6ch_verify.py`.
-- **G3 false-positive gate (multi-signal):** `flood_px_frac > 0.01 AND vh_mean < 0.44 AND chg_mean < 0.40 AND max_prob > 0.9 AND strata ∉ {dry_inland, mixed}`. Achieves **strict-zero FPR (0.000)** on no-flood scenes, overall 0.008, Feni TPR 0.83. Root cause it fixes: model learned a "dark-SAR wet heuristic" (VH −0.52, CHANGE −0.32 corr) that thresholding alone cannot fix.
-- **MONSOON perm-water mask:** applied so permanent water / monsoon channels aren't flagged as flood (part of strata + mask logic in prep/negative control).
-- **TTA + SWA:** test-time augmentation at inference; stochastic weight averaging produced `d3vX_swa_best.pt` checkpoints.
-- **Asymmetric / one-sided onset bands:** symmetric bands cap onset coverage (~0.72). One-sided lower-only band: **go-before = stored − 0.201** (w_up_1sided=0.2009), `lower = max(0, stored − 0.201), upper = +inf`. One-sided erases the flood-class miss (coverage 1.0000 vs 0.6083 two-sided).
-- **EVE dry-edge two-segment routing:** snap origin to nearest NON-flooded graph node (evacuation starts at the flood edge, not centroid); route = boundary-egress segment + main-route segment; go-before = sum of both. Per-population-cluster, not per-polygon.
-- **Contract validation:** every object validates against its schema; `validate_bundle.py` exit 0 = valid, exit 1 = tampered. Bundles carry per-object flags `real_data / derived_data / proxy_data / missing_data`.
-- **CAP gate chain (template fork):** order = (1) schema gate → (2) exposure gate (no people → advisory may still draft, no public alert) → (3) G3 corroboration → (4) confidence class (→ human review queue, not dropped) → (5) **template fork** (safe route → evacuation; no safe route → shelter-in-place; flash valley <6h → nearest-shelter-vector) → (6) provenance stamping. Two alert types = separate gate profiles (Operational Advisory vs Public Evacuation Alert). **Re-evaluate freshness at Approve time** (drafts can sit for hours → force re-review if stale). Route status is a template fork, NOT a gate — people with no safe route need the alert most.
-- **Negative-control regression gate:** `work/eval/run_negative_control_inference.py` + `negative_control_report.md`; runs on every future checkpoint (FPR by terrain, tiered thresholds viz τ0.5 / analyst queue τ0.6 / CAP-draft G3 only).
-- **GEE read access:** works via ADC (asset-root 404 harmless); unlocks dry-season composite, CoastSat, MCDWD. Writes blocked (no asset root).
+**Date-stamped:** 2026-09-01 · **Purpose:** the live working snapshot for the project. Companion to `docs/PRODUCT_SPEC.md` (stable product spec), `docs/HONEST_ASSESSMENT.md` (our own risk register), `docs/DOCTRINE.md` (non-negotiables), `docs/SUBMISSION_READY.md` (program one-pager).
 
 ---
 
-## 4. Product Specs
+## What is LIVE
 
-### Model specs (d3v4.1 / d3v4.2)
-- **Arch:** EfficientNet-b0 U-Net, **6 channels** (in_channels=6), sigmoid head, `efficientnet-b0-unet-6ch`.
-- **v4.1 (FROZEN):** trained 2020+2022; Feni 2024 is an **unseen** event → historical baseline **Feni 0.485**.
-- **v4.2 (trained, not promoted):** train = 2020+2022 (5,253) + Feni-train (87, strong-weighted 2×) = 5,340; val = 2024-north (weak labels) + Feni contiguous tripwire (20) + Sirajganj 2019 (cross-algorithm).
-- **Split:** 2024-north + Feni for val/eval; Sirajganj 2019 as independent unseen check.
-- **Metrics:** see §6 table.
+- **Vercel demo:** `kalopathor-hbgo` (Next.js 14 + MapLibre) — the seeded Feni penthouse renders end-to-end: detection → polygons → exposure → action card → CAP draft, with honest seeded/live states. Live at `https://kalopathor-hbgo.vercel.app`.
+- **Repository:** `github.com/realsamiul/Kalopathor` — contracts, doctrine, product specs, data, frontend scaffold.
+- **Seeded penthouse:** the Feni vertical-slice loop (detection → exposure → action card → CAP-draft) built on the real Feni 2024 replay bundle. It is explicitly a demo of honest states, not a live monitoring system.
+- **Live SAR age:** genuinely live (real acquisition timestamps). Everything else that isn't live is labeled SEEDED/DEMO — nothing presented as live that isn't.
 
-### Alert card IA order (9 items)
-Status badge → critical window → affected people → action → shelter → route → gauge → CAP button → evidence trail (collapsed). Voice mode = items 2→4→5→6 only. "No safe route" carries same visual weight as a safe route + shelter-in-place fallback. Confidence badge style reference: spur.us.
+## What is IN FLIGHT (the wave)
 
-## 5. Progress (phase-by-phase, what is DONE)
+- **Calibration** — first isotonic fit on the v4.2 logits measured (Brier 0.086 → 0.081 per-pixel); decile curves + chip-level curves computed; re-threshold mapping (raw 0.50 → cal 0.37) derived; **verification + final lexicon update in flight**. Gate: no new government-facing confidence claims until the decile check passes and coverage is re-measured with calibrated probabilities.
+- **Feni live-plumbing floor (Phase L)** — the real Sentinel-1 RTC → 6-channel prep → v4.2 inference → polygonize → freshness pipeline is running for the Feni bbox (`live/feni_latest/`: mask COG, polygons, freshness.json). First live granule processed (S1D, 2026-08-30 pass, ~62 s CPU); next-pass model built on measured constellation cadence. Corroboration hook (GFM WMS-T overlay) specified, third-signal wiring in flight.
+- **FLOMPY third signal** — FLOMPY (dense time-series SAR flood mapping) evaluated as an independent third SAR signal for the G3 corroboration chain, alongside our model and the S1-Flood-Bangladesh reference.
+- **CAP approve-feed** — persistent, append-only approval queue + audit layer on the CAP engine (`approve_feed.py`): enqueue → reviewed → approve/reject → export, with the approve-time freshness re-check (stale evidence forces re-review). Test suite passing.
+- **Replay harness** — retrospective event replays (2022 haor, 2024 Feni, Jamuna riverine, coastal surge) with lead-time-at-issuance, shelter-assignment coverage, and the **would-have-been false-alarm count** (the trust-cost metric).
+- **Dry-season composite (CHANGE v2)** — replacing the annual WorldCover median with a true dry-season S1 composite, now that GEE read access works. Directly improves the weakest input channel.
 
-- **Research audit** — full ML/data/geo/pipeline audit → `RESEARCH_AUDIT_2026-08-29.md`. Headline: deployment-grade ML engine; frontend was the weak link (now built).
-- **Data fixes** — DEM/GSW/CHANGE/HAND/TTA corrections (`work/fixes/`). Headline: 6ch pipeline clean.
-- **Chips** — 6ch chip prep + verification; strong labels added (Feni + 2020/2022 SHP-derived). Headline: ~5,253 train chips + 87 Feni-train strong.
-- **Retrains** — v3 → v4 → v4.1 → v4.2 (Lightning, 0.72 GPU-hr). Headline: v4.1 Feni 0.485 (unseen); v4.2 tripwire +0.064.
-- **Polygonize** — v4 predictions → **1,461 polygons** (`detection_polygons_v4.geojson`).
-- **Contracts** — 9 schemas + bundle schema + validator frozen & validated. Headline: 100% bundle validation pass.
-- **CAP** — draft engine + 3 XSD-valid CAP 1.2 XMLs + failure-path tests. Headline: valid CAP output.
-- **Bands** — 0.341 → 0.615 → 0.886 → one-sided onset coverage + flood-class 1.0. Headline: go-before = stored − 0.201.
-- **Frontend slices** — scaffold (slice 1) + ops-console (slice 2) + action card. Headline: build passes, 2D default, freshness API live.
-- **Sirajganj** — 2019 composite via GEE + 42 chips + both-model eval. Headline: v4.1 0.540 / v4.2 0.553 (cross-algorithm).
-- **GEE** — read-auth unblocked. Headline: dry-season composite / CoastSat / MCDWD unlocked.
+## What is BLOCKED (external)
 
----
+- **Shelter data — 3 institutional asks in flight, all unanswered.** No official shelter inventory exists for Feni/Noakhali in any open dataset; no safe routes exist in Feni and the system says so. The three asks: MoDMR/ministry, LGED-framed (World Bank MDSP / GeoDASH leverage), UNDP Shelter Cluster. Until one lands: EVE honest NO_SAFE_ROUTE states persist, CAP evacuation-template branch stays parked, and the evacuation value proposition is hostage to a relationship that doesn't exist yet.
+- **Cell broadcast / mass SMS** — national infrastructure (BTRC roadmap), external to the platform.
 
-## 6. Metrics
+## Evidence hierarchy (the honest claim, exactly)
 
-## 7. Items To Do (remaining queue, Sonnet priority order)
+1. **ONE independent unseen event** — Feni 2024, UNOSAT/Charter strong labels: v4.1 **0.485** (locked as historical record when Feni entered v4.2 training); v4.2 tripwire **0.5338** (n=20 contiguous block, +0.064).
+2. **ONE cross-algorithm agreement** — Sirajganj 2019: v4.1 0.540 / v4.2 0.553 (n=42). Explicitly NOT a second Feni — two SAR methods agreeing on a SAR-derived reference is partly self-consistency.
+3. **ONE in-distribution val** — 2024-north 0.5432/0.5433, on labels proven unreliable (strong-covered 0.02 artifact).
 
-1. **Shelter acquisition (emails)** — Sam sends the 3 institutional emails (`eve/shelters/institutional_requests.md`). #1 long pole; nothing computed can replace it. DMB first, LGED second, UNDP third.
-2. **EVE re-run on real shelters** — when data lands: `eve/shelters/import_official.py` (ingest → validate shelter schema → merge official>proxy, **demote not delete** proxies → re-run `build_feni_routes.py` v3 → update bundle + card). Expect passability to flip from "all blocked" to real routes.
-3. **v4.2 promotion decision** — buffer ablation passed (Δ+0.044 interior), E delivered cross-algorithm number. Decide promote to ops (v4.1 = rollback) vs hold. If promoted: **re-run 6ch polygonize with v4.2** for next polygon refresh.
-4. **CAP semantic review** (A1) — non-urgent; XSD-valid ≠ semantically valid; needs someone who has reviewed real CAP feeds; re-check after real EVE routes land.
-5. **Field-verification workflow** (E1) — named backlog item (owner = Sam/MoDMR liaison); CPP volunteers photographing flood extent = the only path to closing the n=1 generalization gap; also verifies shelter data.
-6. **Live data plumbing (slice 3)** — real FFWC ingest loop, real satmarg next-pass source, station-level stale counts, real alert queue. Currently freshness is seeded, not live.
-7. **Frontend slice 3** — wire real routes/shelters into the action card; complete district + field surfaces; real freshness wiring.
-8. **Dry-season S1 composite for CHANGE** — graduate from opportunistic to scheduled (better CHANGE channel ch5).
-9. **v4.2 polygonize** — refresh polygon layer from v4.2 if promoted.
-10. **Event replays** — 2022 haor, 2024 Feni, Jamuna riverine, coastal surge (`work/eval/replay/`); metric: lead-time-at-issuance + shelter-assignment coverage + **would-have-been false-alarm count**.
-11. **User testing** — 3–5 Bengali speakers on action card + confidence wording, comprehension + shelter-selection under time pressure → punch-list.
-12. **Tabletop + hardening** — with MoDMR/DDM/FFWC; roles (Viewer/Analyst/Approver/Admin), monitoring (freshness API), audit logs, backup/offline.
+Net: ~1.5 events of genuine independent evidence. Research-grade generalization, not certification. The n=1 closure path is the field-verification program (CPP volunteers photographing the next live event) — named backlog item, owner = Sam/MoDMR liaison.
 
----
+## v4.1 / v4.2 freeze rules
 
-## 9. Warnings (honest caveats & known issues)
+- **v4.2 = provisionally promoted ops model** (2026-09-01, decision by Sam). All three promotion gates passed: Feni tripwire +0.064, negative-control FPR 0.000, unseen-event number exists.
+- **v4.1 = frozen one-command rollback.** Contracts read the frozen v4.1 output schema; v4.2 may never destabilize in-flight tracks.
+- **Both provisional** until one live national event with ground truth. Buffer ablation confirms the tripwire gain survives boundary exclusion (interior Δ+0.044, deep-interior Δ+0.042) — not pure spatial leakage.
+- Re-polygonized national 2024 layer from v4.2 (`detection_polygons_v4.2.geojson`, threshold 0.65 + G3 post-mask, same schema).
 
-- **Flood-class band 0.608 → 1.0 story:** symmetric/asymmetric bands left flood-class-in-onset coverage at 0.608 (2024 flood rows scored 0.48–0.60 sat outside band). The **one-sided lower-only band fixes it (1.0)**, but the asymmetric direction was inverted vs theory (w_up narrower than |w_dn|) — confirmed a **sigmoid probability-clipping artifact** (residual capped by `1−stored`), not error structure.
-- **Sirajganj is cross-algorithm agreement, NOT independent validation.** Both models compared against the S1-Flood-Bangladesh algorithm that also made the labels — two SAR methods seeing water in water is partly self-consistency. No independent 2019 BD labels exist publicly (DFO's only polygon unusable; no CEMS/UNOSAT). Do NOT present as "second Feni" or ground-truth accuracy. n=42 chips, single event.
-- **Freshness = seeded, not live.** "Fresh" statuses derive from file mtimes/static JSON; SAR age is real (real acquisition), FFWC/forecast are seeded, next-pass is "est.", shelters/model are static. Any external demo must show the amber SEEDED/DEMO banner.
-- **No safe route in Feni.** Zero shelters within 22.8 km; Feni roads inundated; only southern corridor + western highland links passable/marginal. EVE honestly returns NO_SAFE_ROUTE everywhere. A closer shelter dataset is the single highest-leverage fix.
-- **Weak labels on 2024-north.** The 2024-north val uses weak labels; Feni tripwire uses strong labels (more credible); the 2024-north tie means no in-distribution gain claimed for v4.2.
-- **Shelter data absent in Feni/Noakhali** in every open source; institutional asks are in flight and un-answered.
-- **CAP happy path untested against real routes** — only tested on a synthetic fixture (real Feni has no safe route). XSD-valid ≠ semantically valid.
-- **WMO / GoB external deps** — Google Flood API waitlist (v2 opportunistic), LGED/BWDB/UNDP shelter data (external), MoDMR/FFWC engagement (demo-driven, internally paced), cell-broadcast infra (external).
+## Decile-check requirement
 
----
+- Calibration is not "done" until the decile check passes: calibrated mean probability must track empirical frequency across all ten bins (per-pixel AND chip-level), and onset + flood-class coverage must be re-measured on the 2024 holdout with calibrated probabilities.
+- First-pass deciles are computed and already close (e.g. bin [0.9,1.0]: cal 0.902 vs empirical 0.902). Re-threshold mapping derived: raw 0.50 → calibrated 0.37. Final gate = verification run + lexicon update.
+
+## Working state (how it works TODAY)
+
+- **6ch prep:** `d3_6ch_prep_v2.py` → `d3_6ch_verify.py`; strong-labeled chips 2× loss weight.
+- **G3 false-positive gate:** `flood_px_frac > 0.01 AND vh_mean < 0.44 AND chg_mean < 0.40 AND max_prob > 0.9 AND strata ∉ {dry_inland, mixed}` → strict-zero FPR on no-flood scenes, Feni TPR 0.83. Wired as a permanent regression gate on every checkpoint.
+- **MONSOON permanent-water mask:** channel > 0.90 → background (haors preserved).
+- **TTA + SWA** at inference (+0.011 IoU).
+- **One-sided lower-only onset band:** `lower = max(0, stored − 0.201)`, `upper = +inf`; onset coverage 0.822, flood-class-in-onset 1.000 (was 0.608 two-sided); lexicon "historical range, not a guarantee"; go-before reads the lower bound, never midpoint. Two-sided band dropped from government-facing text.
+- **EVE dry-edge two-segment routing:** snap to nearest non-flooded node; boundary-egress + main-route; go-before = sum; per-population-cluster.
+- **Contract validation:** every object validates against its schema; `validate_bundle.py` exit 0 = valid; per-object `real_data / derived_data / proxy_data / missing_data` flags.
+- **CAP gate chain (template fork):** schema → exposure → G3 corroboration (≥2 signals) → confidence class (→ human review, never dropped) → template fork (evacuation / shelter-in-place / nearest-shelter-vector) → provenance stamping. Approve-time freshness re-check. Two alert types = separate gate profiles.
+- **Freshness API:** per-layer contract with server-side staleness enums, `server_time`, absolute timestamps, `shelters.provenance`, `model.version`, `mode: seeded|live`; ~60 s cache.
+- **GEE read access:** works via ADC (writes blocked — fine). Unlocks dry-season composite, CoastSat, MCDWD.
+
+## Standing queue (post-wave)
+
+1. Shelter acquisition — Sam sends/follows the 3 institutional emails (long pole; nothing computed replaces it).
+2. Calibration verification + re-threshold + lexicon update (decile gate).
+3. Feni live loop completion — scheduler (cron/systemd), GFM corroboration hook, truthful `mode: live`.
+4. EVE re-run on real shelters when data lands (official > proxy merge, demote not delete).
+5. Usability pass — 3–5 Bengali speakers / one officer on action card + confidence wording (cheapest foundation validation).
+6. Event replays → would-have-been false-alarm counts.
+7. Dry-season CHANGE v2 composite → re-prep/verify.
+8. Tabletop + hardening with MoDMR/DDM/FFWC (roles, monitoring, audit, backup).
