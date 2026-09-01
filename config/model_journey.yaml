@@ -1,0 +1,246 @@
+# KALOPATHOR — Model Journey: the PINNED pipeline (set in stone)
+# Top constants are the single source of truth for model/band/dataset versions.
+# Change a version here -> regenerate every downstream artifact; the pipeline
+# is version-pinned so rollback is one constant swap (v4.2 -> v4.1).
+#
+# Real artifact filenames below reference the production workspace:
+#   /root/General/kalopathor/work/  (mirrored to repo `data/`)
+#   /mnt/data/kalopathor-gcs/       (chip/tile store)
+#   /mnt/data/kalopathor-rtc/       (HyP3 RTC store)
+#   /mnt/data/kalopathor-serve/     (forecast serve tiles)
+#   gs://monarqlabs-gemini-workspace/kalopathor/  (GCS vault)
+
+version_pin: "kalopathor-2026-08-30"
+schema_version: "0.1.0"
+pinned_at: "2026-08-30"
+pin_authority: "MoDMR/DDM ops baseline — reviewed 2026-08-30, provisionally promoted 2026-08-31"
+
+# ---------------------------------------------------------------------------
+# TOP CONSTANTS — model & band versions (single source of truth)
+# ---------------------------------------------------------------------------
+model:
+  detection:
+    architecture: "efficientnet-b0-unet-6ch"
+    in_channels: 6
+    activation: sigmoid
+    promoted: "d3v4.2"          # PROVISIONALLY PROMOTED (ops) — 2026-08-31 decision
+    rollback: "d3v4.1"          # frozen demo baseline; rollback = one constant swap
+    status: "provisional"       # stays provisional until one live national event w/ ground truth
+    channel_names: ["VV", "VH", "DEM", "HAND", "MONSOON", "CHANGE"]
+    chip_size_px: 512           # 512x512 chips, 6 channels
+    strong_weight: 2.0
+    weak_weight: 1.0
+    monsoon_perm_thresh: 0.9
+    training:
+      train_chips: 5340         # 2020+2022 (5253) + Feni-train strong (87, 2x weighted)
+      val_chips: 1991
+      train_set: "2020+2022 (5253) + Feni-train (87, strong-weighted 2x)"
+      val_set: "2024-north (weak) + Feni contiguous tripwire (20) + Sirajganj 2019 (cross-algorithm)"
+      epochs: 20
+      lr_schedule: "OneCycleLR(max_lr=0.0100, pct_start=0.15, div_factor=10, final_div_factor=100)"
+      swa_start_epoch: 15
+      tta: true                 # test-time augmentation at inference
+      swa: true                 # stochastic weight averaging -> d3vX_swa_best.pt
+    gates:
+      negative_control_fpr: 0.0   # on no-flood scenes (strict-zero)
+      feni_tripwire_delta_iou: +0.0636   # v4.2 - v4.1 on Feni holdout (pass: >= -0.03)
+      event_split_iou_2024north: 0.5432  # v4.2; v4.1 = 0.5433
+      feniprogress_unseen_iou_v41: 0.485
+      feni_tripwire_holdout_iou_v42: 0.5338
+      cross_algo_sirajganj_v42: 0.553    # agreement only, NOT validation
+
+  forecast:
+    model: "LightGBM dual-branch"   # SAR-anchored + GloFAS
+    band_method: "one-sided lower-only conformal"   # conformal; labeled "historical range, not a statistical guarantee"
+    band_type: "onesided"
+    n_onset_cal: 403374
+    w_up_1sided: 0.200925           # 0.201 — single-sided upper weight (go-before width)
+    go_before_formula: "go_before = stored - 0.201"   # LOWER bound, never midpoint
+    band_formula: "lower = max(0, stored - 0.200925); upper = +inf"
+    onset_coverage: 1.0             # flood-class-in-onset, n=403k (vs 0.6083 two-sided)
+    calibration_events: "event_2020 + event_2022 (excludes 2024)"
+    holdout_events: "event_2024"
+    confidence_level: 0.9
+    asymmetric_fit:                 # fitted (inverted-direction artifact) — superseded by onesided
+      method: "empirical_asymmetric"
+      k_up: 383207
+      k_dn: 20169
+      w_up: 0.217893
+      w_dn: -0.383834
+
+  eve:
+    routing: "dry-edge two-segment"
+    segment1: "flood-boundary egress segment"    # origin snapped to nearest NON-flooded graph node
+    segment2: "main route segment"
+    go_before: "sum of both segments"
+    scope: "per population cluster (not per polygon)"
+    passability_states: ["Passable", "Marginal", "Likely-blocked", "Blocked", "Unknown"]
+    unknown_means_not_safe: true    # unknown != safe (doctrine)
+
+  alert:
+    standard: "CAP 1.2"
+    approval: "human approval mandatory; never auto-send"
+    types:
+      - "operational_advisory"      # officials, lower bar
+      - "public_evacuation_alert"   # public, full gate chain
+    gate_order: ["schema", "exposure", "multi_signal_corrob", "confidence_class", "template_fork", "provenance"]
+    template_fork: "safe_route -> evacuation | no_safe_route -> shelter-in-place | flash_valley(<6h) -> nearest-shelter-vector"
+
+# ---------------------------------------------------------------------------
+# STAGE 1 — s1_acquisition  (Sentinel-1 IW GRD -> RTC)
+# ---------------------------------------------------------------------------
+s1_acquisition:
+  description: "Sentinel-1 IW GRD -> radiometrically terrain corrected (RTC) VV/VH backscatter"
+  source: "Sentinel-1 IW GRD (descending, BD_WKT 88/20.5/93/27.5)"
+  processor: "HyP3 RTC_GAMMA (ASF) — primary"
+  processor_alt: "Planetary Computer sentinel-1-rtc (gamma0, Catalyst/PlanetDEM) — long-term replacement"
+  spatial_resolution_m: 30
+  polarizations: ["VV", "VH"]
+  revisit_days: 6               # nominal; NOTE: S1C/S1D joined -> do not hardcode (satmarg next-pass source)
+  products:
+    - "{scene}_RTC.tif"         # sigma0 dB, VV+VH (HyP3 output; store /mnt/data/kalopathor-rtc/)
+  artifacts:
+    input: "asf_search GRD_HD IW granules (hyp3_submit_coverage.py)"
+    output: "/mnt/data/kalopathor-rtc/  (RTC zips -> gs://monarqlabs-gemini-workspace/kalopathor/rtc-zips/)"
+    jobs_log: "/root/General/kalopathor/work/hyp3_jobs.json"
+  cadence: "per-pass (6-day); dry-season composites for CHANGE channel"
+  freshness_field: "sar_pass_date  (real acquisition timestamp)"
+  normalization: "granite sigma0 dB normalization"
+
+# ---------------------------------------------------------------------------
+# STAGE 2 — chip_prep  (6-channel chip stack)
+# ---------------------------------------------------------------------------
+chip_prep:
+  description: "Build 512x512, 6-channel chips per scene: VV, VH, DEM, HAND, MONSOON, CHANGE"
+  channels:
+    VV: "Sentinel-1 VV sigma0 dB (granite-normalized)"
+    VH: "Sentinel-1 VH sigma0 dB (granite-normalized)"
+    DEM: "MERIT + Copernicus GLO-30 full-country 90m/30m (merged)"
+    HAND: "MERIT Hydro HAND 30m (height above nearest drainage)"
+    MONSOON: "GSW Jun-Oct water recurrence (perm-water / haor preservation; thresh 0.9)"
+    CHANGE: "VV vs dry-season reference dB (ai4g-style change prior)"
+  artifacts:
+    input: "RTC tifs + aux_full (DEM/HAND/GSW/REF)"
+    output: "/mnt/data/kalopathor-gcs/raw/chips/*_ch6.tif (+ *_mask.tif)"
+    prep_script: "/root/General/kalopathor/work/d3_6ch_prep_v2.py"
+    verify_script: "/root/General/kalopathor/work/d3_6ch_verify.py"
+    aux_fixes: "/root/General/kalopathor/work/fixes/ds1_dem/dem90m_bgd_full.tif, ds2_gsw/gsw_monsoon_recurrence_bgd_full.tif, ds3_change/dry_vv_reference_full.tif, ds5_hand/hand30m_bgd_full.tif"
+  normalization: "per-channel normalization; strong chips weighted 2x"
+  cadence: "on demand per acquisition (offline)"
+  freshness_field: "chip build timestamp (file mtime); model input is static once built"
+
+# ---------------------------------------------------------------------------
+# STAGE 3 — inference  (d3v4.2 provisionally promoted)
+# ---------------------------------------------------------------------------
+inference:
+  description: "Run 6ch U-Net (d3v4.2) over chip stack -> flood probability per pixel"
+  model_version: "d3v4.2"     # PROVISIONALLY PROMOTED; rollback -> d3v4.1
+  rollback_version: "d3v4.1"
+  checkpoint: "/root/General/kalopathor/work/checkpoints/d3v4.2_swa_best.pt"
+  training_script: "/root/General/kalopathor/work/d3_train_unet_6ch_v42.py"
+  inference_script: "/root/General/kalopathor/work/d3_polygonize_v4.py"
+  tta: true
+  artifacts:
+    input: "chips (6ch)"
+    output: "prob rasters -> /root/General/kalopathor/work/probs_v4/  (flood probability per scene)"
+    report: "/root/General/kalopathor/work/d3v4.2_report.json"
+  cadence: "per acquisition (6-day)"
+  freshness_field: "sar_pass_date"
+
+# ---------------------------------------------------------------------------
+# STAGE 4 — polygonize  (G3 false-positive gate)
+# ---------------------------------------------------------------------------
+polygonize:
+  description: "Threshold probs -> vector polygons, apply G3 multi-signal false-positive gate"
+  gate: "G3 multi-signal"
+  g3_conditions: "flood_px_frac > 0.01 AND vh_mean < 0.44 AND chg_mean < 0.40 AND max_prob > 0.9 AND strata NOT IN {dry_inland, mixed}"
+  g3_perf: "FPR 0.000 on no-flood scenes; overall 0.008; Feni TPR 0.83"
+  artifacts:
+    input: "prob rasters + SAR/CHANGE statistics + MONSOON perm-water mask"
+    output: "/root/General/kalopathor/work/detection_polygons_v4.geojson  (1461 polygons, 2024-08-12 national pass)"
+    polygonize_script: "/root/General/kalopathor/work/d3_polygonize_v4.py"
+    postprocess_script: "/root/General/kalopathor/work/d3v42_postprocess.py"
+    log: "/root/General/kalopathor/work/launch_polygonize_v4.log"
+  min_area_km2: 2.0
+  cadence: "per acquisition"
+  freshness_field: "sar_pass_date"
+
+# ---------------------------------------------------------------------------
+# STAGE 5 — exposure  (HRSL / WorldPop)
+# ---------------------------------------------------------------------------
+exposure:
+  description: "Intersect flood polygons with population grid -> affected people per polygon / district"
+  population_source: "WorldPop 2024 constrained 100m, R2025A release (HDX bgd_pop_2024_CN_100m_R2025A_v1)"
+  population_local_mirror: "/mnt/data/kalopathor-gcs/vault-2026-08/data_satellite/population/"
+  artifacts:
+    input: "detection_polygons_v4.geojson + WorldPop grid"
+    output: "/root/General/kalopathor/work/exposure/flood_affected_population.json  (total_affected 20,491,387 on 2024-08-12 pass; Feni district ~184k in replay)"
+    script: "/root/General/kalopathor/work/exposure/exposure.py"
+  cadence: "on demand after polygonize"
+  freshness_field: "sar_pass_date"
+
+# ---------------------------------------------------------------------------
+# STAGE 6 — forecast  (LightGBM + one-sided bands)
+# ---------------------------------------------------------------------------
+forecast:
+  description: "Dual-branch LightGBM (SAR-anchored + GloFAS) with one-sided lower-only conformal bands"
+  model: "LightGBM dual-branch"
+  branch_a: "SAR-anchored"
+  branch_b: "GloFAS v5 EWDS reanalysis + Open-Meteo Flood API + FFWC"
+  band: "one-sided lower-only; lower = max(0, stored - 0.201), upper = +inf"
+  go_before: "stored - 0.201"          # reads LOWER bound, never midpoint
+  coverage: "flood-onset coverage 1.0 (n=403k); 90% confidence level"
+  artifacts:
+    input: "ffwc_water_levels.parquet (115 observed + 81 forecast stations) + openmeteo_flood.parquet + GloFAS"
+    output: "/root/General/kalopathor/work/forecast/f5_mapie_bands_onesided.parquet"
+    report: "/root/General/kalopathor/work/forecast/f5_onesided_report.json"
+    scripts: "f5_asymmetric_bands.py, f5_onesided_diagnostic.py, f5_stratified_conformal.py"
+    verdict: "/root/General/kalopathor/work/forecast/mapie_method_verdict.md"
+  cadence: "daily (FFWC 2x/day observed + forecast windows)"
+  freshness_field: "as_of / forecast_date"
+
+# ---------------------------------------------------------------------------
+# STAGE 7 — eve_routing  (dry-edge 2-segment, passability states)
+# ---------------------------------------------------------------------------
+eve_routing:
+  description: "Evacuation routing from flood edge to shelters; passability states; per population cluster"
+  routing: "dry-edge two-segment (boundary-egress + main route); snap origin to nearest NON-flooded node"
+  passability_states: ["Passable", "Marginal", "Likely-blocked", "Blocked", "Unknown"]
+  unknown_not_safe: true
+  graphs: ["national OSM road graph", "Feni/Khowai pilot", "Khulna south pilot", "Bhola pilot"]
+  shelter_layer: "346 proxy points (OSM + HDX); Feni gap: 0 official shelters within ~20 km"
+  artifacts:
+    input: "detection_polygons_v4.geojson + OSM road graph + shelter points"
+    output: "route objects in bundle (route_id r_feni_001..003; NO_SAFE_ROUTE in Feni is the honest state)"
+    scripts: "work/eve/ (build_feni_routes.py), eve/shelters/import_official.py (on real shelter data)"
+  cadence: "on demand per polygon refresh"
+  freshness_field: "valid_until (passability decays; NO_RECENT_PASSABILITY_DATA when stale)"
+
+# ---------------------------------------------------------------------------
+# STAGE 8 — alert_draft  (CAP 1.2, human approval)
+# ---------------------------------------------------------------------------
+alert_draft:
+  description: "CAP 1.2 bilingual draft from gate chain output; human approval mandatory"
+  standard: "CAP 1.2 (XSD-valid)"
+  languages: ["bn", "en"]
+  gate_order: ["schema", "exposure", "multi_signal_corrob", "confidence_class", "template_fork", "provenance"]
+  approval: "human approval mandatory; never auto-send; approve-time freshness re-check"
+  confidence_classes: ["observed_high", "observed_medium", "possible", "forecast_only", "review_required"]
+  artifacts:
+    input: "polygons + exposure + forecast bands + gauges + EVE routes"
+    output: "alert_draft object in bundle; CAP 1.2 XMLs (3 drafts validated)"
+    script: "work/alert/ (draft engine)"
+  cadence: "event-driven"
+  freshness_field: "valid_from/valid_until + approve-time re-check"
+
+# ---------------------------------------------------------------------------
+# Freshness policy (server-side only; client renders ages from absolute timestamps)
+# ---------------------------------------------------------------------------
+freshness:
+  stale_after_s:
+    ffwc_gauges: 3600
+    sar_detection: "next_pass window"
+    forecast_glofas: "run_ts + 6h"
+    forecast_openmeteo: "run_ts + 6h"
+  failed_is_distinct: true    # "failed" never rendered as "3h old"
+  cache_s: "1-5 min"

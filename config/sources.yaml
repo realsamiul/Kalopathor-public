@@ -1,0 +1,203 @@
+# KALOPATHOR — Data Source Registry (config/sources.yaml)
+# Access classification: public-no-key | token | gated (registration/agreement required)
+# License notes are the OPS constraint; usage describes the pipeline stage.
+
+sources:
+
+  # ------------------------------------------------------------------ S1
+  sentinel-1-rtc-hyp3:
+    provider: ASF HyP3 (Alaska Satellite Facility)
+    product: "Sentinel-1 IW GRD -> RTC_GAMMA, sigma0 dB, VV+VH, ~30m"
+    access: token            # NASA Earthdata Login credential via hyp3_sdk
+    url: "https://hyp3-api.asf.alaska.edu"           # API; jobs submitted via hyp3_sdk
+    asf_search: "asf.search(platform='Sentinel-1', processingLevel='GRD_HD', beamMode='IW', flightDirection='DESCENDING')"
+    license_note: "Sentinel-1 data (ESA/EC) redistribution allowed; RTC processing on HyP3"
+    usage: "PRIMARY RTC processor for the sigma0/granite-normalized 6ch pipeline (s1_acquisition). ~525 credits used of 7,960 remaining for 105 dry-season jobs."
+    cadence: "per acquisition; dry-season composite for CHANGE channel"
+
+  planetary-computer-sentinel1-rtc:
+    provider: Microsoft Planetary Computer
+    product: "sentinel-1-rtc collection (global IW RTC COGs, free)"
+    access: public-no-key    # SAS-signed via planetary-computer sign(); raster-only COGs
+    url: "https://planetarycomputer.microsoft.com/api/stac/v1/collections/sentinel-1-rtc"
+    license_note: "ESA Sentinel-1 (CC-BY) terms; PC catalog terms"
+    usage: "LONG-TERM replacement for HyP3. NOTE gamma0 (Catalyst/PlanetDEM), not sigma0 -> granite normalization needs a local calibration check. stackstac + PC SDK for chip pulls."
+    cadence: "per acquisition"
+
+  # ------------------------------------------------------------- Copernicus
+  copernicus-dem-glo30:
+    provider: Copernicus DEM / AWS Open Data
+    product: "GLO-30 30m global DEM (COGs)"
+    access: public-no-key
+    url: "s3://copernicus-dem-30m"
+    license_note: "Copernicus DEM (contains modified Copernicus data); no registration for S3 read"
+    usage: "DEM channel (merged with MERIT for full-country 90m/30m). Local fixed: work/fixes/ds1_dem/dem90m_bgd_full.tif"
+
+  copernicus-gsw-seasonality:
+    provider: Copernicus Global Surface Water (GSW) / EC-JRC
+    product: "seasonality + recurrence (Jun-Oct monsoon water)"
+    access: public-no-key
+    url: "gs://global-surface-water"   # public GCS; also GEE read via ADC
+    license_note: "GSW dataset license (EC-JRC); attribution required"
+    usage: "MONSOON channel (ch4) + permanent-water mask (thresh 0.9). Local fixed: work/fixes/ds2_gsw/gsw_monsoon_recurrence_bgd_full.tif"
+
+  cems-gfm:
+    provider: Copernicus Emergency Management Service — Global Flood Monitoring (GFM)
+    product: "flood extent (WMS-T) + STAC archive"
+    access: public-no-key    # WMS-T public; STAC needs auth for bulk
+    url: "https://gfm.jrc.ec.europa.eu/static/wms/gfm/"       # WMS-T endpooint
+    stac: "https://gfm.jrc.ec.europa.eu/stac/"                # STAC catalog
+    license_note: "CEMS products — free for humanitarian use with attribution"
+    usage: "Independent flood-extent corroboration for the G3 multi-signal gate; cross-check vs our polygons"
+
+  cems-ewds-glofas:
+    provider: Copernicus Emergency Management Service — Early Warning & Data Store (EWDS)
+    product: "GloFAS v5.0 forecast / historical / reforecast / seasonal"
+    access: gated            # CDS/EWDS registration + license accept (instant, self-serve)
+    url: "https://ewds.climate.copernicus.eu/api"     # cdsapi>=0.7.7; .cdsapirc
+    system_version: "version_5_0"
+    license_note: "Copernicus license; registration required, no waitlist"
+    usage: "Branch B (GloFAS) input + return-period threshold recalibration on v5.0. Release ~Jul 2026 (1980-2025, +162% calibration stations)."
+
+  cdse:
+    provider: Copernicus Data Space Ecosystem (CDSE)
+    product: "Sentinel-1/2 access + Copernicus DEM downloader"
+    access: token            # CDSE OAuth
+    url: "https://dataspace.copernicus.eu"
+    license_note: "Copernicus license"
+    usage: "Alternative S1 GRD access + Copernicus-DEM-Downloader path (MMotaFerreira) for GLO-30"
+
+  # --------------------------------------------------------------------- MERIT
+  merit-dem-hand:
+    provider: Yamazaki et al. (MERIT) / MERIT Hydro
+    product: "MERIT DEM + HAND (height above nearest drainage)"
+    access: public-no-key
+    url: "http://hydro.iis.u-tokyo.ac.jp/~yamadai/MERIT_Hydro/"   # public download
+    license_note: "Free for research/non-commercial; cite Yamazaki et al. 2019"
+    usage: "DEM + HAND channels (ch3, ch5). HAND 30m fixed: work/fixes/ds5_hand/hand30m_bgd_full.tif; built with whitebox-tools ElevationAboveStream"
+
+  # ----------------------------------------------------------------- WorldCover
+  esa-worldcover-s1:
+    provider: ESA WorldCover (S1-based 10m product)
+    product: "S1 WorldCover v2 10m land cover (global)"
+    access: public-no-key
+    url: "s3://esa-worldcover-s1"
+    license_note: "CC BY 4.0 (ESA WorldCover)"
+    usage: "Land-cover prior for flood strata (e.g. exclude dense-urban/double-bounce misclass); aux channel candidate"
+
+  # ------------------------------------------------------------ UNOSAT / HDX
+  unosat:
+    provider: UNITAR-UNOSAT
+    product: "flood extent polygons (humanitarian activation)"
+    access: public-no-key
+    url: "https://unosat.org"
+    url_alt: "https://unosat-maps.cern.ch"
+    license_note: "Free; cite UNOSAT"
+    usage: "Ground-truth labels (Feni 2024 UNOSAT) + independent extent cross-check"
+
+  hdx:
+    provider: Humanitarian Data Exchange (HDX)
+    product: "WorldPop 2024 constrained 100m (bgd_pop_2024_CN_100m_R2025A_v1), shelter points, admin boundaries"
+    access: public-no-key
+    url: "https://data.humdata.org/dataset/worldpop-unadjusted-national-counts-grid-2-5-arcmin/resource/bgd_pop_2024_CN_100m_R2025A_v1"
+    license_note: "WorldPop: CC BY 4.0"
+    usage: "Exposure (HRSL/WorldPop); local mirror /mnt/data/kalopathor-gcs/vault-2026-08/data_satellite/population/"
+
+  # ---------------------------------------------------------------------- FFWC
+  ffwc:
+    provider: Bangladesh Flood Forecasting and Warning Centre (FFWC)
+    product: "daily river gauge: water_level_m, danger_level_m (115 observed + 81 forecast stations)"
+    access: gated            # public charts + gated API (api.ffwc.gov.bd token)
+    url: "http://old.ffwc.gov.bd/ffwc_charts/"        # public chart scrape
+    api: "http://api.ffwc.gov.bd"                     # gated API, token documented in geophysics/ffwc_ingest.py
+    license_note: "Government of Bangladesh data; API access controlled"
+    usage: "Gauge_station objects + forecast bands. Ingest: work/geophysics/ffwc_ingest.py + ffwc_station.py; parquet: work/geophysics/ffwc_water_levels.parquet"
+
+  # ---------------------------------------------------------------- Open-Meteo
+  open-meteo-flood:
+    provider: Open-Meteo
+    product: "Flood API (river discharge, no-key)"
+    access: public-no-key
+    url: "https://open-meteo.com/en/docs/flood-api"
+    license_note: "Free for non-commercial with attribution; commercial requires license"
+    usage: "Discharge forecasts -> forecast_band rows (value m3/s). Parquet: work/prediction/openmeteo_flood.parquet (6 stations x 10 days)"
+
+  # ----------------------------------------------------------------------- IMERG
+  imerg:
+    provider: NASA GPM IMERG
+    product: "Precipitation Rate (30-min nominal, ~5-day latency)"
+    access: public-no-key    # GIBS WMTS, no key
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/GPM_3IMERGHH_PrecipitationRate/default/{TIME}/GoogleMapsCompatible_Level6/{z}/{y}/{x}.png"
+    license_note: "NASA data; public domain"
+    usage: "Rainfall layer (maxzoom 6, ~10km); date-grey >= 5 days back; rainfall corroboration signal"
+
+  # ------------------------------------------------------------- NASA MCDWD/VCDWD
+  nasa-mcdwd:
+    provider: NASA LANCE MODIS — MCDWD (daily surface water)
+    product: "MODIS-based daily water detection (MCDWD)"
+    access: public-no-key    # GIBS WMTS
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{TIME}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg"
+    license_note: "NASA data; public domain"
+    usage: "Daily flood corroboration — labeled 'optical/cloud-limited' in UI (not yet wired to gibs.js)"
+
+  nasa-vcdwd:
+    provider: NASA LANCE VIIRS — VCDWD (daily surface water)
+    product: "VIIRS daily water detection"
+    access: public-no-key
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_SNPP_Daily_SurfaceWater/..."
+    license_note: "NASA data; public domain"
+    usage: "Daily flood corroboration (nocturnal capability); cloud-limited"
+
+  # --------------------------------------------------------------- GIBS basemap
+  gibs-viirs-truecolor:
+    provider: NASA GIBS VIIRS SNPP
+    product: "CorrectedReflectance TrueColor day satellite basemap"
+    access: public-no-key
+    url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default/{TIME}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg"
+    license_note: "NASA data; public domain"
+    usage: "Primary satellite basemap; TIME token date-substituted (no 'latest' auto-token — app bakes date); maxzoom 9 (~250m). Demo centerpiece."
+
+  # ------------------------------------------------------------- Google flood data
+  google-inundation-history:
+    provider: Google Flood Forecasting (open-sourced)
+    product: "Inundation History 1999-2020, 128m water occurrence (GeoJSON per bounds tile)"
+    access: public-no-key    # anonymous gsutil read
+    url: "gs://flood-forecasting/inundation_history/data/inundation_history_{bounds}.geojson"
+    license_note: "CC BY 4.0"
+    usage: "Historical labels / validation + calibration of SAR extent; BD tiles exist. Note: GRRR + hydrologic_predictions/*.zarr have official Colab reader."
+
+  # ----------------------------------------------------------------------- ETCI
+  etci:
+    provider: Earth Observation (regional) — context only
+    product: "reference notes (ETCI_ACCESS_NOTES.md)"
+    access: gated
+    url: "file:///root/General/kalopathor/work/ETCI_ACCESS_NOTES.md"
+    license_note: "regional partnership terms"
+    usage: "Optional regional context layer; not in the pinned pipeline"
+
+# ---------------------------------------------------------------------------
+# Access-class quick reference (for ops)
+# ---------------------------------------------------------------------------
+access_classes:
+  public-no-key:
+    - planetary-computer-sentinel1-rtc
+    - copernicus-dem-glo30
+    - copernicus-gsw-seasonality
+    - cems-gfm
+    - merit-dem-hand
+    - esa-worldcover-s1
+    - unosat
+    - hdx
+    - open-meteo-flood
+    - imerg
+    - nasa-mcdwd
+    - nasa-vcdwd
+    - gibs-viirs-truecolor
+    - google-inundation-history
+  token:
+    - sentinel-1-rtc-hyp3      # NASA Earthdata Login
+    - cdse                     # CDSE OAuth
+  gated:
+    - cems-ewds-glofas         # EWDS registration (instant, self-serve)
+    - ffwc                     # api.ffwc.gov.bd token
+    - etci
