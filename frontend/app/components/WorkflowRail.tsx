@@ -23,7 +23,7 @@ export default function WorkflowRail({
       initial={{x: -24, opacity: 0}}
       animate={{x: 0, opacity: 1}}
       transition={{delay: 0.15}}
-      className="absolute left-3 top-12 z-20 w-48 rounded-lg border border-[#1f2937] bg-[#111827]/85 p-3 backdrop-blur"
+      className="absolute left-3 top-[4.75rem] z-20 w-48 rounded-lg border border-[#1f2937] bg-[#111827]/85 p-3 backdrop-blur"
     >
       <div className="mb-2 font-mono text-[10px] uppercase tracking-widest text-[#9ca3af]">
         {t('ops.rail.title')}

@@ -1,23 +1,96 @@
 export type LayerId =
+  | 'basemap'
+  | 'mcdwd'
+  | 'imerg'
   | 'hillshade'
   | 'rivers'
   | 'flood'
+  | 'exposure'
   | 'erosion'
-  | 'prediction';
+  | 'prediction'
+  | 'gauges';
 
-export const layers: {id: LayerId}[] = [
-  {id: 'hillshade'},
-  {id: 'rivers'},
-  {id: 'flood'},
-  {id: 'erosion'},
-  {id: 'prediction'}
+export type Coverage = 'global' | 'pilot' | 'national';
+
+export interface LayerDef {
+  id: LayerId;
+  coverage: Coverage;
+  // e.g. "optical/cloud-limited" gap-filler layers
+  noteKey?: string;
+}
+
+export const layers: LayerDef[] = [
+  {id: 'basemap', coverage: 'global'},
+  {id: 'mcdwd', coverage: 'global', noteKey: 'layers.note.gapFiller'},
+  {id: 'imerg', coverage: 'global', noteKey: 'layers.note.gapFiller'},
+  {id: 'hillshade', coverage: 'pilot'},
+  {id: 'rivers', coverage: 'national'},
+  {id: 'flood', coverage: 'national'},
+  {id: 'exposure', coverage: 'national'},
+  {id: 'erosion', coverage: 'pilot'},
+  {id: 'prediction', coverage: 'national'},
+  {id: 'gauges', coverage: 'national'}
 ];
 
-// Recent date with confirmed VIIRS TrueColor coverage over Bangladesh.
-export const GIBS_DATE = '2026-08-10';
+// ---------------------------------------------------------------------------
+// GIBS (NASA GIBS / EOSDIS) basemap + gap-filler layers.
+// epsg4326 "250m" geographic grid; MapLibre requests WebMercator xyz, which the
+// `gibs://` protocol translates to the nearest GIBS epsg4326 tile.
+// ---------------------------------------------------------------------------
 
-const GIBS_BASE =
-  'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_SNPP_CorrectedReflectance_TrueColor/default';
+export type GibsLayer = 'basemap' | 'mcdwd' | 'imerg';
+
+export const GIBS_LAYERS: Record<
+  GibsLayer,
+  {product: string; ext: 'jpg' | 'png'; maxDate: string | null}
+> = {
+  basemap: {
+    product: 'VIIRS_SNPP_CorrectedReflectance_TrueColor',
+    ext: 'jpg',
+    maxDate: null
+  },
+  // MCDWD = MODIS Combined Drought & Water index daily flood detection.
+  // Palette: grey=no-water, red=flood, cyan=uncertain (GIBS native).
+  mcdwd: {
+    product: 'MODIS_Combined_Flood_2-Day',
+    ext: 'png',
+    maxDate: null
+  },
+  // IMERG Early (GIBS publish is capped 2025-10-22; later dates have no tiles).
+  imerg: {
+    product: 'IMERG_Precipitation_Rate',
+    ext: 'png',
+    maxDate: '2025-10-22'
+  }
+};
+
+// Most recent date verified to have VIIRS TrueColor over Bangladesh.
+export const GIBS_DEFAULT_DATE = '2026-08-30';
+// SAR pass date of the national detection set (quick-jump target).
+export const GIBS_EVENT_DATE = '2024-08-12';
+
+// Scrubber window: [START .. END], step 1 day. Default = GIBS_DEFAULT_DATE.
+export const GIBS_DATE_START = '2026-08-01';
+export const GIBS_DATE_END = '2026-08-31';
+
+export function clampGibsDate(layer: GibsLayer, date: string): string {
+  const cap = GIBS_LAYERS[layer].maxDate;
+  if (!cap) return date;
+  return date > cap ? cap : date;
+}
+
+export function gibsDatesBetween(start: string, end: string): string[] {
+  const out: string[] = [];
+  const cur = new Date(start + 'T00:00:00Z');
+  const last = new Date(end + 'T00:00:00Z');
+  while (cur <= last) {
+    out.push(cur.toISOString().slice(0, 10));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return out;
+}
+
+export const GIBS_DATES = gibsDatesBetween(GIBS_DATE_START, GIBS_DATE_END);
 
 // epsg4326 "250m" matrix dimensions per level (cols, rows)
 const DIMS: Record<number, [number, number]> = {
@@ -33,11 +106,14 @@ const DIMS: Record<number, [number, number]> = {
 };
 
 export function gibsTileUrl(
+  layer: GibsLayer,
   date: string,
   z: number,
   x: number,
   y: number
 ): string {
+  const {product, ext} = GIBS_LAYERS[layer];
+  const effective = clampGibsDate(layer, date);
   // GIBS epsg4326 tiles at level L cover roughly twice the ground of a
   // WebMercator tile at zoom z -> use level = clamp(z-1, 1..8).
   const level = Math.min(8, Math.max(1, z - 1));
@@ -55,5 +131,13 @@ export function gibsTileUrl(
   const col = Math.floor(((lonCenter + 180) / 360) * cols);
   const row = Math.floor(((90 - latCenter) / 180) * rows);
 
-  return `${GIBS_BASE}/${date}/250m/${level}/${row}/${col}.jpg`;
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${product}/default/${effective}/250m/${level}/${row}/${col}.${ext}`;
+}
+
+// 1x1 transparent PNG used when a GIBS tile 404s so the scrubber never breaks.
+export const TRANSPARENT_PNG =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
+export function gibsProtocolUrl(layer: GibsLayer, date: string): string {
+  return `gibs://${layer}/${date}/{z}/{x}/{y}`;
 }

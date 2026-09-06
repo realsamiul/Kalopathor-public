@@ -7,6 +7,22 @@ export type ConfidenceClass =
 
 export type Passability = 'open' | 'caution' | 'blocked' | 'unknown';
 
+export type LifecycleBadge = 'monitoring' | 'analysis' | 'historical';
+
+export function lifecycleBadge(
+  passDate: string | undefined,
+  latestPass: string | undefined
+): LifecycleBadge {
+  if (!passDate || !latestPass) return 'historical';
+  const d = Date.parse(passDate);
+  const l = Date.parse(latestPass);
+  if (Number.isNaN(d) || Number.isNaN(l)) return 'historical';
+  const days = Math.max(0, (l - d) / 86400000);
+  if (days <= 0) return 'monitoring';
+  if (days <= 45) return 'analysis';
+  return 'historical';
+}
+
 export interface Geometry {
   type: string;
   coordinates: number[][][] | number[][];
@@ -175,6 +191,15 @@ export interface ActionCardState {
   evidenceTrail: EvidenceItem[];
   sarPassDate: string;
   eventId: string;
+  badge?: LifecycleBadge;
+}
+
+export interface ActionCardOverrides {
+  confidenceClass?: ConfidenceClass;
+  affectedPeople?: number;
+  district?: string;
+  sarPassDate?: string;
+  badge?: LifecycleBadge;
 }
 
 export const STATE_KEYS = [
@@ -326,7 +351,8 @@ function pickShelter(
 export function deriveActionCardState(
   bundle: Bundle,
   locale: string,
-  polygonId?: number | null
+  polygonId?: number | null,
+  overrides?: ActionCardOverrides
 ): ActionCardState {
   const event = bundle.event;
   const alert = bundle.alert_draft;
@@ -363,19 +389,23 @@ export function deriveActionCardState(
       };
 
   const exposure = bundle.exposure.find((e) => e.polygon_id === polygonId);
-  const affectedPeople = exposure
-    ? exposure.affected_people
-    : event.affected_people_total;
-  const district = exposure?.district ?? event.district;
+  const affectedPeople =
+    overrides?.affectedPeople ??
+    (exposure ? exposure.affected_people : event.affected_people_total);
+  const district = overrides?.district ?? exposure?.district ?? event.district;
 
   const msg = alert.messages?.[locale];
   const recommendedAction =
     msg?.subject || (msg?.body ? msg.body.split('.')[0] + '.' : event.title);
 
+  const confidenceClass =
+    (overrides?.confidenceClass ??
+      alert.confidence_class ??
+      event.confidence_class ??
+      'review_required') as ConfidenceClass;
+
   return {
-    confidenceClass: (alert.confidence_class ||
-      event.confidence_class ||
-      'review_required') as ConfidenceClass,
+    confidenceClass,
     criticalWindowTime: formatClock(alert.go_before),
     affectedPeople,
     district,
@@ -385,7 +415,8 @@ export function deriveActionCardState(
     gauge: pickGauge(bundle),
     capDraft: {alertId: alert.alert_id, status: alert.status},
     evidenceTrail: alert.evidence_trail ?? [],
-    sarPassDate: event.sar_pass_date,
-    eventId: event.event_id
+    sarPassDate: overrides?.sarPassDate ?? event.sar_pass_date,
+    eventId: event.event_id,
+    badge: overrides?.badge ?? lifecycleBadge(event.sar_pass_date, event.sar_pass_date)
   };
 }

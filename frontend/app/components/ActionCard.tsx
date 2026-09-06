@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {motion} from 'framer-motion';
 import {useState} from 'react';
 import {
+  type ActionCardOverrides,
   type ActionCardState,
   type Bundle,
   type ConfidenceClass,
@@ -102,18 +103,20 @@ function ConfidenceGlyph({cls}: {cls: ConfidenceClass}) {
 export default function ActionCard({
   bundle,
   polygonId,
-  onClose
+  onClose,
+  overrides
 }: {
   bundle: Bundle;
   polygonId?: number | null;
   onClose?: () => void;
+  overrides?: ActionCardOverrides;
 }) {
   const t = useTranslations();
   const locale = useLocale();
   const [voice, setVoice] = useState(false);
   const [showEvidence, setShowEvidence] = useState(false);
 
-  const state = deriveActionCardState(bundle, locale, polygonId);
+  const state = deriveActionCardState(bundle, locale, polygonId, overrides);
   const meta = CONFIDENCE_META[state.confidenceClass];
 
   return (
@@ -158,6 +161,11 @@ export default function ActionCard({
       ) : (
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-3 py-3">
           <StatusBadge state={state} meta={meta} />
+          {state.badge && (
+            <span className="self-start rounded bg-[#1f2937] px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#9ca3af]">
+              {t(`ops.badge.${state.badge}`)}
+            </span>
+          )}
 
           <CriticalWindow time={state.criticalWindowTime} />
 

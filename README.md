@@ -1,44 +1,76 @@
 # KALOPATHOR — Bangladesh Flood Intelligence Platform
 
-**One-liner:** A bilingual (Bengali/English) decision-support system that tells officials where flooding is happening, who is affected, which places need action first, which shelters/routes are viable, and what alert should be issued.
+**What it is:** A bilingual (Bengali/English) decision-support system for Bangladesh's flood season — SAR flood detection → forecast → population exposure → evacuation routing → CAP 1.2 alert drafting, built for the Government of Bangladesh (MoDMR/DDM/FFWC context).
 
-**Pipeline:** SAR flood detection → forecast → population exposure → evacuation routing → CAP 1.2 alert drafting — for the Government of Bangladesh (MoDMR/DDM/FFWC context).
+**Honest status, in one paragraph:** The foundation (contracts, eval discipline, honesty doctrine) and a working vertical slice (detection → polygons → exposure → action card → CAP draft, rendering *honest* states end-to-end) are built and **live on Vercel**. The Feni district is the pilot region; national breadth is deliberately deferred but fully slotted (depth-first strategy: one district fully real beats twenty half-real). The interface distinguishes LIVE from SEEDED/DEMO data with an explicit banner — nothing is presented as live that isn't.
 
-## The honest status (read before judging)
-
-- **Depth-first vertical slice strategy:** the foundation (contracts, eval discipline, honesty doctrine) and the penthouse (a working detection → polygons → exposure → action-card → CAP-draft loop for the **Feni pilot region**, rendering *honest* states everywhere) are built. National breadth is deliberately pending but fully slotted.
-- **v4.2 is provisionally promoted** as the ops detection model (Feni tripwire +0.064, buffer ablation Δ+0.044, Sirajganj cross-algorithm 0.553); v4.1 stays frozen as one-command rollback. Both provisional until one live national event with ground truth.
-- **Live vs seeded:** the interface distinguishes LIVE (real acquisition timestamps) from SEEDED/DEMO data with an explicit banner. Nothing is presented as live that isn't. A live Sentinel-1 loop for the Feni bbox is in flight.
-- **The product thesis:** depth guaranteed, coverage pending — deliberately so. One district fully real beats twenty half-real.
-- **We publish our own risk register:** see `docs/HONEST_ASSESSMENT.md` — honesty is the feature.
-- **Live demo:** https://kalopathor-hbgo.vercel.app (seeded Feni penthouse, EN/BN).
-
-## Repo structure
+## The pipeline (pinned — see `config/model_journey.yaml`)
 
 ```
-docs/PRODUCT_SPEC.md        — the product: modules, metrics, surfaces, contracts summary
-docs/DESIGN_SPEC.md         — the visual/interaction spec: action card, layer stack, rails, freshness
-docs/DOCTRINE.md            — the non-negotiables: honesty rules, gates, do-not-do, confidence classes
-docs/CONTEXT.md             — current state snapshot: what's live, in flight, blocked (date-stamped)
-docs/HONEST_ASSESSMENT.md   — our own risk register: brutal self-assessment + fixes landed
-docs/SUBMISSION_READY.md    — program one-pager (AWS Activate / GCP for Startups)
-contracts/                  — canonical JSON schemas (9 objects) + Feni 2024 replay bundle + validator
-data/                       — real product data for the covered regions (polygons, gauges, exposure, erosion, forecast, rivers, hillshade)
-frontend/                   — Next.js 14 + MapLibre ops-console scaffold (styling in progress; see DESIGN_SPEC)
+Sentinel-1 SAR → 6ch chips → d3v4.2 U-Net → G3-gated polygons → HRSL exposure
+→ LightGBM forecast + one-sided conformal bands → EVE routes → CAP 1.2 alert drafts
+```
+
+## Repo file map
+
+```
+README.md                       ← this file: intro + map
+config/
+  model_journey.yaml             ← the pinned end-to-end pipeline (versioned, step by step)
+  sources.yaml                   ← every data source: access method, license, usage
+contracts/
+  schemas/                       ← 9 canonical JSON schemas + bundle schema
+  sample_incidents/feni_2024_replay.json  ← end-to-end replay (real + proxy-flagged)
+  README.md                      ← contract rules (timezone, CRS, versioning)
+data/
+  flood/                         ← SAR detection polygons (v4 full national, v4.2, Feni samples)
+  gauges/ffwc_gauges.geojson     ← 26 FFWC stations (public coords; 89 pending)
+  exposure/flood_affected_population.json  ← affected population per polygon
+  forecast/openmeteo_flood.parquet        ← 10-day discharge forecasts (6 stations)
+  erosion/erosion_layer.geojson  ← 3,003 bankline features
+  rivers/rivers_bgd.geojson      ← 716 river centerlines
+  assets/                        ← hillshade COG, earth texture (see ASSETS_AND_URLS)
+docs/
+  PRODUCT_SPEC.md                ← the product: model, metrics, modules, surfaces
+  DESIGN_SPEC.md                 ← interaction/visual spec: action card, layer stack, freshness
+  DOCTRINE.md                    ← the non-negotiables: honesty rules, gates, do-not-do
+  CONTEXT.md                     ← current-state snapshot (live / in-flight / blocked)
+  FIELD_CATALOG.md               ← every field + measured min/max (responsive-design bible)
+  HONEST_ASSESSMENT.md           ← our published risk register + fixes landed since
+  SUBMISSION_READY.md            ← AWS Activate / GCP for Startups one-pager
+  STAC_DESIGN.md                 ← sensor-agnostic catalog design (end-state)
+  AOI_SMARTALERT_SPEC.md         ← district/AOI alert subscription spec
+  COMMUNITY_INTELLIGENCE.md      ← CPP field-reports channel (n=1 closure path)
+  NOW_VS_ALWAYS.md               ← "Now" (live) vs "Always" (historical) product framing
+  VALHALLA_CLOSURES.md           ← EVE passability → Valhalla closure-schema mapping
+  OPERATIONS_HARDENING.md        ← roles, monitoring, audit, backup checklist
+  ASSETS_AND_URLS.md             ← asset import details: GIBS public URLs, GCS, formats
+frontend/                        ← Next.js 14 + MapLibre ops console (live on Vercel)
 ```
 
 ## Quick start
 
-```
+```bash
 cd frontend
-npm install && npm run dev      # /en/operations · /bn/operations
+npm install && npm run dev      # /en/operations · /bn/operations (seeded demo data)
+npm run build                    # production build
 ```
-The app renders the seeded demo bundle by default. A live Sentinel-1 → detection → freshness loop for the Feni bbox is in flight (Phase L); the demo is also deployed at https://kalopathor-hbgo.vercel.app.
 
-## Product modules (naming)
+## Key facts (measured, not claimed)
 
-`KALOPATHOR Detect` (SAR flood detection) · `Forecast` (GloFAS/Open-Meteo/FFWC + conformal bands) · `Exposure` (population impact) · `EVE` (evacuation routing, shelters, road passability) · `Alert` (bilingual CAP drafting) · `Monitor` (freshness, model confidence, system health).
+- Model: EfficientNet-B0 U-Net, 6 channels, event-split IoU 0.543 (2024-north); **unseen-event Feni 0.485**; cross-algorithm Sirajganj 0.553 (v4.2); G3 false-positive gate: FPR 0.000.
+- Forecast: LightGBM dual-branch + one-sided conformal bands (go-before = lower bound; "historical range, not a guarantee").
+- Exposure: HRSL × flood extent — 20.5M people within the national event extent.
+- Alerting: CAP 1.2 drafts, human approval mandatory, bilingual, evidence trail with coverage numbers.
+- Honesty is the differentiator: unknown ≠ safe, no fake numbers, LIVE vs SEEDED explicit.
 
-## Who uses it
+## Status ledger
 
-Three surfaces: **National Command** (MoDMR/DDM — the main dashboard), **District Ops** (district/upazila officers — scoped view), **Field/Public** (instruction-first, Bengali-first, voice-capable — no GIS).
+- **LIVE:** Vercel demo (kalopathor-hbgo) · repo · seeded penthouse
+- **IN FLIGHT:** calibration integration · live Feni data loop · CHANGE-channel v2 · FLOMPY third signal · CAP approve-feed · event replays
+- **BLOCKED (external):** official shelter data (3 institutional requests in flight) — until it lands, EVE honestly returns "no safe route"
+- **Evidence hierarchy:** ONE independent unseen event (Feni) + ONE cross-algorithm agreement (Sirajganj); both models provisional until one live national event with ground truth
+
+## Contact / roles
+
+Built by the Kalopathor team (Sam — product/engagement; DeepSeek dispatcher — engineering swarm; Opus/Sonnet/Fable — external review). Government deployment context: MoDMR/DDM/FFWC.
