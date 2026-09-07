@@ -12,8 +12,8 @@
 
 ## 2. The honesty lexicon (one language everywhere)
 
-- Bands are **"historical range, not a statistical guarantee"** — with raw `{coverage, n, method}` in the evidence trail.
-- **go-before reads the LOWER bound, never the midpoint** (`stored − 0.201`, one-sided onset band).
+- Bands are **"historical range, not a statistical guarantee"** — with raw `{coverage, n, method}` in the evidence trail (numbers republished only after the in-progress band rebuild verifies; confidence language is frozen until then).
+- **go-before reads the LOWER bound, never the midpoint.** (The former `stored − 0.201` one-sided offset is withdrawn — its aggregate coverage was decile-carried. Band offsets are republished only after the split-conformal per-decile rebuild verifies.)
 - Cross-algorithm checks are called **"cross-algorithm agreement"**, never "validation" or "second Feni".
 
 ## 3. Gates (merge-blocking)

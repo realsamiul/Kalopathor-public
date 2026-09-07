@@ -22,7 +22,7 @@ We deliberately built **ground + penthouse, not horizontal breadth**: the founda
 
 ## 2–3 month roadmap
 
-1. **Calibration (month 1, in flight):** isotonic calibration on the v4.2 logits, decile verification, re-measure onset/flood-class coverage, update the uncertainty lexicon. *Gate: no new confidence claims until the decile check passes.*
+1. **Calibration & band rebuild (month 1, in progress):** correcting the band calibration artifact found in review (sigmoid clipping; the aggregate coverage was decile-carried). Rebuild = split-conformal per-decile bands on calibrated probabilities, then decile verification and re-measurement of onset/flood-class coverage before any band number is republished. *Gate: confidence language is frozen — no new confidence claims until the per-decile check passes.*
 2. **Live Feni loop (month 1–2, in flight):** scheduler (cron/systemd), third-signal corroboration (FLOMPY), approve-time re-check, truthful `mode: live` freshness.
 3. **Usability (month 2):** 3–5 real Bengali-speaking officers on the action card + confidence wording; punch-list into the card. *This is the unhedged bet — real user signal replaces LLM consensus.*
 4. **Pilot (month 3):** one district, one real user, one event end-to-end — live SAR → alert draft → one officer approves → one village gets a message. Only then: national scale-out, auth/roles, ops hardening. Shelter-data acquisition (3 institutional asks) runs in parallel throughout.
@@ -38,7 +38,7 @@ We deliberately built **ground + penthouse, not horizontal breadth**: the founda
 | False-positive gate (G3 multi-signal) | FPR 0.000 on no-flood scenes |
 | National event exposure | 20.5M affected (11.9% of BD) |
 | Discharge skill (DAHITI) | Brahmaputra R² 0.88 · Padma R² 0.93 |
-| **Uncertainty band (operative)** | one-sided lower-only: onset 0.822, flood-class 1.000, go-before = stored − 0.201 |
+| **Uncertainty band (in correction)** | calibration artifact found (sigmoid clipping; aggregate coverage was decile-carried). Split-conformal per-decile bands on calibrated probabilities in progress; confidence language frozen. Band numbers withheld until verification |
 
 - **Live demo:** `https://kalopathor-hbgo.vercel.app` (seeded Feni penthouse, honest states, EN/BN)
 - **Repository:** `github.com/realsamiul/Kalopathor` (contracts, doctrine, product spec, honest assessment, data, frontend)

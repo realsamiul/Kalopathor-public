@@ -51,22 +51,18 @@ model:
 
   forecast:
     model: "LightGBM dual-branch"   # SAR-anchored + GloFAS
-    band_method: "one-sided lower-only conformal"   # conformal; labeled "historical range, not a statistical guarantee"
-    band_type: "onesided"
-    n_onset_cal: 403374
-    w_up_1sided: 0.200925           # 0.201 — single-sided upper weight (go-before width)
-    go_before_formula: "go_before = stored - 0.201"   # LOWER bound, never midpoint
-    band_formula: "lower = max(0, stored - 0.200925); upper = +inf"
-    onset_coverage: 1.0             # flood-class-in-onset, n=403k (vs 0.6083 two-sided)
+    band_status: "CALIBRATION ARTIFACT FOUND — NOT publishable; correction in progress"
+    band_method: "split-conformal per-decile bands on calibrated probabilities (rebuild IN PROGRESS — not yet publishable)"
+    band_type: "withdrawn"          # former two-sided = sigmoid-clipping artifact; former one-sided = decile-carried aggregate
+    withdrawn_note: "aggregate onset coverage 0.822 was carried by clipped-to-zero rows (0.5-0.9 deciles: 1-28%) — do not republish"
+    confidence_language: "FROZEN until the per-decile band rebuild verifies"
+    lexicon: "historical range, not a statistical guarantee"
     calibration_events: "event_2020 + event_2022 (excludes 2024)"
     holdout_events: "event_2024"
-    confidence_level: 0.9
-    asymmetric_fit:                 # fitted (inverted-direction artifact) — superseded by onesided
-      method: "empirical_asymmetric"
-      k_up: 383207
-      k_dn: 20169
-      w_up: 0.217893
-      w_dn: -0.383834
+    confidence_level: "frozen pending verification (formerly 0.9)"
+    retracted_fits:                 # do NOT republish; recorded only as the artifact
+      two_sided: "w_up fitted width was a sigmoid-clipping artifact — danger-side width was not validated error structure"
+      one_sided: "go_before = stored - 0.201 lower offset; aggregate coverage decile-carried — withdrawn"
 
   eve:
     routing: "dry-edge two-segment"
@@ -180,16 +176,16 @@ exposure:
   freshness_field: "sar_pass_date"
 
 # ---------------------------------------------------------------------------
-# STAGE 6 — forecast  (LightGBM + one-sided bands)
+# STAGE 6 — forecast  (LightGBM + uncertainty bands — calibration rebuild in progress)
 # ---------------------------------------------------------------------------
 forecast:
-  description: "Dual-branch LightGBM (SAR-anchored + GloFAS) with one-sided lower-only conformal bands"
+  description: "Dual-branch LightGBM (SAR-anchored + GloFAS) with uncertainty bands; former one-sided/coverage numbers WITHDRAWN (artifact: sigmoid clipping; aggregate coverage was decile-carried). Rebuild: split-conformal per-decile bands on calibrated probabilities — IN PROGRESS, not yet publishable."
   model: "LightGBM dual-branch"
   branch_a: "SAR-anchored"
   branch_b: "GloFAS v5 EWDS reanalysis + Open-Meteo Flood API + FFWC"
-  band: "one-sided lower-only; lower = max(0, stored - 0.201), upper = +inf"
-  go_before: "stored - 0.201"          # reads LOWER bound, never midpoint
-  coverage: "flood-onset coverage 1.0 (n=403k); 90% confidence level"
+  band: "WITHDRAWN — was 'one-sided lower-only; lower = max(0, stored - 0.201), upper = +inf'; not publishable (decile-carried aggregate)"
+  go_before: "reads LOWER bound, never midpoint (offset republished only after the split-conformal per-decile rebuild verifies)"
+  coverage: "WITHDRAWN — former 'flood-onset coverage 1.0' was artifact; re-measuring onset/flood-class coverage on calibrated probabilities"
   artifacts:
     input: "ffwc_water_levels.parquet (115 observed + 81 forecast stations) + openmeteo_flood.parquet + GloFAS"
     output: "/root/General/kalopathor/work/forecast/f5_mapie_bands_onesided.parquet"

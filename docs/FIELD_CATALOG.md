@@ -136,7 +136,7 @@ Measured on 60 real Open-Meteo rows + 5 replay bands:
 | `proxy_scope` | string | — | — | long note | — | collapse; 70ch+ -> **must truncate on mobile** |
 
 > **Honesty rule (doctrine):** bands = "historical range, not a statistical guarantee".
-> `go_before` reads the **lower bound** `stored − 0.201`, never the midpoint.
+> `go_before` reads the **lower bound**, never the midpoint. (Former `stored − 0.201` offset withdrawn — decile-carried artifact; band numbers republished after the split-conformal per-decile rebuild verifies.)
 
 ---
 

@@ -8,7 +8,7 @@
 
 ```
 Sentinel-1 SAR → 6ch chips → d3v4.2 U-Net → G3-gated polygons → HRSL exposure
-→ LightGBM forecast + one-sided conformal bands → EVE routes → CAP 1.2 alert drafts
+→ LightGBM forecast + uncertainty bands (calibration rebuild in progress) → EVE routes → CAP 1.2 alert drafts
 ```
 
 ## Repo file map
@@ -59,7 +59,7 @@ npm run build                    # production build
 ## Key facts (measured, not claimed)
 
 - Model: EfficientNet-B0 U-Net, 6 channels, event-split IoU 0.543 (2024-north); **unseen-event Feni 0.485**; cross-algorithm Sirajganj 0.553 (v4.2); G3 false-positive gate: FPR 0.000.
-- Forecast: LightGBM dual-branch + one-sided conformal bands (go-before = lower bound; "historical range, not a guarantee").
+- Forecast: LightGBM dual-branch + uncertainty bands (band numbers under calibration correction — split-conformal per-decile rebuild in progress, not yet publishable; go-before = lower bound, never midpoint; "historical range, not a guarantee").
 - Exposure: HRSL × flood extent — 20.5M people within the national event extent.
 - Alerting: CAP 1.2 drafts, human approval mandatory, bilingual, evidence trail with coverage numbers.
 - Honesty is the differentiator: unknown ≠ safe, no fake numbers, LIVE vs SEEDED explicit.

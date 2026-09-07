@@ -1,6 +1,6 @@
 # KALOPATHOR — Product Specification
 
-**Version:** 2.0 · **Date:** 2026-09-01 · **Status:** VERTICAL-SLICE PILOT READY — v4.2 provisionally promoted as ops model; one-sided uncertainty band operative; live-plumbing floor (Feni) in flight; Vercel demo live.
+**Version:** 2.0 · **Date:** 2026-09-01 · **Status:** VERTICAL-SLICE PILOT READY — v4.2 provisionally promoted as ops model; uncertainty-band calibration artifact under correction (bands not yet publishable); live-plumbing floor (Feni) in flight; Vercel demo live.
 **Audience:** Bangladesh administration (MoDMR/DDM/FFWC context), engineering team, and program reviewers.
 **Basis:** measured outputs only. Every metric below was measured on held-out events; nothing is predicted. Full evidence ledger: `docs/HONEST_ASSESSMENT.md`, `docs/CONTEXT.md`.
 
@@ -59,14 +59,14 @@ That is the honest hierarchy we present to partners: roughly **1.5 events of gen
 - **Flood forecast** — LightGBM dual-branch (SAR-anchored 87M rows + GloFAS), validated against DAHITI satellite altimetry: Brahmaputra **R² 0.88**, Padma **R² 0.93**.
 - **Gauges** — FFWC 196 stations (115 observed + 81 forecast) with danger levels; GloFAS v5 (EWDS); Open-Meteo Flood API (no-key); UTide harmonics (M2 0.695 m).
 
-### 3.1 The operative uncertainty artifact: one-sided lower-only conformal band
+### 3.1 Uncertainty band — calibration artifact found, correction in progress
 
-The band journey is documented and honest. After symmetric and asymmetric bands were shown to encode a **sigmoid probability-clipping artifact** (residuals mechanically capped by `1 − stored`, so the danger-side width was not validated error structure), the operative tool is now a **one-sided lower-only band on the rapid-onset stratum**:
+The band journey is documented and honest, and external review has now exposed a calibration artifact in it. The **two-sided band was a sigmoid-clipping artifact** — an uncalibrated sigmoid in the 0.6–0.9 stored-value zone mechanically capped residuals at `1 − stored`, so the danger-side width (w_up = +0.218) was not validated error structure. The one-sided aggregate that followed was **decile-carried**: aggregate onset coverage 0.822 was held up by clipped-to-zero rows, with only 1–28% coverage across the 0.5–0.9 deciles. **Those band numbers are withdrawn and are not publishable.**
 
-- **go-before = `stored − 0.201`** (the lower bound — never the midpoint).
-- **Onset coverage 0.822** (2024 holdout); **flood-class-in-onset coverage 1.000** (was 0.608 under the two-sided band — the miss that mattered is erased).
-- Labeled **"historical range, not a guarantee"** — an empirical statement about comparable historical onset rows, not a statistical certification. This exact lexicon is shared verbatim between the action card and the CAP evidence trail.
-- **Calibration scheduled:** the clipping finding is a downstream symptom of an uncalibrated sigmoid in the 0.6–0.9 range. Isotonic calibration on the logits is the scheduled root fix; a first fit is measured (Brier 0.086 → 0.081 per-pixel), with decile verification and re-thresholding in flight. **Gate:** no new government-facing confidence claims until verification lands.
+- **Correction in progress:** split-conformal **per-decile** bands on calibrated probabilities. The bands are **not yet publishable**; onset and flood-class coverage will be re-measured on the 2024 holdout with calibrated probabilities before any number is republished.
+- **Confidence thresholds and confidence language are frozen** until the rebuild verifies. **Gate:** no new government-facing confidence claims until the per-decile verification passes.
+- Calibration basis is being built on calibrated probabilities (first isotonic fit measured: Brier 0.086 → 0.081 per-pixel; re-threshold mapping derived: raw 0.50 → cal 0.37).
+- Lexicon stays **"historical range, not a guarantee"** — an empirical statement, never a statistical certification — shared verbatim between the action card and the CAP evidence trail.
 
 ---
 
