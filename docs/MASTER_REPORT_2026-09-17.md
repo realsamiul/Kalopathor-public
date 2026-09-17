@@ -473,3 +473,215 @@ s  = Studio(name='flood-model-eval-devbox', teamspace=ts)
 s.start(machine='L4')
 "
 ```
+
+---
+
+## 22. What Remains — Prioritised
+
+### Must-do before any external showing
+| # | Item | Time | Blocks |
+|---|---|---|---|
+| 1 | **GCS service account key** — swap personal ADC for SA key | 15 min | Live loop reliability |
+| 2 | **E1 usability recruitment** — send recruiter brief from `work/usability/` | 30 min to send | Only gap between prototype and "government-usable" |
+| 3 | **AWS/GCP submission tags** — fill `[SAM NEEDS TO FILL]` in repo docs | 30 min | Submission readiness |
+
+### Technical (can be done without Sam, ordered by value)
+| # | Item | Time | Blocks |
+|---|---|---|---|
+| 1 | **A1 full refit** — RAPS/APS conformal for 9 remaining deciles | ~1 day | Confidence language unfrozen |
+| 2 | **Live ingestion loop (B)** — wire `watch.py` → inference → freshness.json → redeploy | ~1 day | After A1 |
+| 3 | **FLOMPY root cause** — try 10th-percentile dry reference, Feb-only window | ~2 hrs | G3 corroboration on Feni |
+| 4 | **CAP lifecycle screen** — replace stub at `/approval` with real designed view | ~1 day | Demo quality |
+| 5 | **Methodology page** — wire `METHODOLOGY_PAGE_COPY_2026-09-17.md` as a `/methodology` route | ~1 hr | Honesty narrative |
+| 6 | **multi_hazard_alert.py** — connect to CAP engine for compound CHT/Barind alerts | ~half day | Future |
+
+### Deliberately deferred (no action this week)
+- CPP field verification (needs MoDMR liaison)
+- Shelter data from LGED/MoDMR (3 emails unanswered — re-scope formally)
+- Sirajganj polygon geometries (inference done, chip coordinates not available without tile transform)
+- v5true CHANGE-channel root fix (dry-season composite too noisy — try Feb-only or 10th percentile)
+- STAC catalog / eoAPI end-state
+
+---
+
+## 23. World-Class Frontend Deployment — Infrastructure Plan
+
+### Current state
+- **Host:** Vercel Edge Network (Washington DC, iad1 primary)
+- **TTFB (Singapore):** 1.29s — acceptable for a US-homed deployment
+- **TTFB (Bangladesh target users):** estimated 2.5–4s — unacceptable for field ops
+- **Total public/ data:** 110MB served from Vercel CDN (static, good)
+- **JS bundle:** ~2.8MB static (reasonable for MapLibre app)
+- **Largest files blocking load:** `detection_polygons_v4.geojson` (16MB), `hillshade_bgd.pmtiles` (20MB), `exposure_districts.geojson` (8.1MB), `rivers_bgd.geojson` (6.4MB)
+
+### The core problem
+Vercel's Edge Network has no PoP in Bangladesh or even South Asia outside Mumbai. A field officer in Feni opening the map waits for a 16MB GeoJSON polygon file to traverse Singapore→US→Singapore before the map renders. That's the real latency problem, not the JS.
+
+### Tier 1 — Do this week (~2 hrs, free or near-free)
+
+#### A. Move large static data to GCS + serve via Cloud CDN
+GCS `asia-south1` (Mumbai) is the closest available Google PoP to Bangladesh (~30ms RTT from Dhaka vs ~250ms to US).
+
+```bash
+# Upload large data files to GCS public bucket
+gsutil -m cp \
+  frontend/public/data/detection_polygons_v4.geojson \
+  frontend/public/data/exposure_districts.geojson \
+  frontend/public/data/rivers_bgd.geojson \
+  frontend/public/data/hillshade_bgd.pmtiles \
+  frontend/public/data/erosion_banklines.geojson \
+  gs://monarqlabs-gemini-workspace/kalopathor/cdn/
+
+# Make public
+gsutil -m acl ch -r -u AllUsers:R gs://monarqlabs-gemini-workspace/kalopathor/cdn/
+
+# Enable Cloud CDN on the bucket (GCP Console → Cloud CDN → Add origin)
+# Origin: storage.googleapis.com/monarqlabs-gemini-workspace
+# Serves from asia-south1 edge cache
+```
+
+Update `next.config.mjs` to point large data URLs at GCS:
+```js
+// In map config or env:
+DATA_CDN_BASE = "https://storage.googleapis.com/monarqlabs-gemini-workspace/kalopathor/cdn"
+```
+
+**Expected impact:** Detection polygon load time: 16MB at ~250ms (Vercel US) → ~30ms (GCS Mumbai). Field user first-render: ~4s → ~1.2s.
+
+#### B. Vercel edge config — add cache headers
+Vercel's default for `public/` assets is `max-age=0, must-revalidate`. The static GeoJSON files never change between deployments. Add:
+
+```js
+// next.config.mjs
+headers: [
+  {
+    source: '/data/:path*',
+    headers: [{key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=3600'}]
+  }
+]
+```
+
+**Impact:** Repeat visitors load map instantly (cached). Bangladesh government offices on repeated use will have sub-500ms map renders.
+
+#### C. GeoJSON → PMTiles for the three large vector files
+The 16MB polygon GeoJSON and 8.1MB exposure GeoJSON should be PMTiles. This reduces initial load to only the tiles in the current viewport (typically 200–500KB) rather than the full file.
+
+```bash
+# Install tippecanoe (fast GeoJSON → PMTiles)
+sudo apt-get install -y tippecanoe
+
+tippecanoe -o frontend/public/data/pmtiles/detection_polygons.pmtiles \
+  -z12 -Z6 --drop-densest-as-needed \
+  frontend/public/data/detection_polygons_v4.geojson
+
+tippecanoe -o frontend/public/data/pmtiles/exposure_districts.pmtiles \
+  -z8 -Z4 frontend/public/data/exposure_districts.geojson
+```
+
+**Impact:** Map renders the visible viewport instantly. Full polygon set is never downloaded unless the user pans across the whole country.
+
+---
+
+### Tier 2 — This month (~4 hrs, nominal cost)
+
+#### D. AWS CloudFront + S3 ap-south-1 (Mumbai)
+AWS has a Mumbai PoP and Bangladesh-direct edge nodes. S3 + CloudFront in ap-south-1 would give ~15ms RTT from Dhaka.
+
+```bash
+# Create S3 bucket in ap-south-1
+aws s3 mb s3://kalopathor-cdn --region ap-south-1
+
+# Upload all public/ data
+aws s3 sync frontend/public/data/ s3://kalopathor-cdn/data/ \
+  --acl public-read --region ap-south-1
+
+# Create CloudFront distribution
+aws cloudfront create-distribution --distribution-config '{
+  "Origins": {"Items": [{"DomainName": "kalopathor-cdn.s3.ap-south-1.amazonaws.com", "Id": "s3-origin"}]},
+  "DefaultCacheBehavior": {"ViewerProtocolPolicy": "redirect-to-https", "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"},
+  "Enabled": true, "Comment": "Kalopathor data CDN"
+}'
+```
+
+**Expected performance:** GeoJSON/PMTiles served from ~15ms RTT. Map first-render for Dhaka user: ~0.8s on 4G.
+
+#### E. Vercel Pro + Asia-Pacific edge function region
+If/when moving to Vercel Pro, set the primary region to `sin1` (Singapore) rather than `iad1`. This halves the API route TTFB for Bangladesh users.
+
+```json
+// vercel.json
+{
+  "regions": ["sin1"],
+  "functions": {
+    "app/api/**": {"maxDuration": 30}
+  }
+}
+```
+
+Cost: ~$20/month on Vercel Pro.
+
+---
+
+### Tier 3 — Production deployment (~1 week)
+
+#### F. Custom domain + HTTPS
+Register `kalopathor.gov.bd` (or `.org`) and point to Vercel. Requires institutional partnership or interim use of a `.io`/`.org` domain. Adds legitimacy for government-facing demos.
+
+#### G. GCP Cloud Run — live inference endpoint
+When the live ingestion loop (B) is ready, host the inference service on Cloud Run in `asia-south1`:
+
+```dockerfile
+# Dockerfile
+FROM python:3.11-slim
+COPY work/checkpoints/d3v4.2_best.pt /app/
+COPY work/ /app/work/
+RUN pip install torch segmentation-models-pytorch rasterio
+CMD ["python", "app/work/live/live_feni_pipeline.py", "--serve"]
+```
+
+```bash
+gcloud run deploy kalopathor-inference \
+  --region asia-south1 \
+  --image gcr.io/project-300d4e0e-5c73-49bf-b8a/kalopathor-inference \
+  --memory 4Gi --cpu 2 \
+  --min-instances 0 --max-instances 3
+```
+
+Cost: ~$0.02/inference run (cold start ~8s, warm ~1s). For 1 S1 pass per 6 days over Bangladesh = ~$0.12/month.
+
+#### H. Upstash Redis — freshness state
+Replace the static `freshness.json` file with an Upstash Redis key that the live pipeline writes to and the `/api/freshness` route reads from. Enables true real-time `mode: live` switching without a redeploy.
+
+```bash
+# In Next.js API route
+import { Redis } from '@upstash/redis'
+const redis = Redis.fromEnv()
+const freshness = await redis.get('kalopathor:freshness')
+```
+
+Cost: Upstash free tier (10,000 commands/day) covers this indefinitely.
+
+---
+
+### Performance targets (achievable with Tier 1+2)
+
+| Metric | Current | Tier 1 | Tier 1+2 |
+|---|---|---|---|
+| TTFB (Dhaka, 4G) | ~3.5s (est.) | ~1.5s | ~0.8s |
+| First polygon render | ~6s | ~2s | ~1s |
+| Repeat visit (cached) | ~6s | ~0.3s | ~0.2s |
+| JS bundle (gzipped) | ~900KB | ~900KB | ~650KB (split) |
+| Detection polygon load | 16MB / ~4s | 200KB viewport / ~0.3s | 200KB / ~0.15s |
+
+### Cost summary
+
+| Option | Monthly cost | Implementation |
+|---|---|---|
+| Tier 1: GCS CDN + cache headers | ~$2 (GCS egress) | 2 hrs |
+| Tier 1 + PMTiles conversion | ~$2 | 3 hrs |
+| Tier 2: CloudFront ap-south-1 | ~$3 (CloudFront) | 4 hrs |
+| Tier 2 + Vercel Pro sin1 | ~$23 | 1 hr |
+| Tier 3: Cloud Run inference | ~$0.20/month | 1 day |
+| **Full Tier 1+2+3** | **~$28/month** | **~1 week** | 
+
+The Tier 1 changes (GCS CDN + cache headers) are the single highest-value/effort ratio investment available — 2 hrs of work, ~$2/month, cuts Bangladesh user load time by 60%.
