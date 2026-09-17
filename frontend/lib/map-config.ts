@@ -8,7 +8,11 @@ export type LayerId =
   | 'flood'
   | 'exposure'
   | 'erosion'
+  | 'erosion_banklines'
   | 'prediction'
+  | 'uncertainty'
+  | 'landslide'
+  | 'tvdi'
   | 'gauges';
 
 export type Coverage = 'global' | 'pilot' | 'national';
@@ -21,17 +25,21 @@ export interface LayerDef {
 }
 
 export const layers: LayerDef[] = [
-  {id: 'basemap', coverage: 'global'},
-  {id: 'mcdwd', coverage: 'global', noteKey: 'layers.note.gapFiller'},
-  {id: 'imerg', coverage: 'global', noteKey: 'layers.note.gapFiller'},
-  {id: 'gfm', coverage: 'global', noteKey: 'layers.note.live'},
-  {id: 'hillshade', coverage: 'pilot'},
-  {id: 'rivers', coverage: 'national'},
-  {id: 'flood', coverage: 'national'},
-  {id: 'exposure', coverage: 'national'},
-  {id: 'erosion', coverage: 'pilot'},
-  {id: 'prediction', coverage: 'national'},
-  {id: 'gauges', coverage: 'national'}
+  {id: 'basemap',           coverage: 'global'},
+  {id: 'mcdwd',             coverage: 'global',   noteKey: 'layers.note.gapFiller'},
+  {id: 'imerg',             coverage: 'global',   noteKey: 'layers.note.gapFiller'},
+  {id: 'gfm',               coverage: 'global',   noteKey: 'layers.note.live'},
+  {id: 'hillshade',         coverage: 'pilot'},
+  {id: 'rivers',            coverage: 'national'},
+  {id: 'flood',             coverage: 'national'},
+  {id: 'exposure',          coverage: 'national'},
+  {id: 'erosion',           coverage: 'pilot'},
+  {id: 'erosion_banklines', coverage: 'national', noteKey: 'layers.note.banklines'},
+  {id: 'prediction',        coverage: 'national'},
+  {id: 'uncertainty',       coverage: 'national', noteKey: 'layers.note.calibPending'},
+  {id: 'landslide',         coverage: 'national', noteKey: 'layers.note.cached'},
+  {id: 'tvdi',              coverage: 'national', noteKey: 'layers.note.cached'},
+  {id: 'gauges',            coverage: 'national'},
 ];
 
 // ---------------------------------------------------------------------------
@@ -67,13 +75,16 @@ export const GIBS_LAYERS: Record<
 };
 
 // Most recent date verified to have VIIRS TrueColor over Bangladesh.
-export const GIBS_DEFAULT_DATE = '2026-08-30';
+export const GIBS_DEFAULT_DATE = '2026-09-17';
 // SAR pass date of the national detection set (quick-jump target).
 export const GIBS_EVENT_DATE = '2024-08-12';
+// Haor and Jamuna events
+export const GIBS_HAOR_DATE  = '2022-06-15';
+export const GIBS_JAMUNA_DATE = '2022-06-16';
 
-// Scrubber window: [START .. END], step 1 day. Default = GIBS_DEFAULT_DATE.
-export const GIBS_DATE_START = '2026-08-01';
-export const GIBS_DATE_END = '2026-08-31';
+// Scrubber window: [START .. END], step 1 day.
+export const GIBS_DATE_START = '2024-06-01';
+export const GIBS_DATE_END   = '2026-09-17';
 
 export function clampGibsDate(layer: GibsLayer, date: string): string {
   const cap = GIBS_LAYERS[layer].maxDate;
@@ -94,17 +105,24 @@ export function gibsDatesBetween(start: string, end: string): string[] {
 
 export const GIBS_DATES = gibsDatesBetween(GIBS_DATE_START, GIBS_DATE_END);
 
+// Layer-specific tile matrix sets
+// VIIRS/MCDWD use "250m" epsg4326 grid; IMERG uses "2km" grid
+type TileMatrix = '250m' | '2km';
+const LAYER_MATRIX: Record<GibsLayer, TileMatrix> = {
+  basemap: '250m',
+  mcdwd:   '250m',
+  imerg:   '2km',
+};
+
 // epsg4326 "250m" matrix dimensions per level (cols, rows)
-const DIMS: Record<number, [number, number]> = {
-  0: [2, 1],
-  1: [3, 2],
-  2: [5, 3],
-  3: [10, 5],
-  4: [20, 10],
-  5: [40, 20],
-  6: [80, 40],
-  7: [160, 80],
-  8: [320, 160]
+const DIMS_250m: Record<number, [number, number]> = {
+  0: [2, 1],   1: [3, 2],   2: [5, 3],   3: [10, 5],
+  4: [20, 10], 5: [40, 20], 6: [80, 40], 7: [160, 80], 8: [320, 160]
+};
+// epsg4326 "2km" matrix dimensions per level
+const DIMS_2km: Record<number, [number, number]> = {
+  0: [1, 1], 1: [2, 1], 2: [3, 2], 3: [5, 3],
+  4: [10, 5], 5: [20, 10], 6: [40, 20], 7: [80, 40]
 };
 
 export function gibsTileUrl(
@@ -116,10 +134,11 @@ export function gibsTileUrl(
 ): string {
   const {product, ext} = GIBS_LAYERS[layer];
   const effective = clampGibsDate(layer, date);
-  // GIBS epsg4326 tiles at level L cover roughly twice the ground of a
-  // WebMercator tile at zoom z -> use level = clamp(z-1, 1..8).
-  const level = Math.min(8, Math.max(1, z - 1));
-  const [cols, rows] = DIMS[level];
+  const matrix = LAYER_MATRIX[layer];
+  const DIMS = matrix === '2km' ? DIMS_2km : DIMS_250m;
+  const maxLevel = matrix === '2km' ? 7 : 8;
+  const level = Math.min(maxLevel, Math.max(1, z - 1));
+  const [cols, rows] = DIMS[level] ?? DIMS[1];
 
   const n = Math.pow(2, z);
   const west = (x / n) * 360 - 180;
@@ -133,7 +152,7 @@ export function gibsTileUrl(
   const col = Math.floor(((lonCenter + 180) / 360) * cols);
   const row = Math.floor(((90 - latCenter) / 180) * rows);
 
-  return `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${product}/default/${effective}/250m/${level}/${row}/${col}.${ext}`;
+  return `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${product}/default/${effective}/${matrix}/${level}/${row}/${col}.${ext}`;
 }
 
 // 1x1 transparent PNG used when a GIBS tile 404s so the scrubber never breaks.

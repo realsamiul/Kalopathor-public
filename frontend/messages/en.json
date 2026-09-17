@@ -176,7 +176,11 @@
     "flood": "SAR-confirmed flood",
     "exposure": "District exposure",
     "erosion": "Erosion transects",
+    "erosion_banklines": "River banklines 2016–2021",
     "prediction": "Next 72h flood (model)",
+    "uncertainty": "Prediction uncertainty t+5",
+    "landslide": "Landslide susceptibility",
+    "tvdi": "Drought index 2024",
     "gauges": "FFWC gauges",
     "globe": "Globe",
     "legend": "Legend",
@@ -191,6 +195,8 @@
       "gapFiller": "optical/cloud-limited",
       "live": "Copernicus live SAR",
       "calibPending": "calib. pending",
+      "banklines": "Jamuna · Meghna · Padma",
+      "cached": "2024 dataset",
       "capped": "no data past 2025-10-22",
       "forecastSource": "Open-Meteo · 10-day river forecast"
     }

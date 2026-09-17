@@ -93,13 +93,13 @@ export interface OpsMeta {
 
 // Which core layers each workflow view activates.
 const VIEW_LAYERS: Record<WorkflowItemId, Partial<Record<LayerId, boolean>>> = {
-  now_flooding: {flood: true, gfm: true, prediction: false, exposure: true, erosion: true, gauges: false},
-  next_72h: {prediction: true, flood: true, gfm: false, exposure: false, erosion: false, gauges: false},
-  people_at_risk: {exposure: true, flood: true, gfm: false, prediction: false, erosion: false, gauges: false},
-  routes_shelters: {flood: false, gfm: false, prediction: false, erosion: false, gauges: false},
-  gauges: {gauges: true, flood: false, gfm: false, prediction: false, exposure: false, erosion: false},
-  alerts: {flood: true, gfm: true, prediction: false, exposure: false, erosion: false},
-  data_quality: {flood: true, gfm: false, prediction: false, exposure: false, erosion: false}
+  now_flooding:  {flood: true, gfm: true, prediction: false, exposure: true, erosion: true, erosion_banklines: false, gauges: false, uncertainty: false, landslide: false, tvdi: false},
+  next_72h:      {prediction: true, uncertainty: true, flood: true, gfm: false, exposure: false, erosion: false, gauges: false, landslide: false, tvdi: false},
+  people_at_risk:{exposure: true, flood: true, gfm: false, prediction: false, erosion: false, gauges: false, landslide: false, tvdi: false},
+  routes_shelters:{flood: false, gfm: false, prediction: false, erosion: false, gauges: false},
+  gauges:        {gauges: true, flood: false, gfm: false, prediction: false, exposure: false, erosion: false},
+  alerts:        {flood: true, gfm: true, prediction: false, exposure: false, erosion: false},
+  data_quality:  {flood: true, gfm: false, prediction: false, exposure: false, erosion: false}
 };
 
 const GIB_LAYER_IDS: Record<GibsLayer, string> = {
@@ -109,17 +109,21 @@ const GIB_LAYER_IDS: Record<GibsLayer, string> = {
 };
 
 const RASTER_LAYER_IDS: Record<LayerId, string[]> = {
-  basemap: ['basemap'],
-  mcdwd: ['mcdwd'],
-  imerg: ['imerg'],
-  gfm: ['gfm'],
-  hillshade: ['hillshade'],
-  rivers: ['rivers'],
-  flood: ['flood-fill', 'flood-glow'],
-  exposure: ['exposure-fill'],
-  erosion: ['erosion'],
-  prediction: ['prediction'],
-  gauges: ['gauges']
+  basemap:           ['basemap'],
+  mcdwd:             ['mcdwd'],
+  imerg:             ['imerg'],
+  gfm:               ['gfm'],
+  hillshade:         ['hillshade'],
+  rivers:            ['rivers'],
+  flood:             ['flood-fill', 'flood-glow'],
+  exposure:          ['exposure-fill'],
+  erosion:           ['erosion'],
+  erosion_banklines: ['erosion-banklines'],
+  prediction:        ['prediction'],
+  uncertainty:       ['uncertainty'],
+  landslide:         ['landslide'],
+  tvdi:              ['tvdi'],
+  gauges:            ['gauges']
 };
 
 function toArrayBuffer(b64: string): ArrayBuffer {
@@ -138,17 +142,21 @@ export default function OperationsConsole() {
   const hoveredRef = useRef<number | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [visible, setVisible] = useState<Record<LayerId, boolean>>({
-    basemap: true,
-    mcdwd: false,
-    imerg: false,
-    gfm: false,
-    hillshade: true,
-    rivers: true,
-    flood: true,
-    exposure: true,
-    erosion: true,
-    prediction: true,
-    gauges: false
+    basemap:           true,
+    mcdwd:             false,
+    imerg:             false,
+    gfm:               false,
+    hillshade:         true,
+    rivers:            true,
+    flood:             true,
+    exposure:          true,
+    erosion:           true,
+    erosion_banklines: false,
+    prediction:        true,
+    uncertainty:       false,
+    landslide:         false,
+    tvdi:              false,
+    gauges:            false
   });
   const [gibsDate, setGibsDate] = useState(GIBS_DEFAULT_DATE);
   const [horizon, setHorizon] = useState(5);
@@ -377,7 +385,32 @@ export default function OperationsConsole() {
       }
     });
 
-    // GFM protocol: Copernicus Global Flood Monitoring WMS-T tiles (live SAR).
+    // Hazard tile bundles (landslide + TVDI) — base64 PNG tiles from JSON
+    const hazardBundles: Record<string, Record<string,string>> = {};
+    const loadHazardBundle = async (name: string) => {
+      if (hazardBundles[name]) return hazardBundles[name];
+      const res = await fetch(`/data/pmtiles/${name}_tiles.json`);
+      const data = await res.json();
+      hazardBundles[name] = data.tiles || {};
+      return hazardBundles[name];
+    };
+    addProtocol('hazard', async (params: RequestParameters) => {
+      try {
+        const url = new URL(params.url);
+        const name = url.hostname; // e.g. "landslide" or "tvdi"
+        const [, zs, xs, ys] = url.pathname.split('/');
+        const key = `${zs}/${xs}/${ys}`;
+        const bundle = await loadHazardBundle(name);
+        const b64 = bundle[key];
+        if (!b64) return {data: toArrayBuffer(TRANSPARENT_PNG)};
+        const bin = atob(b64);
+        const arr = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+        return {data: arr.buffer};
+      } catch {
+        return {data: toArrayBuffer(TRANSPARENT_PNG)};
+      }
+    });
     addProtocol('gfm', async (params: RequestParameters, abortController: AbortController) => {
       try {
         const url = new URL(params.url);
@@ -455,12 +488,37 @@ export default function OperationsConsole() {
             type: 'geojson',
             data: '/data/erosion_layer.geojson'
           },
+          erosion_banklines: {
+            type: 'geojson',
+            data: '/data/erosion_banklines.geojson'
+          },
           prediction: {
             type: 'raster',
             tiles: ['pmtiles:///data/pmtiles/prediction_t5_2024-06-18.pmtiles/{z}/{x}/{y}'],
             tileSize: 256,
             minzoom: 0,
             maxzoom: 7
+          },
+          uncertainty: {
+            type: 'raster',
+            tiles: ['pmtiles:///data/pmtiles/uncertainty_t5.pmtiles/{z}/{x}/{y}'],
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: 7
+          },
+          landslide: {
+            type: 'raster',
+            tiles: ['hazard://landslide/{z}/{x}/{y}'],
+            tileSize: 256,
+            minzoom: 5,
+            maxzoom: 9
+          },
+          tvdi: {
+            type: 'raster',
+            tiles: ['hazard://tvdi/{z}/{x}/{y}'],
+            tileSize: 256,
+            minzoom: 5,
+            maxzoom: 9
           },
           gauges: {
             type: 'geojson',
@@ -582,14 +640,56 @@ export default function OperationsConsole() {
             }
           },
           {
-            id: 'prediction',
-            type: 'raster',
-            source: 'prediction',
+            id: 'erosion-banklines',
+            type: 'line',
+            source: 'erosion_banklines',
+            layout: {visibility: 'none'},
             paint: {
-              'raster-opacity': 0.5,
+              'line-color': [
+                'match', ['get', 'river'],
+                'jamuna', '#f59e0b',
+                'meghna', '#a78bfa',
+                'padma',  '#34d399',
+                '#94a3b8'
+              ],
+              'line-width': ['interpolate', ['linear'], ['zoom'], 5, 1, 9, 3],
+              'line-opacity': 0.8
+            }
+          },
+          {
+            id: 'uncertainty',
+            type: 'raster',
+            source: 'uncertainty',
+            layout: {visibility: 'none'},
+            paint: {'raster-opacity': 0.45, 'raster-fade-duration': 0,
+                    'raster-hue-rotate': 30, 'raster-saturation': -0.3}
+          },
+          {
+            id: 'landslide',
+            type: 'raster',
+            source: 'landslide',
+            layout: {visibility: 'none'},
+            paint: {'raster-opacity': 0.55, 'raster-fade-duration': 0,
+                    'raster-hue-rotate': -60, 'raster-saturation': 0.4}
+          },
+          {
+            id: 'tvdi',
+            type: 'raster',
+            source: 'tvdi',
+            layout: {visibility: 'none'},
+            paint: {'raster-opacity': 0.50, 'raster-fade-duration': 0,
+                    'raster-hue-rotate': 60, 'raster-saturation': 0.3}
+          },
+          {
+            id: 'uncertainty',
+            type: 'raster',
+            source: 'uncertainty',
+            layout: {visibility: 'none'},
+            paint: {
+              'raster-opacity': 0.45,
               'raster-fade-duration': 0,
-              'raster-hue-rotate': -40,
-              'raster-saturation': 0.5
+              'raster-hue-rotate': 30,
+              'raster-saturation': -0.3
             }
           },
           {
@@ -702,6 +802,7 @@ export default function OperationsConsole() {
       removeProtocol('pmtiles');
       removeProtocol('gibs');
       removeProtocol('gfm');
+      removeProtocol('hazard');
       map.remove();
       mapRef.current = null;
       readyRef.current = false;
@@ -1033,17 +1134,21 @@ const COVERAGE_LABEL: Record<Coverage, string> = {
 // Honesty chip per layer: status + color
 type HonestyStatus = 'live' | 'seeded' | 'estimate' | 'cached';
 const LAYER_HONESTY: Partial<Record<LayerId, HonestyStatus>> = {
-  basemap:    'live',
-  gfm:        'live',
-  mcdwd:      'live',
-  imerg:      'live',
-  gauges:     'seeded',
-  flood:      'seeded',
-  prediction: 'estimate',
-  exposure:   'seeded',
-  erosion:    'cached',
-  hillshade:  'cached',
-  rivers:     'cached',
+  basemap:           'live',
+  gfm:               'live',
+  mcdwd:             'live',
+  imerg:             'live',
+  gauges:            'seeded',
+  flood:             'seeded',
+  prediction:        'estimate',
+  uncertainty:       'estimate',
+  exposure:          'seeded',
+  erosion_banklines: 'cached',
+  erosion:           'cached',
+  landslide:         'cached',
+  tvdi:              'cached',
+  hillshade:         'cached',
+  rivers:            'cached',
 };
 const HONESTY_STYLE: Record<HonestyStatus, {dot: string; label: string; text: string}> = {
   live:     {dot: 'bg-[#2dd4bf] shadow-[0_0_4px_#2dd4bf]', label: 'LIVE',     text: 'text-[#2dd4bf]'},
