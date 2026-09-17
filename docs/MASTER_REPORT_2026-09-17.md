@@ -4,19 +4,346 @@
 **Audience:** Senior developer, geospatial expert, technical investor, MBA reviewer
 **Scope:** Complete technical state — ML, data, calibration, pipeline, frontend, infrastructure
 
+**Entry point for new sessions:**
+```bash
+cd /home/ubuntu/General/kalopathor && cat AGENTS.md
+```
+
 ---
 
-## Executive Summary
+## 0. Complete File Index
 
-Kalopathor is a Bangladesh national flood early-warning system built on Sentinel-1 C-band SAR radar at 30-metre resolution. It detects active flood extents, estimates population exposure, drafts bilingual CAP 1.2 alert messages, and supports evacuation routing. The system is operational-prototype grade: all technical components are built, tested, and producing real outputs. It is not yet live end-to-end (automated ingestion loop not wired). The limiting constraints are institutional (shelter data, government user testing) and one calibration item (confidence bands), not technical readiness.
+Every file and directory referenced in this report. All paths are absolute on the OVH server (`15.235.143.151`).
+
+### Project root
+```
+/home/ubuntu/General/kalopathor/
+├── AGENTS.md                                    ← READ FIRST — session entry point
+├── frontend/                                    ← Next.js app
+└── work/                                        ← all ML, pipeline, scripts, reports
+```
+
+### Work directory — documents
+```
+work/
+├── MASTER_REPORT_2026-09-17.md                 ← THIS FILE
+├── AGENTS.md (root)                            → /home/ubuntu/General/kalopathor/AGENTS.md
+├── EXECUTION_PLAN_OPUS5_2026-08-30.md          ← master plan + amendments 1-6
+├── WAVE_REPORT_2026-09-07.md                   ← pre-Sep-17 wave results
+├── SESSION_UPDATE_2026-09-17.md                ← this session's changes
+├── METHODOLOGY_PAGE_COPY_2026-09-17.md         ← "What's Real" page copy (ready to deploy)
+├── RESPONSE_TO_FEEDBACKS5_2026-09-17.md        ← FeedbackS5 resolution
+├── ENHANCED_RESOURCES_PLAN_2026-09-17.md       ← /mnt asset utilisation plan
+├── ACCELERATED_PLAN_2026-09-17.md              ← sprint plan with Modal cost estimates
+├── d3v4.2_report.json                          ← v4.2 full training + eval report (13K)
+├── a1_true_refit_result.json                   ← A1 refit: 1/10 publishable, t*=0.01
+├── a1_refit_result.json                        ← A1 cross-model attempt (incorrect, superseded)
+├── flompy_aug21_result.json                    ← FLOMPY Aug-21 peak-day: IoU 0.086
+└── sirajganj_inference_2019.json               ← Sirajganj d3v4.2 inference (42 chips, 6146 km²)
+```
+
+### Work directory — model checkpoints
+```
+work/checkpoints/
+├── d3v4.2_best.pt          (69MB)  ← OPS MODEL — use this for inference
+├── d3v4.2_swa_best.pt      (25MB)  ← SWA checkpoint
+├── d3v4.2_eval_arrays.npz  (19KB)  ← eval pixel arrays
+├── d3v4.2_report.json      (16KB)  ← training + eval metrics
+├── d3v4.1_best.pt          (69MB)  ← rollback checkpoint
+├── d3v4.1_swa_best.pt      (25MB)
+├── d3v4.1_eval_arrays.npz  (19KB)
+├── d3v4.1_report.json       (7KB)
+├── d3v5_best.pt            (69MB)  ← same chips as v4.2, ties, NOT promoted
+├── d3v5_swa_best.pt        (25MB)
+├── d3v5_eval_arrays.npz    (19KB)
+├── d3v5_report.json         (9KB)
+├── d3v5true_best.pt        (69MB)  ← CHANGE v2 chips, neg-ctrl FAIL, NOT promoted
+├── d3v5true_eval_arrays.npz(19KB)
+├── d3v5true_report.json     (9KB)
+├── d3v3_best.pt            (69MB)  ← retired v3 baseline
+└── d3v3_report.json         (2KB)
+```
+
+### Work directory — calibration
+```
+work/calibration/
+├── calib_pixels.npz         (270MB) ← 78M pixels: raw_sigmoid + labels (U-Net 2024-north)
+├── calib_split.npz           (5KB)  ← RANDOM split seed=42 — DO NOT reuse for A1 refit
+├── isotonic_v42.pkl          (11KB) ← fitted isotonic calibrator (U-Net pixels)
+├── calib_fit_summary.json     (4KB) ← isotonic fit metrics
+├── calib3_reverify.json       (1KB) ← reverification after fit
+├── go_before_deciles.json     (4KB) ← prior (broken) band attempt
+├── calibration_report.md      (4KB) ← narrative of calibration work
+├── calib1_infer_split.py      (3KB) ← script: split inference outputs
+├── calib2_fit.py              (6KB) ← script: fit isotonic
+├── calib3_reverify.py         (7KB) ← script: reverify calibration
+└── calib4_go_before_deciles.py(6KB) ← script: per-decile bands (broken, cross-model)
+```
+
+### Work directory — evaluation
+```
+work/eval/
+├── negative_control_manifest.parquet  (20KB) ← 257-chip neg-ctrl manifest
+├── d3v4.2_best_negative_control_results.parquet (25KB) ← v4.2 FPR by terrain
+├── d3v4.2_best_threshold_sweep.json            (1.4KB) ← FPR/TPR at τ=0.3–0.8
+├── d3v4.1_best_negative_control_results.parquet(25KB)
+├── d3v4.1_best_threshold_sweep.json
+├── d3v5_best_negative_control_results.parquet  (25KB) ← v5 (same as v4.2)
+├── d3v5_best_threshold_sweep.json
+├── d3v5true_best_negative_control_results.parquet(26KB) ← v5true: FPR 0.611, GATE FAIL
+├── d3v5true_best_threshold_sweep.json
+├── sirajganj_eval.json                          (2.5KB)← Sirajganj cross-event metrics
+└── replay/                                             ← 4-event CAP replay outputs
+```
+
+### Work directory — alert engine
+```
+work/alert/
+├── cap_engine.py              ← CAP 1.2 drafting + 5-stage gate chain (PRIMARY)
+├── approve_feed.py            ← approval state machine
+├── approve_feed_tests.py      ← 5 test cases (all passing)
+├── approve_feed_tests.log     ← test results
+├── cap_1.2.xsd                ← XSD schema for validation
+├── feni_draft.cap.xml         ← sample: evacuation template
+├── feni_no_safe_route_draft.cap.xml ← sample: shelter-in-place template
+├── templates/                 ← CAP XML templates per scenario
+├── tests/                     ← additional test fixtures
+└── audit/                     ← immutable audit log outputs
+```
+
+### Work directory — data contracts
+```
+work/contracts/
+├── validate_bundle.py         ← validates full incident bundle (exit 0 = valid)
+├── schemas/
+│   ├── flood_polygon.schema.json
+│   ├── forecast_band.schema.json
+│   ├── gauge_station.schema.json
+│   ├── exposure_summary.schema.json
+│   ├── shelter.schema.json
+│   ├── route.schema.json
+│   ├── alert.schema.json
+│   ├── data_freshness.schema.json
+│   ├── event.schema.json
+│   └── bundle.schema.json
+└── sample_incidents/
+    └── feni_2024_replay.json  ← complete Feni incident bundle (validates exit 0)
+```
+
+### Work directory — forecast
+```
+work/forecast/
+├── f5_mapie_bands_onesided.parquet  (156MB) ← PRIMARY: Branch-A stored probs + lower bounds
+├── f5_mapie_bands_asymmetric.parquet(174MB) ← alternative conformal method
+├── f5_mapie_bands_stratified.parquet(202MB) ← stratified method
+├── f5_mapie_bands_enbpi.parquet     (202MB) ← EnbPI method
+├── f5_onesided_report.json           (1.6KB)← onesided method metrics
+├── bands_calibrated_deciles.json      (21KB) ← broken bands (cross-model, superseded)
+├── f6_bands_calibrated_deciles.parquet(39MB) ← broken bands output
+├── bcd_holdout_onset.npz             (21MB) ← holdout onset data
+├── mapie_method_verdict.md           (22KB) ← method comparison analysis
+└── [scripts: f5_onesided_diagnostic.py, f5_asymmetric_bands.py, etc.]
+```
+
+### Work directory — live pipeline
+```
+work/live/
+├── watch.py                   ← Sentinel-1 acquisition monitor (item B)
+├── live_feni_pipeline.py      ← end-to-end: S1 granule → inference → publish
+├── next_pass.py               ← estimate next S1 overpass time
+├── gfm_hook.md                ← GFM WMS-T integration notes
+├── cron.example               ← example cron for automated loop
+└── systemd/                   ← systemd service files for unattended operation
+```
+
+### Work directory — GEE
+```
+work/gee/
+├── export_dry_vv_median.py    ← exports dry-season S1 VV/VH composite to GCS
+├── export_dry_vv_task.json    ← GEE task receipt
+├── monitor_task.py            ← polls GEE task until COMPLETED/FAILED
+└── GEE_AUTH.md                ← headless GEE auth via GCP ADC (working)
+```
+
+### Work directory — EVE routing
+```
+work/eve/
+├── build_feni_routes.py       ← builds OSMnx graph for Feni/Khowai corridor
+├── build_feni_routes_v2.py    ← v2 with depth-penalty cost function
+├── build_feni_routes_v2.log   ← run log
+├── roads/                     ← OSM PBF extracts for 3 pilot areas
+├── routes/                    ← computed route objects (GeoJSON)
+└── shelters/                  ← shelter data placeholder (empty — LGED data pending)
+```
+
+### Work directory — scripts
+```
+work/scripts/
+├── eval_negative_control.py   ← neg-control gate runner (run against any checkpoint)
+├── multi_hazard_alert.py      ← compound hazard alert stub (landslide+TVDI+lightning)
+├── build_hillshade.py         ← builds hillshade PMTile from DEM
+├── build_rivers.py            ← extracts rivers from WorldCover
+└── extract_rivers_bgd.py      ← BGD river extraction
+```
+
+### Work directory — usability
+```
+work/usability/
+├── USABILITY_KIT.md           ← overview and session plan
+├── RECRUITER_BRIEF.md         ← send this to recruit participants
+├── SESSION_SCRIPT_BN.md       ← Bengali-language session script
+└── PUNCHLIST_TEMPLATE.md      ← observer punchlist for sessions
+```
+
+### Frontend — key source files
+```
+frontend/
+├── app/
+│   ├── [locale]/
+│   │   ├── operations/page.tsx      ← main ops console route
+│   │   ├── approval/page.tsx        ← CAP approval stub (needs real view)
+│   │   └── page.tsx                 ← story/landing page
+│   ├── components/
+│   │   ├── OperationsConsole.tsx    ← main map + all layer logic (PRIMARY, ~1200 lines)
+│   │   ├── ActionCard.tsx           ← polygon click panel
+│   │   ├── WorkflowRail.tsx         ← left navigation rail
+│   │   ├── WorkflowListPanel.tsx    ← alert/gauge list
+│   │   ├── GaugeDrawer.tsx          ← hydrograph drawer
+│   │   └── DataQualityPanel.tsx     ← data quality view
+│   └── api/freshness/route.ts       ← /api/freshness endpoint
+├── lib/
+│   ├── map-config.ts                ← LayerId types, GIBS/GFM URLs, layer definitions
+│   ├── bundle.ts                    ← ActionCard state derivation
+│   ├── freshness.ts                 ← freshness contract types
+│   └── workflow.ts                  ← workflow item definitions
+├── messages/
+│   ├── en.json                      ← English translations
+│   └── bn.json                      ← Bengali translations
+└── public/data/
+    ├── detection_polygons_v4.geojson (16MB) ← 1,199 v4.2 polygons, τ=0.5 [SERVED]
+    ├── detection_polygons.geojson   (13MB)  ← v4.0 legacy (not served, keep for ref)
+    ├── exposure_districts.geojson    (8.1MB) ← 64 districts + pop_2024 field [SERVED]
+    ├── rivers_bgd.geojson            (6.4MB) ← river network [SERVED]
+    ├── erosion_layer.geojson         (1.9MB) ← 3,003 erosion transect points [SERVED]
+    ├── erosion_banklines.geojson     (1.5MB) ← Jamuna/Meghna/Padma 2016-2021 [SERVED]
+    ├── ffwc_gauges.geojson           (38KB)  ← 115 FFWC stations [SERVED]
+    ├── ffwc_hydrographs.json        (187KB)  ← gauge time-series [SERVED]
+    ├── feni_2024_replay.json        (374KB)  ← Feni incident bundle [SERVED]
+    ├── top_flood_polygons.json        (6KB)  ← top-N polygon list [SERVED]
+    ├── ops_meta.json                  (415B) ← event metadata, polygon_count=1199 [SERVED]
+    ├── openmeteo_forecast.json        (18KB) ← Open-Meteo forecast [SERVED]
+    ├── hillshade_bgd.pmtiles         (20MB)  ← hillshade raster tiles [SERVED]
+    ├── landslide_cog.tif             (14MB)  ← landslide susceptibility COG [SERVED via hazard://]
+    ├── landslide_layer.tif           (13MB)  ← original (source for COG, not served directly)
+    ├── tvdi_cog.tif                   (3.8MB) ← TVDI drought 2024 COG [SERVED via hazard://]
+    ├── tvdi_layer.tif                 (3.0MB) ← original (source for COG, not served directly)
+    └── pmtiles/                        (55 files, 9.8MB total)
+        ├── prediction_t1_*.pmtiles     ← 12 dated t+1d forecast rasters
+        ├── prediction_t3_*.pmtiles     ← 12 dated t+3d forecast rasters
+        ├── prediction_t5_*.pmtiles     ← 12 dated t+5d forecast rasters
+        ├── prediction_t7_*.pmtiles     ← 12 dated t+7d forecast rasters
+        ├── prediction_t1.pmtiles       ← composite t+1d
+        ├── prediction_t5.pmtiles       ← composite t+5d
+        ├── uncertainty_t5.pmtiles      ← t+5d prediction uncertainty [SERVED]
+        ├── landslide_tiles.json        ← base64 PNG tile bundle for hazard:// protocol
+        └── tvdi_tiles.json             ← base64 PNG tile bundle for hazard:// protocol
+```
+
+### Data on /mnt
+```
+/mnt/data/
+├── kalopathor-gcs/
+│   ├── raw/
+│   │   ├── chips/
+│   │   │   ├── 2020/     (5,090 .tif files — Sylhet/Jamalpur raw chips)
+│   │   │   ├── 2022/     (5,416 .tif files — Sylhet haor raw chips)
+│   │   │   └── 2024/     (3,982 .tif files — Feni raw chips)
+│   │   ├── dry_vv_median_bgd.tif      (520MB) ← 2-band dry-season S1 composite (GEE export)
+│   │   ├── dem90m_bgd_full.tif        (135MB) ← Copernicus DEM 90m
+│   │   ├── hand30m_bgd_full.tif       (1.1GB) ← HAND drainage proximity
+│   │   └── gsw_monsoon_recurrence_bgd_full.tif (24MB) ← JRC seasonal water
+│   ├── tiles/
+│   │   ├── prediction_t1.tif          ← composite t+1d prediction raster (source)
+│   │   ├── prediction_t5.tif          ← composite t+5d
+│   │   ├── uncertainty_t5.tif         ← uncertainty raster (source)
+│   │   └── temporal/                  ← 48 dated .tif files (t1/t3/t5/t7 × 12 dates)
+│   ├── vault-2026-08/
+│   │   ├── checkpoints/               ← v3 era checkpoint backups
+│   │   └── data_satellite/
+│   │       ├── erosion/
+│   │       │   ├── out/               ← bankline_jamuna/meghna/padma_201[6-1].json (raw)
+│   │       │   │   └── river_erosion_by_year.json
+│   │       │   └── gsw/               ← gsw_yearly_201[6-1]_belt.tif (water change)
+│   │       ├── glofas/                ← fc_y2024_oper_ctrl.nc, glofas_discharge_swi_*.nc
+│   │       ├── hazard/
+│   │       │   ├── landslide_susceptibility.tif (110MB, Chittagong Hill Tracts)
+│   │       │   └── tvdi_2024.tif               (19MB, Barind drought index)
+│   │       ├── heat/lst/              ← lst_2013–2022.tif (land surface temp per year)
+│   │       ├── population/
+│   │       │   ├── bgd_pop_2024_CN_100m_R2025A_v1.tif (55MB) ← 2024 WorldPop 100m
+│   │       │   └── bgd_pd_2020_1km_UNadj.tif
+│   │       ├── era5/
+│   │       │   ├── era5_cape_smoke.nc  ← CAPE lightning proxy
+│   │       │   └── era5_profile.nc
+│   │       └── static/
+│   │           ├── gsw_occurrence_bgd.tif
+│   │           ├── hand30m_bgd.tif
+│   │           ├── merit_dem90m_bgd.tif
+│   │           └── worldcover10m_bgd*.tif (2 tiles, ESA 10m land cover)
+│   └── backups/                       ← GCS backup snapshots
+├── chips6_export/
+│   ├── chips6.npy                     (22GB)  ← 7,244 training chips, float16
+│   ├── labels.npy                      (1.8GB) ← binary flood labels
+│   ├── chips_index.parquet            (98KB)  ← chip metadata (chip_id, event, strata, path)
+│   ├── strong_labels.npz              (N/A)   ← UNOSAT strong-label coverage mask
+│   └── zero_aux_paths.txt             ← chips with all-zero DEM/HAND (coastal boundary)
+├── chips_feni/
+│   ├── chips6_feni.npy                ← 107 Feni chips (train=87, holdout=20)
+│   ├── labels_feni.npy
+│   └── feni_index.parquet
+├── chips_sirajganj/
+│   ├── chips6_sirajganj.npy           (42 chips)
+│   ├── labels_sirajganj.npy
+│   └── sirajganj_index.parquet
+└── chips_feni_dry_diag/
+    ├── chips6_feni_dry.npy            ← A2a dry-swap diagnostic chips
+    └── A2a_tripwire_swap.json         ← A2a dry-swap result
+```
+
+### GCS bucket
+```
+gs://monarqlabs-gemini-workspace/kalopathor/
+├── raw/                               ← mirrors /mnt/data/kalopathor-gcs/raw/
+│   ├── dry_vv_median_bgd.tif          ← dry-season S1 composite (source of truth)
+│   ├── dem90m_bgd_full.tif
+│   ├── hand30m_bgd_full.tif
+│   └── gsw_monsoon_recurrence_bgd_full.tif
+├── chips6/                            ← training chips mirror
+├── serve/                             ← live-serving outputs
+│   ├── cell_lookup.json
+│   ├── manifest.json
+│   ├── metrics.json
+│   ├── peak_day_index.json
+│   └── shap.json
+├── tiles/                             ← raster tile outputs
+└── vault-2026-08/                     ← satellite data archive
+```
+
+---
+
+## 1. Executive Summary
+
+Kalopathor is a Bangladesh national flood early-warning system built on Sentinel-1 C-band SAR (10 m GRD, 30 m inference). It detects active flood extents from radar backscatter, generates exposure estimates per district, and drafts CAP 1.2 alert messages with an honest confidence trail. It is not a forecast model — it is a detection-and-alerting system anchored to real SAR acquisitions.
+
+The system is **operational-prototype grade**: all technical components are built, tested, and producing real outputs. It is not yet live (no automated ingestion loop without manual trigger). The limiting constraint is institutional — shelter data from government agencies, not technical readiness.
 
 **Live URL:** https://kalopathor-hbgo.vercel.app
-**Ops model:** d3v4.2 (EfficientNet-B0 U-Net, 6ch, Feni holdout IoU 0.5338)
+**Ops model:** d3v4.2 · EfficientNet-B0 U-Net · Feni holdout IoU 0.5338
 **Polygons served:** 1,199 · 21,954 km² · threshold τ=0.5
 
 ---
 
-## 1. System Architecture
+## 2. System Architecture
 
 **Detection model:** EfficientNet-B0 U-Net (segmentation-models-pytorch), 6.3M parameters
 **Input:** 6-channel 512×512px tiles at 30m — VV, VH, DEM, HAND, seasonal water mask, dry-season CHANGE baseline
@@ -24,64 +351,62 @@ Kalopathor is a Bangladesh national flood early-warning system built on Sentinel
 **Training time:** 41 minutes on NVIDIA L4 GPU
 
 **Six input channels:**
-1. VV — Sentinel-1 GRD backscatter (flood pass)
-2. VH — Sentinel-1 GRD backscatter (flood pass)
-3. DEM — Copernicus 30m (HAND-derived)
-4. HAND — Height Above Nearest Drainage
-5. MONSOON — JRC Global Surface Water seasonal mask (threshold 0.9)
-6. CHANGE — Delta from dry-season VV/VH median composite (suppresses permanent water)
+1. **VV** — Sentinel-1 GRD backscatter (flood pass)
+2. **VH** — Sentinel-1 GRD backscatter (flood pass)
+3. **DEM** — Copernicus 30m (`/mnt/data/kalopathor-gcs/raw/dem90m_bgd_full.tif`)
+4. **HAND** — Height Above Nearest Drainage (`/mnt/data/kalopathor-gcs/raw/hand30m_bgd_full.tif`)
+5. **MONSOON** — JRC Global Surface Water (`/mnt/data/kalopathor-gcs/raw/gsw_monsoon_recurrence_bgd_full.tif`)
+6. **CHANGE** — Delta from dry-season S1 composite (`/mnt/data/kalopathor-gcs/raw/dry_vv_median_bgd.tif`)
 
 ---
 
-## 2. Training Data
+## 3. Training Data
 
-| Event | Year | Chips | Label type | Geography |
+| Event | Year | Chips | Label type | Raw chips location |
 |---|---|---|---|---|
-| Sylhet/Jamalpur flood | 2020 | 2,545 | Weak (SAR-derived) | North/northeast BD |
-| Sylhet haor flash flood | 2022 | 2,708 | Weak (SAR-derived) | Northeast BD |
-| Feni flash flood | 2024 | 107 train + 20 holdout | Strong (UNOSAT) | Southeast BD |
+| Sylhet/Jamalpur flood | 2020 | 2,545 | Weak (SAR-derived) | `/mnt/data/kalopathor-gcs/raw/chips/2020/` |
+| Sylhet haor flash flood | 2022 | 2,708 | Weak (SAR-derived) | `/mnt/data/kalopathor-gcs/raw/chips/2022/` |
+| Feni flash flood | 2024 | 107 | Strong (UNOSAT) | `/mnt/data/chips_feni/` |
 
-- **Total training chips:** 5,340 (2020+2022+87 Feni-train, strong-label ×2 weight)
-- **Tripwire holdout:** 20 spatially-contiguous Feni chips (rows 63–64), never seen in training
-- **Unique spatial coverage:** 2,709 tile positions — full national coverage with overlap
-- **Strong labels:** UNOSAT Aug-2024 Feni flood extent; 1,204 of 7,244 total chips have strong coverage
+- **Compiled training set:** `/mnt/data/chips6_export/chips6.npy` (22GB, 7,244 chips, float16)
+- **Labels:** `/mnt/data/chips6_export/labels.npy` (1.8GB)
+- **Index:** `/mnt/data/chips6_export/chips_index.parquet` (chip_id, event, strata, path)
+- **Strong labels mask:** `/mnt/data/chips6_export/strong_labels.npz`
+- **Feni holdout:** `/mnt/data/chips_feni/chips6_feni.npy` — 107 chips (87 train, 20 tripwire holdout rows 63–64)
+- **Sirajganj cross-event:** `/mnt/data/chips_sirajganj/chips6_sirajganj.npy` — 42 chips, 2019
 
 ---
 
-## 3. Model Version History and Promotion State
+## 4. Model Versions and Promotion State
 
-| Version | Key change | Feni tripwire | Val IoU | Neg-ctrl FPR | Status |
+| Version | Checkpoint | Feni tripwire | Val IoU | Neg-ctrl FPR | Status |
 |---|---|---|---|---|---|
-| d3v3 | 4-channel baseline | — | ~0.518 | — | Retired |
-| d3v4.1 | 6ch + HAND + MONSOON + CHANGE v1 | 0.4703 | 0.5433 | — | Rollback checkpoint |
-| **d3v4.2** | + strong-label ×2 weighting | **0.5338** | **0.5432** | **0.335** | **OPS MODEL** |
-| d3v5 | Same recipe as v4.2 (CHANGE v1 chips) | 0.5338 | 0.5432 | 0.335 | Ties v4.2 — not promoted |
-| d3v5true | CHANGE v2 dry-season composite chips | 0.5382 | 0.5429 | **0.611** | Gate FAIL — not promoted |
+| d3v3 | `checkpoints/d3v3_best.pt` | — | ~0.518 | — | Retired |
+| d3v4.1 | `checkpoints/d3v4.1_best.pt` | 0.4703 | 0.5433 | — | Rollback only |
+| **d3v4.2** | **`checkpoints/d3v4.2_best.pt`** | **0.5338** | **0.5432** | **0.335** | **OPS MODEL** |
+| d3v5 | `checkpoints/d3v5_best.pt` | 0.5338 | 0.5432 | 0.335 | Ties v4.2 — not promoted |
+| d3v5true | `checkpoints/d3v5true_best.pt` | 0.5382 | 0.5429 | **0.611** | Gate FAIL — not promoted |
 
-### Promotion gate (three-part, all required)
-1. **Feni tripwire** — ≥ 0.5038 (−0.030 tolerance from v4.2)
-2. **Neg-control FPR** — no new failure terrain vs previous version
-3. **Buffer ablation** — tripwire gain survives interior-16 chip crop
+**Gate results files:**
+- v4.2 neg-control: `eval/d3v4.2_best_negative_control_results.parquet`
+- v4.2 threshold sweep: `eval/d3v4.2_best_threshold_sweep.json`
+- v5true neg-control: `eval/d3v5true_best_negative_control_results.parquet`
+- v5true threshold sweep: `eval/d3v5true_best_threshold_sweep.json`
 
-**v5true gate result:** Tripwire passes (0.5382 ✅) but neg-control FPR 0.335 → 0.611 across nearly all terrain types (❌). **Not promoted.** The dry-season CHANGE v2 hypothesis is falsified — the Dec–Feb median captures seasonal agricultural and haor/wetland variability that amplifies rather than suppresses the false-positive signal. Root cause: boro rice irrigation cycles begin Dec–Jan in Bangladesh; the "dry-season" composite is not a stable bare-soil reference for the haor/coastal/mixed terrain types where FPR was already the known problem.
-
-### v4.2 gate evidence (current ops model)
-- Feni tripwire: +0.064 vs v4.1 ✅
-- Buffer ablation (interior-16): +0.044 ✅; deep-interior-12: +0.042 ✅
-- Neg-ctrl FPR: chars 0.000, coastal_polder 0.000, river_edge 0.000, hill/flash_valley 0.033 — clean
-- Known failure terrain: dry_inland 0.800, mixed 0.727 — pre-existing, not a promotion blocker
-- Sirajganj 2019 cross-event: v4.1 0.5400 → v4.2 0.5526 (+0.013)
-
-**Promotion status:** PROVISIONAL — v4.2 is the ops model pending one live national event with CPP volunteer ground-truth photography.
+**v5true gate failure root cause:** Dec–Feb dry-season S1 median captures boro rice irrigation cycles (Dec–Jan haor fill), coastal tidal variability, and mixed agricultural backscatter. The "dry-season" composite is not a stable bare-soil reference — it amplifies non-flood backscatter variation as false CHANGE signal in exactly the terrain types that were already the FPR problem. Next fix: try Feb-only window or 10th-percentile composite.
 
 ---
 
-## 4. Detection Polygons
+## 5. Detection Polygons
 
-### v4.2 national detection layer (2024 flood event composite)
-- **1,199 polygons** · **21,954 km²** total · threshold τ=0.5
-- Permanent-water post-mask applied (Ch4 > 0.9 → background)
-- All in-country, schema-valid, `threshold=0.5` and `model_version=d3v4.2` in every feature property
+**Served layer:** `frontend/public/data/detection_polygons_v4.geojson`
+- 1,199 polygons · 21,954 km² · τ=0.5 · model_version=d3v4.2
+- All 8 divisions covered · permanent-water post-mask applied
+- Source script: `work/d3_polygonize_v4.py` (run via `work/launch_polygonize_v42.py`)
+
+**Source polygon file (work dir):** `work/detection_polygons_v4.2.geojson` (37MB, master copy)
+
+**By division:**
 
 | Division | Polygons | Area (km²) |
 |---|---|---|
@@ -94,247 +419,214 @@ Kalopathor is a Bangladesh national flood early-warning system built on Sentinel
 | Chittagong | 85 | 791 |
 | Barisal | 18 | 64 |
 
-**Note on threshold provenance:** An earlier report incorrectly stated threshold 0.65. Verified from launch script: no `--threshold` flag was passed; polygonizer default = 0.5. The 0.65 was a stale docstring — never executed. The "raw-threshold, confidence-language pending" posture is intact and demonstrably true.
-
-### PMTiles prediction rasters
-10 dated prediction rasters (Jun–Jul 2024) served as PMTiles for temporal scrubber in frontend. These represent LightGBM Branch-A flood-onset probability surface, not the U-Net detection.
+**PMTiles prediction rasters:** `frontend/public/data/pmtiles/` — 48 dated files + 3 composites across t1/t3/t5/t7 horizons. Source TIFs: `/mnt/data/kalopathor-gcs/tiles/temporal/` (48 files).
 
 ---
 
-## 5. Calibration
+## 6. Calibration
 
-Isotonic calibration fitted on disjoint 15% split of 2024-north validation set (299 chips, 78M pixels, permanent-water excluded, random split seed=42).
+**Script chain:**
+1. `work/calibration/calib1_infer_split.py` — splits 2024-north validation set
+2. `work/calibration/calib2_fit.py` — fits isotonic regression
+3. `work/calibration/calib3_reverify.py` — reverifies calibration quality
+4. `work/calibration/calib4_go_before_deciles.py` — BROKEN (cross-model, superseded)
 
-| Metric | Value |
-|---|---|
-| Brier improvement (per-pixel) | −6.0% |
-| Brier improvement (per-chip) | −16.7% |
-| Raw τ=0.5 calibrated value | 0.37 (raw 0.5 overstates confidence) |
-| t* (raw threshold for calibrated 0.5) | 0.6857 |
+**Key outputs:**
+- `work/calibration/calib_pixels.npz` (270MB) — 78M pixels: `raw_sigmoid`, `labels`
+- `work/calibration/calib_split.npz` (5KB) — cal/eval indices (RANDOM seed=42 — **do not reuse**)
+- `work/calibration/isotonic_v42.pkl` (11KB) — fitted calibrator
+- `work/calibration/calib_fit_summary.json` — Brier scores, t*=0.6857
 
-At t*: IoU drops 1.6pts (fewer FPs), FPR improves 6pts. Not applied to served polygons — polygons remain at raw τ=0.5.
-
----
-
-## 6. Uncertainty Quantification — Bands (A1)
-
-### History
-- **First attempt (Sep 1):** Cross-model transfer bug — isotonic fitted on U-Net pixel probs applied to LightGBM Branch-A stored probs. 9.4M/11.4M holdout rows clipped to zero. 0/10 deciles publishable. Root cause: two different model architectures have different probability distributions; the isotonic map collapses Branch-A probs to zero.
-
-- **Second attempt (Sep 17, this session):** Fixed — fitted isotonic directly on Branch-A native stored probs from `f5_mapie_bands_onesided.parquet` using time-blocked 70/30 date split (not random). Brier improvement: **−52.5%** (confirms the bug was real and large). t* = 0.01 (Branch-A probs already well-calibrated for onset detection; isotonic near-trivial).
-
-### Current result: **1/10 deciles publishable**
-- `[0.8, 0.9)`: n=1.8M, n_unclipped=323,124, unclipped coverage **0.8524** ✅
-- Deciles 0–0.8: n_unclipped=0 everywhere (lower=0 structural — 40.7M of 43.5M rows clipped)
-- **Publishable claim:** "For high-confidence onset cells (calibrated probability 0.8–0.9), our 90% conformal lower bound covers 85.2% of observed onsets in held-out 2024 data."
-- All other deciles: explicitly `do-not-cite`
-
-### Split validity caveat
-The original calibration split (calib_split.npz) used random seed-42 shuffle. The second attempt used a time-blocked date split (correct). The calib_split.npz file should not be reused for future refits; regenerate with chronologically-sorted indices.
-
-### Consequence
-All confidence language frozen until A1 is fully resolved. go-before timestamps labeled "estimate · pending recalibration" in frontend. No confidence interval percentages shown anywhere in live surfaces.
+**Calibration metrics:** raw τ=0.5 → calibrated value 0.37. t* (raw threshold for calibrated 0.5) = 0.6857. Brier improvement: −6% pixel, −17% chip.
 
 ---
 
-## 7. Third-Signal Corroboration (FLOMPY / G3)
+## 7. Uncertainty Quantification — Bands (A1)
 
-FLOMPY is a peer-reviewed SAR flood detection algorithm (EMS-validated) used as G3 corroboration. IoU ≥ 0.50 required for automated CAP escalation.
+**Status: 1/10 deciles publishable.** Confidence language frozen everywhere.
 
-### All FLOMPY runs on Feni 2024:
+**Files:**
+- `work/forecast/f5_mapie_bands_onesided.parquet` (156MB) — Branch-A stored probs (`stored` column) + conformal lower bounds
+- `work/a1_true_refit_result.json` — **authoritative result**: 1/10 publishable, Brier −52.5%, t*=0.01
+- `work/a1_refit_result.json` — superseded (cross-model attempt, incorrect)
+- `work/forecast/f6_bands_calibrated_deciles.parquet` (39MB) — broken bands output (do not cite)
+- `work/forecast/bands_calibrated_deciles.json` (21KB) — broken bands summary (do not cite)
 
-| Run | Pair | IoU | Verdict |
+**Publishable decile:** `[0.8, 0.9)` — n=1.8M, n_unclipped=323,124, coverage 0.852.
+**Exact claim:** "For high-confidence onset cells (calibrated probability 0.8–0.9), our 90% conformal lower bound covers 85.2% of observed onsets in held-out 2024 data."
+
+**Root cause of prior failure:** Isotonic fit on U-Net pixel outputs applied to LightGBM Branch-A stored probabilities — cross-model transfer. LightGBM probs have a different distribution; the map clipped 40.7M of 43.5M rows to zero.
+
+**Fix required for A1:** Generate a new chronologically-sorted split (first 15% of dates as calibration), refit isotonic on Branch-A `stored` column only, re-run per-decile split-conformal. The split in `calib_split.npz` must NOT be reused.
+
+---
+
+## 8. FLOMPY / G3 Corroboration
+
+**All runs:**
+| Run | Granules | IoU | Verdict | Script/output |
+|---|---|---|---|---|
+| Sep 1 (annual) | 2024 composite | < 0.50 | NO_CORROBORATION | `work/flompy/run/run_d3v42_feni.py` |
+| Sep 7 (dedicated Aug-28) | Aug-16/Aug-28 | < 0.50 | NO_CORROBORATION | `work/flompy/feni_agreement_vs_d3v42.md` |
+| Sep 17 (peak-day Aug-21) | Aug-9/Aug-21 orbit 114 | **0.086** | **NO_CORROBORATION** | `work/flompy_aug21_result.json` |
+
+**FLOMPY codebase:** `work/flompy/` — includes `FLOMPY_env.yml`, algorithm code, run scripts
+**FLOMPY masks:** `work/flompy/feni_flompy_mask.tif`, `work/flompy/feni_flompy_mask_dedicated.tif`
+
+Confirmed: timing hypothesis falsified. Two independent SAR algorithms detect the Feni flood but disagree on spatial extent by 86%. G3 gate correctly requires analyst review.
+
+---
+
+## 9. Forecast System (LightGBM F5)
+
+**Branch A (SAR-anchored)** + **Branch B (GloFAS)** dual-branch model.
+- Expansion-phase F1: 0.19 · Accuracy: 0.975
+- Branch-B GloFAS data: `work/forecast/` — `fc_y2024_oper_ctrl.nc`, monthly discharge files
+- GloFAS credentials: `~/.cdsapirc` (EWDS endpoint, working)
+- **go-before timestamps:** labeled "estimate · pending recalibration" in all frontend surfaces
+
+---
+
+## 10. CAP Alert Engine
+
+**Primary file:** `work/alert/cap_engine.py`
+**XSD:** `work/alert/cap_1.2.xsd`
+**Templates:** `work/alert/templates/`
+**Tests:** `work/alert/approve_feed_tests.py` — 5/5 passing
+**Sample outputs:** `work/alert/feni_draft.cap.xml`, `work/alert/feni_no_safe_route_draft.cap.xml`
+**Audit log:** `work/alert/audit/`
+
+Gate 4 (`confidence_class`) reads from FloodPolygon schema — **confirmed independent of Branch-A bands**.
+go-before calculation uses `forecast_bands.lower` — **affected by A1 but not a gate blocker**.
+
+**Replay results:** `work/eval/replay/` — 4 events, Feni 0/7 false alarms.
+
+---
+
+## 11. EVE Routing
+
+**Scripts:** `work/eve/build_feni_routes_v2.py`
+**Road graphs:** `work/eve/roads/` (3 pilot areas: Feni/Khowai, Khulna south, Bhola/Kutubdia)
+**Routes:** `work/eve/routes/`
+**Shelters:** `work/eve/shelters/` — **empty** — LGED/MoDMR data not received
+
+Returns "no safe route" honestly. Shelter routing formally descoped from pilot. Frontend label: "pending LGED/MoDMR data."
+
+---
+
+## 12. Data Contracts
+
+**9 schemas:** `work/contracts/schemas/`
+**Validation:** `work/contracts/validate_bundle.py` — exit 0 on valid bundle
+**Feni replay bundle:** `work/contracts/sample_incidents/feni_2024_replay.json` — validates exit 0
+**Also served at:** `frontend/public/data/feni_2024_replay.json`
+
+---
+
+## 13. Frontend
+
+**Live:** https://kalopathor-hbgo.vercel.app
+**Primary component:** `frontend/app/components/OperationsConsole.tsx` (~1,200 lines)
+**Map config:** `frontend/lib/map-config.ts` — all LayerId types, GIBS/GFM/hazard URL builders
+**Translations:** `frontend/messages/en.json`, `frontend/messages/bn.json`
+
+**Active layers (all wired and serving):**
+
+| Layer | Source | Status | Protocol |
 |---|---|---|---|
-| Sep 1 (annual composite) | 2024 composite vs d3v4.2 | < 0.50 | NO_CORROBORATION |
-| Sep 7 (dedicated pair) | Aug-16 (pre) / Aug-28 (post-recession) | < 0.50 | NO_CORROBORATION |
-| Sep 17 (peak-day pair) | Aug-9 (pre) / Aug-21 (flood peak) | **0.086** | **NO_CORROBORATION** |
+| Satellite basemap | NASA GIBS VIIRS | ✅ Live | `gibs://` custom |
+| Copernicus GFM | geoserver.gfm.eodc.eu | ✅ Live | `gfm://` custom |
+| NASA MCDWD | NASA GIBS | ✅ Live | `gibs://` |
+| NASA IMERG | NASA GIBS (2km matrix) | ✅ Live (fixed) | `gibs://` |
+| SAR flood polygons | detection_polygons_v4.geojson | Seeded Aug 2024 | GeoJSON |
+| Exposure choropleth | exposure_districts.geojson | Seeded, pop_2024 | GeoJSON |
+| FFWC gauges | ffwc_gauges.geojson | Seeded Aug 2024 | GeoJSON |
+| Rivers/hillshade | rivers_bgd.geojson, hillshade PMTile | Cached | PMTiles |
+| Erosion transects | erosion_layer.geojson | Cached | GeoJSON |
+| Erosion banklines | erosion_banklines.geojson | Cached 2016–2021 | GeoJSON |
+| Prediction t1–t7 | 48 PMTiles | Seeded Jun–Aug 2024 | PMTiles |
+| Uncertainty t+5 | uncertainty_t5.pmtiles | Seeded | PMTiles |
+| Landslide susceptibility | landslide_cog.tif | Cached static | `hazard://` custom |
+| TVDI drought 2024 | tvdi_cog.tif | Cached static | `hazard://` custom |
 
-The Aug-21 run is the correct dedicated pair (flood peak day, orbit 114). The result is confirmed: two independent SAR flood detection algorithms detect the same flood event but disagree on spatial extent by 86%. This is not a timing issue. GFM (Copernicus) also misses Feni on the dedicated bbox.
-
-**Consequence:** Feni CAP draft remains in `review_required` — human analyst approval required before any alert is issued. This is the gate working correctly. The honest framing: "two SAR algorithms independently detect the Feni flood; they agree an event happened, disagree on where the water is — human review required per design."
-
----
-
-## 8. Forecast System (LightGBM F5)
-
-Dual-branch LightGBM for flood onset probability:
-- **Branch A (SAR-anchored):** Sentinel-1 backscatter history + FFWC gauge anomalies
-- **Branch B (GloFAS):** GloFAS v5 discharge (ECMWF EWDS via CDS API)
-
-**Metrics:** Expansion-phase F1: 0.19 (vs 0.0 persistence floor) · Accuracy: 0.975 · Branch-B coverage t+5/t+7: 91.5% / 89.2%
-
-**Status:** Fitted and producing probability outputs. go-before timestamps derived from `forecast_bands.lower` — labeled provisional until A1 complete.
-
----
-
-## 9. CAP Alert Engine
-
-Complete CAP 1.2 alert drafting and approval pipeline. 5-stage gate:
-1. Schema validation
-2. Exposure gate (no population → no public alert)
-3. G3 multi-signal corroboration (≥2 of: SAR, gauge, GloFAS, FLOMPY)
-4. Confidence class check (review_required → human queue)
-5. Template fork (route availability → evacuation vs shelter-in-place)
-
-Gate 4 reads `confidence_class` from FloodPolygon schema — **confirmed independent of Branch-A bands** (not affected by A1 bug).
-
-**Replay results (4 events):**
-| Event | Lead time | False alarms | Notes |
-|---|---|---|---|
-| Feni 2024 | −150h (post-onset) | 0/7 | All polygons ≥35% inside UNOSAT extent |
-| Haor 2022 | −72h | 70/100 | Permanent haor water — permanent-water problem exposed |
-| Jamuna 2022 | −42h | 3/8 | Channel slivers; moderate trust cost |
-
-All 4 CAP XML drafts XSD-valid. 5/5 test cases passing (including failure paths).
+**GIBS scrubber:** Jun 2024 → Sep 2026 (840 days), GFM date-synced
+**Honesty chips:** LIVE/SEEDED/ESTIMATE/CACHED per layer in LayerSwitcher
+**Stats strip:** 1,199 · 21,954 km² · 20.5M · 115
+**go-before badge:** "estimate · pending recalibration" EN + BN
 
 ---
 
-## 10. EVE Routing
+## 14. Freshness System
 
-Routing engine built and tested. Returns "no safe route" honestly for all current Feni polygons.
-- Road graphs: Feni/Khowai corridor, Khulna south, Bhola/Kutubdia
-- Edge cost: base_time × depth_penalty × road_class × bridge/ferry × confidence
-- Shelter data (LGED/MoDMR/UNDP): **not received** — 3 institutional emails sent, no reply
-- **Decision:** shelter routing scoped out of pilot. Frontend displays "pending LGED/MoDMR data" — explicitly labeled, not hidden
-
----
-
-## 11. Exposure and Gauges
-
-- **Exposure:** 64-district choropleth, WorldPop 2020 base, per-polygon affected_people field (0–768,000 range)
-- **FFWC Gauges:** 115 stations with coordinates, hydrograph time-series (seeded Aug 2024), danger levels per station where available
-- **GloFAS/CDS:** Next-72h forecast via `.cdsapirc`, working
-- **DAHITI/GEOGLAWS validation:** confirmed on 10 stations
+**API route:** `frontend/app/api/freshness/route.ts`
+**Mode:** `seeded` (live loop not yet wired)
+**Config structure:** per-layer `{last_success, status: fresh|stale|failed, stale_after_s}`
+**Badge:** top-right status bar reflects mode honestly
 
 ---
 
-## 12. Frontend — Live State
+## 15. Infrastructure and Credentials
 
-**Live URL:** https://kalopathor-hbgo.vercel.app
-**Deployed:** 2026-09-17, Vercel iad1, build time 41s
-
-### Live satellite layers (genuinely live today)
-| Layer | Status | Source | Latency |
-|---|---|---|---|
-| GIBS VIIRS TrueColor | ✅ Live | NASA EOSDIS | ~24h |
-| Copernicus GFM flood | ✅ Live | geoserver.gfm.eodc.eu | ~1–2 day |
-| NASA MCDWD flood | ✅ Live | NASA GIBS | ~3 day |
-| NASA IMERG rainfall | ✅ Live (capped 2025-10-22) | NASA GIBS | Near-real |
-
-### Seeded data layers
-| Layer | Status | Data source |
+| Resource | Status | Key / Config |
 |---|---|---|
-| SAR flood polygons | Seeded (Aug 2024) | d3v4.2, 1,199 polys, τ=0.5 |
-| FFWC gauges + hydrographs | Seeded (Aug 2024) | Real FFWC scrape |
-| Exposure choropleth | Seeded | WorldPop 2020 |
-| PMTiles prediction rasters | Seeded (10 dates Jun–Jul 2024) | LightGBM Branch-A |
-
-### Frontend changes this session
-- **GFM live layer wired** — custom `gfm://` MapLibre protocol, date-synced with GIBS scrubber, toggle button in status bar
-- **go-before timestamps badged** — "estimate · pending recalibration" in EN+BN on all surfaces
-- **Polygon layer fixed** — was serving v4 (1,461 polys), now v4.2 (1,199 polys, τ=0.5, model_version field)
-- **ops_meta corrected** — polygon_count=1199, threshold=0.5
-- **Honesty chip system** — per-layer LIVE/SEEDED/ESTIMATE/CACHED dots in layer switcher
-- **Stats strip** — persistent bottom bar: 1,199 polygons · 21,954 km² · 20.5M affected · 115 gauges
-- **Prediction ESTIMATE badge** — "calib. pending" amber label on forecast layer
-- **ActionCard provenance footer** — model: d3v4.2 · threshold: τ=0.5 · polygons: 1,199
-- **BN/EN parity** — all new strings translated
-
-### Architecture
-- Next.js 14, MapLibre GL, PMTiles, next-intl (EN/BN)
-- Custom protocols: `pmtiles://` (Protocol from pmtiles), `gibs://` (WMTS tile translator), `gfm://` (WMS-T tile builder)
-- Vercel deployment, project `kalopathor-hbgo`
+| OVH server | ✅ Running | 15.235.143.151, Ubuntu 24.04 |
+| Python venv | ✅ | `/opt/monarq-venv/` |
+| Lightning AI | ✅ 11 credits | `LIGHTNING_API_KEY` in `~/.bashrc` |
+| Modal | ✅ ~$29 remaining | `~/.modal.toml`, `MODAL_TOKEN_ID/SECRET` in `~/.bashrc` |
+| GCS | ✅ Personal ADC | `~/.config/gcloud/application_default_credentials.json` (**expires — swap to SA key**) |
+| GEE | ✅ Headless reads | Via GCP ADC, `work/gee/GEE_AUTH.md` |
+| WireGuard VPN | ✅ Port 51820 | `General/iphone-ovh.conf`, iPhone client |
+| Vercel | ✅ | `VERCEL_TOKEN` in `~/.bashrc`, project `kalopathor-hbgo` |
+| GitHub Private | ✅ `23bfc2e` current | `https://github.com/realsamiul/Kalopathor` |
+| GitHub Public | ✅ `2de6291` current | `https://github.com/realsamiul/Kalopathor-public` |
+| CDS API (GloFAS) | ✅ | `~/.cdsapirc` |
+| NASA Earthdata | ✅ | `~/.netrc` (`mnrq` account) |
+| ASF HyP3 | ✅ | Via Earthdata credentials |
+| Planetary Computer | ✅ | No auth required |
+| DAHITI | ❌ 404 | `DAHITI_API_KEY` in `~/.bashrc` — endpoint changed |
+| GCP VM `kalopathor-prep` | Stopped | n2d-highcpu-16, us-central1-a — start for fast GCS transfers |
 
 ---
 
-## 13. Data Contracts and Schemas
+## 16. Key Artifacts — Quick Reference
 
-9 canonical schemas frozen: `FloodPolygon, ForecastBand, GaugeStation, ExposureSummary, Shelter, Route, Alert, DataFreshness, Event`. All carry `schema_version: 0.1.0`, `model_version: d3v4.2`, `pipeline_version: kalopathor-2026-08-30`. All timestamps ISO-8601 with explicit `+06:00` or UTC. All GeoJSON EPSG:4326.
-
-Feni 2024 replay bundle: complete, validates against `validate_bundle.py` exit 0. Per-field `real/derived/proxy/missing` provenance flags on all fields.
-
----
-
-## 14. Infrastructure
-
-| Resource | Status | Notes |
-|---|---|---|
-| OVH server (15.235.143.151) | ✅ Running | Ubuntu 24.04, 4 CPU, 7.8GB RAM |
-| Lightning AI | ✅ 11 credits remaining | L4 GPU, used ~2.5 GPU-hrs tonight |
-| Modal.com | ✅ ~$29.40 remaining | Used for FLOMPY + A1 refit tonight |
-| GCS bucket | ✅ Authenticated | `monarqlabs-gemini-workspace`, personal ADC restored |
-| WireGuard VPN | ✅ Live | OVH port 51820, iPhone config at `General/iphone-ovh.conf` |
-| Vercel | ✅ Live | `kalopathor-hbgo.vercel.app`, token `vcp_3emKk4...` |
-| GitHub | ✅ | `github.com/realsamiul/Kalopathor` (private) |
-| GCP VM (`kalopathor-prep`) | Stopped | n2d-highcpu-16, us-central1-a, available for fast GCS transfers |
-| Planetary Computer | ✅ | Sentinel-1 RTC STAC verified |
-| GloFAS CDS API | ✅ | `.cdsapirc` at `/root` |
-| AWS Bedrock | ✅ | Claude Sonnet 4.6 / Haiku 4.5 |
-
-**GCS auth caveat:** Current ADC is a personal `authorized_user` token (will expire). Swap to service account key before live Feni loop (item B) is wired for unattended operation.
-
----
-
-## 15. Key Artifacts on Disk
-
-| Path | Contents |
+| What | Path |
 |---|---|
-| `work/checkpoints/d3v4.2_best.pt` | Ops model checkpoint (69MB) |
-| `work/checkpoints/d3v4.2_swa_best.pt` | SWA checkpoint (25MB) |
-| `work/checkpoints/d3v5true_best.pt` | v5true checkpoint — gate fail, not promoted |
-| `work/detection_polygons_v4.2.geojson` | 1,199-polygon ops layer (37MB) |
-| `work/calibration/isotonic_v42.pkl` | Fitted isotonic calibrator |
-| `work/calibration/calib_pixels.npz` | 78M pixel calibration data |
-| `work/a1_true_refit_result.json` | A1 refit result (1/10 publishable) |
-| `work/flompy_aug21_result.json` | FLOMPY Aug-21 peak-day result (IoU 0.086) |
-| `work/forecast/f5_mapie_bands_onesided.parquet` | Conformal bands (156MB) |
-| `work/alert/cap_engine.py` | CAP 1.2 drafting engine |
-| `work/contracts/` | 9 canonical schemas + Feni replay bundle |
-| `work/usability/` | E1 kit: recruiter brief, BN session script, punchlist |
-| `work/METHODOLOGY_PAGE_COPY_2026-09-17.md` | "What's Real" page copy, ready to deploy |
-| `frontend/public/data/detection_polygons_v4.geojson` | v4.2 layer served to frontend |
-| `frontend/public/data/ffwc_gauges.geojson` | 115 stations |
-| `frontend/public/data/pmtiles/` | 10 dated prediction rasters |
+| **OPS MODEL checkpoint** | `work/checkpoints/d3v4.2_best.pt` |
+| **OPS MODEL SWA** | `work/checkpoints/d3v4.2_swa_best.pt` |
+| Polygon source (master) | `work/detection_polygons_v4.2.geojson` |
+| Polygon (served) | `frontend/public/data/detection_polygons_v4.geojson` |
+| Feni replay bundle | `work/contracts/sample_incidents/feni_2024_replay.json` |
+| Isotonic calibrator | `work/calibration/isotonic_v42.pkl` |
+| A1 refit result | `work/a1_true_refit_result.json` |
+| FLOMPY Aug-21 result | `work/flompy_aug21_result.json` |
+| Sirajganj inference | `work/sirajganj_inference_2019.json` |
+| Band data (primary) | `work/forecast/f5_mapie_bands_onesided.parquet` |
+| CAP engine | `work/alert/cap_engine.py` |
+| Bundle validator | `work/contracts/validate_bundle.py` |
+| Live pipeline | `work/live/live_feni_pipeline.py` + `work/live/watch.py` |
+| Neg-control runner | `work/scripts/eval_negative_control.py` |
+| Multi-hazard stub | `work/scripts/multi_hazard_alert.py` |
+| E1 usability kit | `work/usability/` (4 files) |
+| GEE export script | `work/gee/export_dry_vv_median.py` |
+| Training chips | `/mnt/data/chips6_export/chips6.npy` |
+| Dry-season composite | `/mnt/data/kalopathor-gcs/raw/dry_vv_median_bgd.tif` |
 
 ---
 
-## 16. Acceptance Bar — Current Status
+## 17. Acceptance Bar — Current Status
 
 | Gate | Status |
 |---|---|
 | SAR detection at 30m over Bangladesh | ✅ |
-| Flood polygons with district attribution and area | ✅ |
-| Population exposure per polygon | ✅ |
+| Flood polygons with district attribution | ✅ |
+| Population exposure per polygon | ✅ (updated to 2024) |
 | CAP draft engine (XSD-valid, bilingual) | ✅ |
-| Gauge integration | ✅ Seeded; live loop scripts ready |
-| Live satellite imagery | ✅ GIBS + GFM live |
-| Routing to shelters | 🟡 Engine built; shelter data pending |
-| Live automated ingestion | 🟡 Scripts exist; not wired end-to-end |
-| Government user has tested the system | ❌ E1 not started |
-
-**6.5/8 on acceptance bar.** Items 7–8 have non-technical lead times (institutional data, recruiting).
-
----
-
-## 17. Outstanding — Priority Order
-
-### Technical (can be done without Sam)
-| # | Item | Effort | Blocks |
-|---|---|---|---|
-| 1 | **Live ingestion loop wiring** — `watch.py` → inference → `freshness.json` → PMTiles refresh | ~1 day | After A1 |
-| 2 | **A1 full resolution** — currently 1/10 publishable; remaining 9 deciles need RAPS/APS conformal or better onset definition | ~1 day | Confidence language |
-| 3 | **GCS service account key** — swap personal ADC token | 15 min | Live loop reliability |
-| 4 | **CAP lifecycle screen** — replace stub with real designed view | ~1 day | Demo quality |
-| 5 | **FLOMPY root cause** — try 10th-percentile dry reference, restrict to Feb only | ~2 hrs | G3 corroboration |
-| 6 | **Methodology page** — copy written, needs a Next.js route | ~1 hr | — |
-
-### Sam actions
-| # | Item | Time |
-|---|---|---|
-| 1 | E1 usability recruitment — send recruiter brief | 30 min to send, weeks to land |
-| 2 | AWS/GCP submission — fill `[SAM NEEDS TO FILL]` tags in repo | 30 min |
-| 3 | GCS service account key — GCP Console → `kalopathor-ml` SA → Storage Object Admin | 5 min |
-| 4 | MoDMR/LGED shelter data — escalate or formally scope out | Decision |
+| Gauge integration | ✅ seeded |
+| Live satellite imagery | ✅ GIBS + GFM + MCDWD + IMERG |
+| Routing to shelters | 🟡 engine built, shelter data pending |
+| Live automated ingestion | 🟡 scripts ready, not wired |
+| Government user tested | ❌ E1 not started |
 
 ---
 
@@ -343,187 +635,140 @@ Feni 2024 replay bundle: complete, validates against `validate_bundle.py` exit 0
 | Capability | Flood Hub | Kalopathor |
 |---|---|---|
 | SAR-based flood detection | ❌ optical + statistical | ✅ Sentinel-1 30m |
-| Dry-season CHANGE channel | ❌ | ✅ (suppresses permanent water) |
+| Dry-season CHANGE channel | ❌ | ✅ suppresses permanent water |
 | Per-polygon confidence class | ❌ black box | ✅ 5-class with evidence trail |
-| CAP 1.2 alert drafts | ❌ | ✅ XSD-valid, bilingual EN/BN |
-| Evacuation routing engine | ❌ | 🟡 Built, shelter data pending |
-| Bengali UI | ❌ | ✅ Full BN parity |
-| Honesty doctrine (structural) | ❌ | ✅ Every claim measured and scoped |
-| Audit trail per alert | ❌ | ✅ Immutable append-only log |
-| Live satellite + GFM overlay | ❌ | ✅ Both wired and live |
-| Temporal flood scrubber | ❌ | ✅ 10 dated rasters, GIBS+GFM synced |
-
-Flood Hub advantage: fully live, wider gauge network, global coverage, institutional deployment. Kalopathor advantage: SAR detection depth, routing engine, honesty architecture, Bengali-first design, temporal scrubber.
+| CAP 1.2 alert drafts | ❌ | ✅ XSD-valid, bilingual |
+| Bengali UI | ❌ | ✅ full BN parity |
+| Honesty chips per layer | ❌ | ✅ LIVE/SEEDED/ESTIMATE/CACHED |
+| Temporal flood scrubber | ❌ | ✅ 840 days, all horizons, GFM-synced |
+| River erosion animation | ❌ | ✅ Jamuna/Meghna/Padma 2016–2021 |
+| Landslide + drought layers | ❌ | ✅ CHT landslide, Barind TVDI |
+| Audit trail per alert | ❌ | ✅ immutable append-only log |
 
 ---
 
-## 19. Honesty Doctrine — Current Compliance
+## 19. Honesty Doctrine — Compliance Record
 
-The system has a structural honesty requirement: every claim must be measured, scoped, and disclosed. Evidence of doctrine holding under pressure this session:
-
-- **A1 0/10 deciles** — reported as failure, not smoothed over
-- **v5true gate fail** — not promoted despite marginal tripwire improvement; neg-control failure documented with root cause hypothesis
-- **FLOMPY 0.086 IoU** — confirmed on the correct peak-day pair; reported as NO_CORROBORATION, not re-run until a better result appeared
-- **CHANGE v2 hypothesis falsified** — documented plainly; investigation of root cause logged
-- **Threshold provenance** — 0.65 docstring error caught and corrected; polygon threshold confirmed 0.5 from launch script
-- **go-before timestamps** — labeled "estimate · pending recalibration" on all frontend surfaces
-- **A1 single-decile claim** — scoped explicitly (1/10 deciles); not generalized to "confidence bands are calibrated"
-- **GFM Feni miss** — disclosed and documented in methodology copy; not hidden
-
-These are not admissions of weakness. They are the system working as designed.
+- **FLOMPY 0.086 IoU** — reported plainly, not re-run until a better result appeared ✅
+- **v5true FPR 0.335→0.611** — gate failure documented with root cause, not promoted ✅
+- **A1 0/10 → 1/10** — prior cross-model bug documented, fix confirmed ✅
+- **Threshold 0.65 docstring error** — caught and corrected ✅
+- **go-before timestamps** — labeled "estimate · pending recalibration" everywhere ✅
+- **CHANGE v2 hypothesis** — formally falsified, root cause logged ✅
+- **A1 single-decile claim** — scoped (1/10 only), never generalised ✅
 
 ---
 
-## 20. For the MBA/Investor Audience This Week
+## 20. Session Updates — 2026-09-17
 
-**What to lead with:** 5,340 training chips, 3 flood events, 41-minute training time, 1,199 real polygons across 8 divisions, zero false alarms on the Feni validation event, live satellite imagery, bilingual.
+### GCS Credentials Restored
+ADC written from `gcloud auth describe` refresh token. Persisted at `~/.config/gcloud/application_default_credentials.json`. **Expires — swap to service account before live loop.**
 
-**What to have ready if asked:** FLOMPY corroboration failed on the Feni event — algorithms agree a flood happened, disagree on extent, human review required by design. This is a feature, not a bug. Don't volunteer; don't deny.
+### WireGuard VPN
+Server running on OVH port 51820. iPhone config: `General/iphone-ovh.conf`.
 
-**What not to show in UI this week:** the A1 single-decile confidence band (too narrow to render honestly without confusing a non-technical viewer), the FLOMPY/GFM disagreement as a map annotation (same reason), any go-before timestamp without the "estimate" badge.
+### Modal Connected
+`~/.modal.toml` workspace `mortuzamanisha`. Token in `~/.bashrc`. ~$29 remaining.
 
-**The differentiator sentence:** "Google Flood Hub shows you a map. Kalopathor shows you a map, tells you exactly what's real and what isn't, and generates a bilingual CAP alert draft with an immutable audit trail — in Bengali."
+### v5true Retrain — Gate Fail
+Trained on chips6-v2 (dry-season CHANGE v2). Feni tripwire 0.5382 (+0.004) but neg-control FPR 0.335→0.611. Not promoted. v4.2 remains ops.
+
+### FLOMPY Aug-21 — Confirmed NO_CORROBORATION
+Aug-9/Aug-21 orbit 114 pair. IoU 0.086. Timing hypothesis falsified. G3 gate working correctly.
+
+### A1 Refit — 1/10 Publishable
+Cross-model bug fixed. Branch-A native probs, time-blocked split. Brier −52.5%. 1/10 deciles publishable: `[0.8,0.9)` coverage 0.852. Result: `work/a1_true_refit_result.json`.
+
+### Frontend Changes
+- GFM live layer wired (`gfm://` protocol, date-synced)
+- IMERG fixed (250m→2km tile matrix)
+- Scrubber widened Jun 2024→Sep 2026 (840 days)
+- Honesty chip system (LIVE/SEEDED/ESTIMATE/CACHED per layer)
+- Stats strip (polygons · area · affected · gauges)
+- Erosion banklines (Jamuna/Meghna/Padma 2016–2021)
+- Landslide + TVDI layers via `hazard://` protocol
+- Uncertainty PMTile rendered
+- Population updated to WorldPop 2024 100m
+- go-before badge: "estimate · pending recalibration" EN+BN
+- v4.2 polygon layer fixed (was v4.0, 1461 polys → v4.2, 1199 polys, τ=0.5)
+- Vercel deployed: https://kalopathor-hbgo.vercel.app
+
+### Repository State
+- Private: `github.com/realsamiul/Kalopathor` — commit `7248d7b`
+- Public: `github.com/realsamiul/Kalopathor-public` — commit `2de6291`
+- AGENTS.md added to repo root
+
+### multi_hazard_alert.py
+Copied from `~/Opencode/General/Downloads/plans/p7_hazard/multi_hazard_alert.py` → `work/scripts/multi_hazard_alert.py`. Expanded with wiring plan, data source references, honesty note (susceptibility-based, not detected). Future CAP engine input for compound CHT/Barind alerts.
 
 ---
 
 ## 21. Project Structure — Canonical Reference
 
 ### Entry point for all new sessions
-```
-cd /home/ubuntu/General/kalopathor
-cat AGENTS.md
-```
-
-`AGENTS.md` at this level is read automatically by OpenCode and contains:
-credentials, top open items, honesty doctrine, and pointers to the three files
-every new session needs to read before touching anything.
-
-### Directory map (nothing should be moved from these locations)
-
-```
-General/kalopathor/
-├── AGENTS.md                          ← READ FIRST every session
-├── frontend/                          ← Next.js app (served at kalopathor-hbgo.vercel.app)
-│   ├── app/                           ← React components, pages, API routes
-│   ├── lib/                           ← map-config.ts, bundle.ts, freshness.ts
-│   ├── messages/                      ← EN + BN translations
-│   └── public/data/                   ← GeoJSON, PMTiles, ops_meta, hydrographs
-└── work/
-    ├── MASTER_REPORT_2026-09-17.md    ← THIS FILE — complete state reference
-    ├── EXECUTION_PLAN_OPUS5_2026-08-30.md  ← master plan + amendments
-    ├── WAVE_REPORT_2026-09-07.md      ← pre-Sep-17 wave results
-    ├── SESSION_UPDATE_2026-09-17.md   ← this session's changes
-    ├── METHODOLOGY_PAGE_COPY_2026-09-17.md ← "What's Real" page copy
-    ├── a1_true_refit_result.json      ← A1 calibration refit (1/10 publishable)
-    ├── flompy_aug21_result.json       ← FLOMPY Aug-21 result (IoU 0.086)
-    ├── sirajganj_inference_2019.json  ← Sirajganj d3v4.2 inference results
-    ├── checkpoints/                   ← all model checkpoints
-    │   ├── d3v4.2_best.pt             ← OPS MODEL (69MB)
-    │   ├── d3v4.2_swa_best.pt
-    │   ├── d3v5_best.pt               ← same chips, not promoted
-    │   └── d3v5true_best.pt           ← CHANGE v2, gate fail, not promoted
-    ├── calibration/                   ← isotonic_v42.pkl, calib_pixels.npz
-    ├── eval/                          ← neg-control results, replay, sirajganj
-    ├── forecast/                      ← f5_mapie_bands_onesided.parquet
-    ├── alert/                         ← cap_engine.py, approval workflow
-    ├── contracts/                     ← 9 canonical schemas + Feni replay bundle
-    ├── scripts/                       ← eval scripts, multi_hazard_alert.py
-    ├── usability/                     ← E1 kit: recruiter brief, BN script
-    ├── live/                          ← watch.py, live_feni_pipeline.py (B)
-    ├── flompy/                        ← FLOMPY scripts, results
-    ├── gee/                           ← GEE export scripts, auth docs
-    ├── eve/                           ← EVE routing engine
-    ├── fixes/                         ← aux rasters (DEM, HAND, GSW)
-    └── calibration/                   ← A1 scripts and outputs
-
-/mnt/data/
-├── kalopathor-gcs/
-│   ├── raw/                           ← raw S1 chips (83GB), dry composite, aux
-│   ├── tiles/temporal/                ← 48 prediction TIFs (all horizons)
-│   └── vault-2026-08/data_satellite/  ← erosion, glofas, hazard, heat, population
-├── chips6_export/                     ← training chips v6 (25GB)
-├── chips_feni/                        ← Feni 2024 chips (348MB)
-└── chips_sirajganj/                   ← Sirajganj 2019 chips (137MB)
+```bash
+cd /home/ubuntu/General/kalopathor && cat AGENTS.md
 ```
 
-### Files NOT to use as source of truth
-- `General/kalopathor/*.md` (root level, not AGENTS.md) — pre-Sep-17 planning artifacts
-- `/mnt/data/kalopathor-work/` — old Linode structure, largely superseded
-- Any `HANDOFF.md` or `CONTEXT_FOR_AGENT.md` in legacy dirs — contain errors
-
-### Deploy commands (from memory for new sessions)
+### Deploy commands
 ```bash
 # Vercel
 cd /home/ubuntu/General/kalopathor/frontend
 vercel deploy --prod --token $VERCEL_TOKEN --yes
 
-# GitHub push
-cd /tmp/kalopathor-repo  # (clone if missing: git clone https://$GITHUB_TOKEN@github.com/realsamiul/Kalopathor.git /tmp/kalopathor-repo)
+# GitHub push (clone first if needed)
+# git clone https://$GITHUB_TOKEN@github.com/realsamiul/Kalopathor.git /tmp/kalopathor-repo
 rsync -a --delete --exclude='.next' --exclude='node_modules' \
   /home/ubuntu/General/kalopathor/frontend/ /tmp/kalopathor-repo/frontend/
-git -C /tmp/kalopathor-repo add -A && git -C /tmp/kalopathor-repo commit -m "msg"
-git -C /tmp/kalopathor-repo push origin main
+cd /tmp/kalopathor-repo
+git add -A && git commit -m "msg"
+git push origin main
 
-# Lightning studio (CPU for downloads, L4 for training)
+# Lightning: start L4 studio
 python3 -c "
-import os; os.environ['LIGHTNING_API_KEY']=open('/dev/stdin').read().strip()  # from ~/.bashrc
+import os; os.environ['LIGHTNING_API_KEY']='$(grep LIGHTNING_API_KEY ~/.bashrc | head -1 | cut -d= -f2- | tr -d '\"')'
 from lightning_sdk import Teamspace, Studio
-ts = Teamspace(name='sar-flood-response-project', user='skarim')
-s  = Studio(name='flood-model-eval-devbox', teamspace=ts)
+s = Studio(name='flood-model-eval-devbox', teamspace=Teamspace(name='sar-flood-response-project', user='skarim'))
 s.start(machine='L4')
+print(s.status)
 "
 ```
 
 ---
 
-## 22. What Remains — Prioritised
+## 22. What Remains
 
-### Must-do before any external showing
+### Sam actions (critical path this week)
+| # | Item | Time |
+|---|---|---|
+| 1 | **GCS service account key** — GCP Console → IAM → `kalopathor-ml` SA → Storage Object Admin | 15 min |
+| 2 | **E1 usability recruitment** — send `work/usability/RECRUITER_BRIEF.md` | 30 min to send |
+| 3 | **AWS/GCP submissions** — fill `[SAM NEEDS TO FILL]` in repo docs | 30 min |
+
+### Technical (ordered by value)
 | # | Item | Time | Blocks |
 |---|---|---|---|
-| 1 | **GCS service account key** — swap personal ADC for SA key | 15 min | Live loop reliability |
-| 2 | **E1 usability recruitment** — send recruiter brief from `work/usability/` | 30 min to send | Only gap between prototype and "government-usable" |
-| 3 | **AWS/GCP submission tags** — fill `[SAM NEEDS TO FILL]` in repo docs | 30 min | Submission readiness |
-
-### Technical (can be done without Sam, ordered by value)
-| # | Item | Time | Blocks |
-|---|---|---|---|
-| 1 | **A1 full refit** — RAPS/APS conformal for 9 remaining deciles | ~1 day | Confidence language unfrozen |
-| 2 | **Live ingestion loop (B)** — wire `watch.py` → inference → freshness.json → redeploy | ~1 day | After A1 |
-| 3 | **FLOMPY root cause** — try 10th-percentile dry reference, Feb-only window | ~2 hrs | G3 corroboration on Feni |
-| 4 | **CAP lifecycle screen** — replace stub at `/approval` with real designed view | ~1 day | Demo quality |
-| 5 | **Methodology page** — wire `METHODOLOGY_PAGE_COPY_2026-09-17.md` as a `/methodology` route | ~1 hr | Honesty narrative |
-| 6 | **multi_hazard_alert.py** — connect to CAP engine for compound CHT/Barind alerts | ~half day | Future |
-
-### Deliberately deferred (no action this week)
-- CPP field verification (needs MoDMR liaison)
-- Shelter data from LGED/MoDMR (3 emails unanswered — re-scope formally)
-- Sirajganj polygon geometries (inference done, chip coordinates not available without tile transform)
-- v5true CHANGE-channel root fix (dry-season composite too noisy — try Feb-only or 10th percentile)
-- STAC catalog / eoAPI end-state
+| 1 | **A1 full refit** — RAPS/APS conformal for 9 remaining deciles | ~1 day | confidence language |
+| 2 | **Live ingestion loop (B)** — `work/live/watch.py` → inference → `freshness.json` | ~1 day | after A1 |
+| 3 | **CAP lifecycle screen** — replace `frontend/app/[locale]/approval/page.tsx` stub | ~1 day | demo quality |
+| 4 | **Methodology page** — wire `work/METHODOLOGY_PAGE_COPY_2026-09-17.md` as `/methodology` route | ~1 hr | honesty narrative |
+| 5 | **FLOMPY root cause** — try Feb-only or 10th-percentile dry reference | ~2 hrs | G3 corroboration |
+| 6 | **GCS CDN + cache headers** — see Section 23 Tier 1 | ~2 hrs | Bangladesh load time |
 
 ---
 
-## 23. World-Class Frontend Deployment — Infrastructure Plan
+## 23. World-Class Frontend Deployment
 
 ### Current state
 - **Host:** Vercel Edge Network (Washington DC, iad1 primary)
-- **TTFB (Singapore):** 1.29s — acceptable for a US-homed deployment
-- **TTFB (Bangladesh target users):** estimated 2.5–4s — unacceptable for field ops
-- **Total public/ data:** 110MB served from Vercel CDN (static, good)
-- **JS bundle:** ~2.8MB static (reasonable for MapLibre app)
-- **Largest files blocking load:** `detection_polygons_v4.geojson` (16MB), `hillshade_bgd.pmtiles` (20MB), `exposure_districts.geojson` (8.1MB), `rivers_bgd.geojson` (6.4MB)
+- **TTFB (Singapore):** 1.29s — acceptable locally, poor for Bangladesh
+- **TTFB (Dhaka, estimated):** 3–4s — unacceptable for field ops
+- **Largest blocking assets:** `detection_polygons_v4.geojson` 16MB, `hillshade_bgd.pmtiles` 20MB, `exposure_districts.geojson` 8.1MB, `rivers_bgd.geojson` 6.4MB
 
-### The core problem
-Vercel's Edge Network has no PoP in Bangladesh or even South Asia outside Mumbai. A field officer in Feni opening the map waits for a 16MB GeoJSON polygon file to traverse Singapore→US→Singapore before the map renders. That's the real latency problem, not the JS.
+### Tier 1 — This week (~2 hrs, ~$2/month)
 
-### Tier 1 — Do this week (~2 hrs, free or near-free)
-
-#### A. Move large static data to GCS + serve via Cloud CDN
-GCS `asia-south1` (Mumbai) is the closest available Google PoP to Bangladesh (~30ms RTT from Dhaka vs ~250ms to US).
-
+**A. Move large static data to GCS asia-south1 + Cloud CDN**
 ```bash
-# Upload large data files to GCS public bucket
 gsutil -m cp \
   frontend/public/data/detection_polygons_v4.geojson \
   frontend/public/data/exposure_districts.geojson \
@@ -531,157 +776,79 @@ gsutil -m cp \
   frontend/public/data/hillshade_bgd.pmtiles \
   frontend/public/data/erosion_banklines.geojson \
   gs://monarqlabs-gemini-workspace/kalopathor/cdn/
-
-# Make public
 gsutil -m acl ch -r -u AllUsers:R gs://monarqlabs-gemini-workspace/kalopathor/cdn/
-
-# Enable Cloud CDN on the bucket (GCP Console → Cloud CDN → Add origin)
-# Origin: storage.googleapis.com/monarqlabs-gemini-workspace
-# Serves from asia-south1 edge cache
+# Enable Cloud CDN on GCP Console → Cloud CDN → Add origin
 ```
+Expected: Bangladesh TTFB 3–4s → 1.2s.
 
-Update `next.config.mjs` to point large data URLs at GCS:
+**B. Add Vercel cache headers**
 ```js
-// In map config or env:
-DATA_CDN_BASE = "https://storage.googleapis.com/monarqlabs-gemini-workspace/kalopathor/cdn"
+// next.config.mjs — add to headers array:
+{source: '/data/:path*', headers: [{key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=3600'}]}
 ```
+Expected: Repeat visits — map loads in <0.3s.
 
-**Expected impact:** Detection polygon load time: 16MB at ~250ms (Vercel US) → ~30ms (GCS Mumbai). Field user first-render: ~4s → ~1.2s.
-
-#### B. Vercel edge config — add cache headers
-Vercel's default for `public/` assets is `max-age=0, must-revalidate`. The static GeoJSON files never change between deployments. Add:
-
-```js
-// next.config.mjs
-headers: [
-  {
-    source: '/data/:path*',
-    headers: [{key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=3600'}]
-  }
-]
-```
-
-**Impact:** Repeat visitors load map instantly (cached). Bangladesh government offices on repeated use will have sub-500ms map renders.
-
-#### C. GeoJSON → PMTiles for the three large vector files
-The 16MB polygon GeoJSON and 8.1MB exposure GeoJSON should be PMTiles. This reduces initial load to only the tiles in the current viewport (typically 200–500KB) rather than the full file.
-
+**C. Convert polygons + exposure to PMTiles (tippecanoe)**
 ```bash
-# Install tippecanoe (fast GeoJSON → PMTiles)
 sudo apt-get install -y tippecanoe
-
 tippecanoe -o frontend/public/data/pmtiles/detection_polygons.pmtiles \
   -z12 -Z6 --drop-densest-as-needed \
   frontend/public/data/detection_polygons_v4.geojson
-
 tippecanoe -o frontend/public/data/pmtiles/exposure_districts.pmtiles \
   -z8 -Z4 frontend/public/data/exposure_districts.geojson
 ```
+Expected: Initial polygon load 16MB → ~200KB viewport-only.
 
-**Impact:** Map renders the visible viewport instantly. Full polygon set is never downloaded unless the user pans across the whole country.
+### Tier 2 — This month (~4 hrs, ~$3/month)
 
----
-
-### Tier 2 — This month (~4 hrs, nominal cost)
-
-#### D. AWS CloudFront + S3 ap-south-1 (Mumbai)
-AWS has a Mumbai PoP and Bangladesh-direct edge nodes. S3 + CloudFront in ap-south-1 would give ~15ms RTT from Dhaka.
-
+**D. AWS CloudFront + S3 ap-south-1 (Mumbai, ~15ms RTT from Dhaka)**
 ```bash
-# Create S3 bucket in ap-south-1
 aws s3 mb s3://kalopathor-cdn --region ap-south-1
-
-# Upload all public/ data
-aws s3 sync frontend/public/data/ s3://kalopathor-cdn/data/ \
-  --acl public-read --region ap-south-1
-
-# Create CloudFront distribution
-aws cloudfront create-distribution --distribution-config '{
-  "Origins": {"Items": [{"DomainName": "kalopathor-cdn.s3.ap-south-1.amazonaws.com", "Id": "s3-origin"}]},
-  "DefaultCacheBehavior": {"ViewerProtocolPolicy": "redirect-to-https", "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6"},
-  "Enabled": true, "Comment": "Kalopathor data CDN"
-}'
+aws s3 sync frontend/public/data/ s3://kalopathor-cdn/data/ --acl public-read --region ap-south-1
+aws cloudfront create-distribution --distribution-config file://cloudfront-config.json
 ```
 
-**Expected performance:** GeoJSON/PMTiles served from ~15ms RTT. Map first-render for Dhaka user: ~0.8s on 4G.
-
-#### E. Vercel Pro + Asia-Pacific edge function region
-If/when moving to Vercel Pro, set the primary region to `sin1` (Singapore) rather than `iad1`. This halves the API route TTFB for Bangladesh users.
-
+**E. Vercel Pro + sin1 (Singapore) primary region**
 ```json
 // vercel.json
-{
-  "regions": ["sin1"],
-  "functions": {
-    "app/api/**": {"maxDuration": 30}
-  }
-}
+{"regions": ["sin1"], "functions": {"app/api/**": {"maxDuration": 30}}}
 ```
+Cost: ~$20/month.
 
-Cost: ~$20/month on Vercel Pro.
+### Tier 3 — Production (~1 week)
 
----
-
-### Tier 3 — Production deployment (~1 week)
-
-#### F. Custom domain + HTTPS
-Register `kalopathor.gov.bd` (or `.org`) and point to Vercel. Requires institutional partnership or interim use of a `.io`/`.org` domain. Adds legitimacy for government-facing demos.
-
-#### G. GCP Cloud Run — live inference endpoint
-When the live ingestion loop (B) is ready, host the inference service on Cloud Run in `asia-south1`:
-
-```dockerfile
-# Dockerfile
-FROM python:3.11-slim
-COPY work/checkpoints/d3v4.2_best.pt /app/
-COPY work/ /app/work/
-RUN pip install torch segmentation-models-pytorch rasterio
-CMD ["python", "app/work/live/live_feni_pipeline.py", "--serve"]
-```
-
+**F. Cloud Run inference endpoint (asia-south1)**
 ```bash
 gcloud run deploy kalopathor-inference \
-  --region asia-south1 \
-  --image gcr.io/project-300d4e0e-5c73-49bf-b8a/kalopathor-inference \
-  --memory 4Gi --cpu 2 \
+  --region asia-south1 --memory 4Gi --cpu 2 \
   --min-instances 0 --max-instances 3
 ```
+Cost: ~$0.20/month (1 S1 pass per 6 days).
 
-Cost: ~$0.02/inference run (cold start ~8s, warm ~1s). For 1 S1 pass per 6 days over Bangladesh = ~$0.12/month.
-
-#### H. Upstash Redis — freshness state
-Replace the static `freshness.json` file with an Upstash Redis key that the live pipeline writes to and the `/api/freshness` route reads from. Enables true real-time `mode: live` switching without a redeploy.
-
-```bash
-# In Next.js API route
+**G. Upstash Redis — live freshness state**
+```js
 import { Redis } from '@upstash/redis'
 const redis = Redis.fromEnv()
 const freshness = await redis.get('kalopathor:freshness')
 ```
+Cost: Free tier (10k commands/day).
 
-Cost: Upstash free tier (10,000 commands/day) covers this indefinitely.
+**H. Custom domain** — `kalopathor.gov.bd` or `.org` pointing to Vercel.
 
----
-
-### Performance targets (achievable with Tier 1+2)
+### Performance targets
 
 | Metric | Current | Tier 1 | Tier 1+2 |
 |---|---|---|---|
-| TTFB (Dhaka, 4G) | ~3.5s (est.) | ~1.5s | ~0.8s |
+| TTFB (Dhaka 4G) | ~3.5s | ~1.5s | ~0.8s |
 | First polygon render | ~6s | ~2s | ~1s |
 | Repeat visit (cached) | ~6s | ~0.3s | ~0.2s |
-| JS bundle (gzipped) | ~900KB | ~900KB | ~650KB (split) |
-| Detection polygon load | 16MB / ~4s | 200KB viewport / ~0.3s | 200KB / ~0.15s |
+| Polygon load | 16MB/~4s | ~200KB/~0.3s | ~200KB/~0.15s |
 
-### Cost summary
+### Total cost estimate
 
-| Option | Monthly cost | Implementation |
+| Tier | Monthly | Implementation |
 |---|---|---|
-| Tier 1: GCS CDN + cache headers | ~$2 (GCS egress) | 2 hrs |
-| Tier 1 + PMTiles conversion | ~$2 | 3 hrs |
-| Tier 2: CloudFront ap-south-1 | ~$3 (CloudFront) | 4 hrs |
-| Tier 2 + Vercel Pro sin1 | ~$23 | 1 hr |
-| Tier 3: Cloud Run inference | ~$0.20/month | 1 day |
-| **Full Tier 1+2+3** | **~$28/month** | **~1 week** | 
-
-The Tier 1 changes (GCS CDN + cache headers) are the single highest-value/effort ratio investment available — 2 hrs of work, ~$2/month, cuts Bangladesh user load time by 60%.
+| Tier 1: GCS CDN + headers + PMTiles | ~$2 | 2–3 hrs |
+| Tier 2: CloudFront + Vercel Pro | ~$23 | 4 hrs |
+| Tier 3: Cloud Run + Redis | ~$0.20 | 1 day |
+| **Full** | **~$28/month** | **~1 week** |
