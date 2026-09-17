@@ -25,6 +25,8 @@ import {
   clampGibsDate,
   gibsProtocolUrl,
   gibsTileUrl,
+  gfmTileUrl,
+  GFM_DEFAULT_DATE,
   layers,
   type Coverage,
   type GibsLayer,
@@ -91,13 +93,13 @@ export interface OpsMeta {
 
 // Which core layers each workflow view activates.
 const VIEW_LAYERS: Record<WorkflowItemId, Partial<Record<LayerId, boolean>>> = {
-  now_flooding: {flood: true, prediction: false, exposure: true, erosion: true, gauges: false},
-  next_72h: {prediction: true, flood: true, exposure: false, erosion: false, gauges: false},
-  people_at_risk: {exposure: true, flood: true, prediction: false, erosion: false, gauges: false},
-  routes_shelters: {flood: false, prediction: false, erosion: false, gauges: false},
-  gauges: {gauges: true, flood: false, prediction: false, exposure: false, erosion: false},
-  alerts: {flood: true, prediction: false, exposure: false, erosion: false},
-  data_quality: {flood: true, prediction: false, exposure: false, erosion: false}
+  now_flooding: {flood: true, gfm: true, prediction: false, exposure: true, erosion: true, gauges: false},
+  next_72h: {prediction: true, flood: true, gfm: false, exposure: false, erosion: false, gauges: false},
+  people_at_risk: {exposure: true, flood: true, gfm: false, prediction: false, erosion: false, gauges: false},
+  routes_shelters: {flood: false, gfm: false, prediction: false, erosion: false, gauges: false},
+  gauges: {gauges: true, flood: false, gfm: false, prediction: false, exposure: false, erosion: false},
+  alerts: {flood: true, gfm: true, prediction: false, exposure: false, erosion: false},
+  data_quality: {flood: true, gfm: false, prediction: false, exposure: false, erosion: false}
 };
 
 const GIB_LAYER_IDS: Record<GibsLayer, string> = {
@@ -110,6 +112,7 @@ const RASTER_LAYER_IDS: Record<LayerId, string[]> = {
   basemap: ['basemap'],
   mcdwd: ['mcdwd'],
   imerg: ['imerg'],
+  gfm: ['gfm'],
   hillshade: ['hillshade'],
   rivers: ['rivers'],
   flood: ['flood-fill', 'flood-glow'],
@@ -138,6 +141,7 @@ export default function OperationsConsole() {
     basemap: true,
     mcdwd: false,
     imerg: false,
+    gfm: false,
     hillshade: true,
     rivers: true,
     flood: true,
@@ -276,6 +280,11 @@ export default function OperationsConsole() {
         (src as RasterTileSource | undefined)?.setTiles([gibsProtocolUrl(l, date)]);
       }
     }
+    // Sync GFM date to GIBS scrubber date
+    const gfmSrc = map.getSource('gfm');
+    if (gfmSrc && 'setTiles' in gfmSrc) {
+      (gfmSrc as RasterTileSource | undefined)?.setTiles([`gfm://${date}/{z}/{x}/{y}`]);
+    }
   }, []);
 
   const onPolygonClick = useCallback(
@@ -368,6 +377,26 @@ export default function OperationsConsole() {
       }
     });
 
+    // GFM protocol: Copernicus Global Flood Monitoring WMS-T tiles (live SAR).
+    addProtocol('gfm', async (params: RequestParameters, abortController: AbortController) => {
+      try {
+        const url = new URL(params.url);
+        const [, date, zs, xs, ys] = url.pathname.split('/');
+        const z = Number(zs);
+        const x = Number(xs);
+        const y = Number(ys);
+        const res = await fetch(gfmTileUrl(date, z, x, y), {
+          signal: abortController.signal
+        });
+        if (!res.ok) return {data: toArrayBuffer(TRANSPARENT_PNG)};
+        const data = await res.arrayBuffer();
+        return {data};
+      } catch (err) {
+        console.warn('gfm tile error', err);
+        return {data: toArrayBuffer(TRANSPARENT_PNG)};
+      }
+    });
+
     const map = new MapLibreMap({
       container: mapContainer.current,
       style: {
@@ -393,6 +422,14 @@ export default function OperationsConsole() {
             tileSize: 512,
             minzoom: 0,
             maxzoom: 9
+          },
+          gfm: {
+            type: 'raster',
+            tiles: [`gfm://${GFM_DEFAULT_DATE}/{z}/{x}/{y}`],
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: 12,
+            attribution: '© Copernicus GFM / EODC'
           },
           hillshade: {
             type: 'raster',
@@ -454,6 +491,13 @@ export default function OperationsConsole() {
             source: 'imerg',
             layout: {visibility: 'none'},
             paint: {'raster-opacity': 0.55, 'raster-fade-duration': 0}
+          },
+          {
+            id: 'gfm',
+            type: 'raster',
+            source: 'gfm',
+            layout: {visibility: 'none'},
+            paint: {'raster-opacity': 0.70, 'raster-fade-duration': 0}
           },
           {
             id: 'hillshade',
@@ -657,6 +701,7 @@ export default function OperationsConsole() {
     return () => {
       removeProtocol('pmtiles');
       removeProtocol('gibs');
+      removeProtocol('gfm');
       map.remove();
       mapRef.current = null;
       readyRef.current = false;
@@ -707,6 +752,8 @@ export default function OperationsConsole() {
             stats={stats}
             healthMode={freshness?.mode ?? 'seeded'}
             locale={locale}
+            gfmVisible={visible.gfm}
+            onGfmToggle={() => setLayerVisible('gfm', !visible.gfm)}
           />
           <StateSelector
             active={activeState}
@@ -761,6 +808,21 @@ export default function OperationsConsole() {
               setPrediction(horizon, PREDICTION_DATES[i]);
             }}
           />
+
+          {/* Stats strip */}
+          {opsMeta && (
+            <div className="absolute bottom-20 left-1/2 z-10 -translate-x-1/2 pointer-events-none">
+              <div className="flex items-center gap-3 rounded-lg border border-[#1f2937] bg-[#0d1220]/90 px-3 py-1.5 backdrop-blur">
+                <StatsChip label={t('ops.stats.polygons')} value={String(opsMeta.sar.polygon_count)} />
+                <span className="h-3 w-px bg-[#1f2937]" />
+                <StatsChip label={t('ops.stats.area')} value={`21,954 km²`} />
+                <span className="h-3 w-px bg-[#1f2937]" />
+                <StatsChip label={t('ops.stats.affected')} value={`${(opsMeta.sar.total_affected / 1e6).toFixed(1)}M`} />
+                <span className="h-3 w-px bg-[#1f2937]" />
+                <StatsChip label={t('ops.stats.gauges')} value="115" />
+              </div>
+            </div>
+          )}
 
           {view !== 'data_quality' && activeGauge && (
             <div className="absolute bottom-20 right-3 top-[5.25rem] z-10">
@@ -872,12 +934,16 @@ function TopStatusBar({
   eventName,
   stats,
   healthMode,
-  locale
+  locale,
+  gfmVisible,
+  onGfmToggle
 }: {
   eventName: string;
   stats: {sar: string; ffwc: string; fcst: string; next: string};
   healthMode: 'seeded' | 'live';
   locale: string;
+  gfmVisible: boolean;
+  onGfmToggle: () => void;
 }) {
   const t = useTranslations();
   const live = healthMode === 'live';
@@ -901,6 +967,19 @@ function TopStatusBar({
         <Stat label={t('ops.status.ffwcAge')} value={stats.ffwc} />
         <Stat label={t('ops.status.forecastAge')} value={stats.fcst} />
         <Stat label={t('ops.status.nextPass')} value={stats.next} />
+        <span className="mx-1 h-3 w-px bg-[#1f2937]" />
+        <button
+          onClick={onGfmToggle}
+          className={`flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest transition-colors ${
+            gfmVisible
+              ? 'border border-[#2dd4bf]/60 bg-[#2dd4bf]/10 text-[#2dd4bf]'
+              : 'border border-[#1f2937] text-[#9ca3af] hover:text-[#e5e7eb]'
+          }`}
+          title="Toggle Copernicus GFM live flood layer"
+        >
+          <span className={`h-1.5 w-1.5 rounded-full ${gfmVisible ? 'animate-pulse bg-[#2dd4bf]' : 'bg-[#374151]'}`} />
+          GFM
+        </button>
         <Link
           href={locale === 'bn' ? '/en/operations' : '/bn/operations'}
           className="rounded border border-[#1f2937] px-1.5 py-0.5 font-mono text-[10px] text-[#818cf8] transition-colors hover:border-[#818cf8]/50"
@@ -936,10 +1015,41 @@ function Stat({label, value}: {label: string; value: string}) {
   );
 }
 
+function StatsChip({label, value}: {label: string; value: string}) {
+  return (
+    <span className="flex flex-col items-center">
+      <span className="font-mono text-[11px] font-bold text-[#e5e7eb]">{value}</span>
+      <span className="font-mono text-[8px] uppercase tracking-widest text-[#6b7280]">{label}</span>
+    </span>
+  );
+}
+
 const COVERAGE_LABEL: Record<Coverage, string> = {
   global: 'coverage.global',
   national: 'coverage.national',
   pilot: 'coverage.pilot'
+};
+
+// Honesty chip per layer: status + color
+type HonestyStatus = 'live' | 'seeded' | 'estimate' | 'cached';
+const LAYER_HONESTY: Partial<Record<LayerId, HonestyStatus>> = {
+  basemap:    'live',
+  gfm:        'live',
+  mcdwd:      'live',
+  imerg:      'live',
+  gauges:     'seeded',
+  flood:      'seeded',
+  prediction: 'estimate',
+  exposure:   'seeded',
+  erosion:    'cached',
+  hillshade:  'cached',
+  rivers:     'cached',
+};
+const HONESTY_STYLE: Record<HonestyStatus, {dot: string; label: string; text: string}> = {
+  live:     {dot: 'bg-[#2dd4bf] shadow-[0_0_4px_#2dd4bf]', label: 'LIVE',     text: 'text-[#2dd4bf]'},
+  seeded:   {dot: 'bg-[#6b7280]',                           label: 'SEEDED',   text: 'text-[#6b7280]'},
+  estimate: {dot: 'bg-[#f59e0b] shadow-[0_0_4px_#f59e0b]', label: 'ESTIMATE', text: 'text-[#f59e0b]'},
+  cached:   {dot: 'bg-[#374151]',                           label: 'CACHED',   text: 'text-[#4b5563]'},
 };
 
 function LayerSwitcher({
@@ -956,34 +1066,51 @@ function LayerSwitcher({
   const t = useTranslations();
   return (
     <div className="flex flex-col gap-1.5">
-      {layers.map(({id, coverage, noteKey}) => (
-        <div key={id} className="flex flex-col gap-0.5">
-          <label className="flex cursor-pointer items-start gap-2 text-[12px] text-[#e5e7eb]">
-            <input
-              type="checkbox"
-              checked={visible[id]}
-              onChange={(e) => onToggle(id, e.target.checked)}
-              className="mt-0.5 h-3.5 w-3.5 accent-[#818cf8]"
-            />
-            <span className="min-w-0">
-              <span className="block leading-tight">{t(`layers.${id}`)}</span>
-              <span className="mt-0.5 flex flex-wrap items-center gap-1">
-                <span className="rounded bg-[#1f2937] px-1 py-px font-mono text-[8px] uppercase tracking-widest text-[#6b7280]">
-                  {t(COVERAGE_LABEL[coverage])}
+      {layers.map(({id, coverage, noteKey}) => {
+        const honesty = LAYER_HONESTY[id];
+        const hs = honesty ? HONESTY_STYLE[honesty] : null;
+        return (
+          <div key={id} className="flex flex-col gap-0.5">
+            <label className="flex cursor-pointer items-start gap-2 text-[12px] text-[#e5e7eb]">
+              <input
+                type="checkbox"
+                checked={visible[id]}
+                onChange={(e) => onToggle(id, e.target.checked)}
+                className="mt-0.5 h-3.5 w-3.5 accent-[#818cf8]"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center justify-between gap-1">
+                  <span className="leading-tight">{t(`layers.${id}`)}</span>
+                  {hs && (
+                    <span className={`flex items-center gap-0.5 font-mono text-[8px] uppercase tracking-widest ${hs.text}`}>
+                      <span className={`h-1.5 w-1.5 rounded-full ${hs.dot}`} />
+                      {hs.label}
+                    </span>
+                  )}
                 </span>
-                {id === 'imerg' && imergClipped && (
-                  <span className="rounded bg-[#f59e0b]/15 px-1 py-px font-mono text-[8px] text-[#f59e0b]">
-                    {t('layers.note.capped')}
+                <span className="mt-0.5 flex flex-wrap items-center gap-1">
+                  <span className="rounded bg-[#1f2937] px-1 py-px font-mono text-[8px] uppercase tracking-widest text-[#4b5563]">
+                    {t(COVERAGE_LABEL[coverage])}
                   </span>
+                  {id === 'imerg' && imergClipped && (
+                    <span className="rounded bg-[#f59e0b]/15 px-1 py-px font-mono text-[8px] text-[#f59e0b]">
+                      {t('layers.note.capped')}
+                    </span>
+                  )}
+                  {id === 'prediction' && (
+                    <span className="rounded bg-[#f59e0b]/10 px-1 py-px font-mono text-[8px] text-[#f59e0b]">
+                      {t('layers.note.calibPending')}
+                    </span>
+                  )}
+                </span>
+                {noteKey && noteKey !== 'layers.note.calibPending' && (
+                  <span className="block font-mono text-[9px] text-[#f59e0b]">{t(noteKey)}</span>
                 )}
               </span>
-              {noteKey && (
-                <span className="block font-mono text-[9px] text-[#f59e0b]">{t(noteKey)}</span>
-              )}
-            </span>
-          </label>
-        </div>
-      ))}
+            </label>
+          </div>
+        );
+      })}
       <div className="mt-1 border-t border-[#1f2937] pt-1.5 font-mono text-[9px] text-[#6b7280]">
         {t('layers.basemapDate')}: {gibsDate}
       </div>

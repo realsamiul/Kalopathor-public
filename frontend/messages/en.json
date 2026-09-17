@@ -16,6 +16,12 @@
     "subtitle": "Bangladesh flood monitoring & forecast console",
     "nextPass": "Next S1 pass",
     "lastObs": "Last observation",
+    "stats": {
+      "polygons": "polygons",
+      "area": "area",
+      "affected": "affected",
+      "gauges": "gauges"
+    },
     "status": {
       "livePilot": "LIVE PILOT · FENI",
       "designPreview": "DESIGN PREVIEW · NATIONAL COVERAGE ROADMAP",
@@ -120,6 +126,7 @@
         "review_required": "Review required"
       },
       "criticalWindow": "Move before {time} BDT",
+      "goBeforeEstimate": "estimate · pending recalibration",
       "affectedPeople": "Affected people",
       "people": "people",
       "recommendedAction": "Recommended action",
@@ -154,7 +161,10 @@
       "capDraft": "CAP draft",
       "openApproval": "Open approval flow",
       "evidenceTrail": "Why this advisory",
-      "sarPass": "SAR pass {date}"
+      "sarPass": "SAR pass {date}",
+      "modelVersion": "model",
+      "threshold": "threshold",
+      "polygonCount": "polygons"
     }
   },
   "layers": {
@@ -179,6 +189,8 @@
     },
     "note": {
       "gapFiller": "optical/cloud-limited",
+      "live": "Copernicus live SAR",
+      "calibPending": "calib. pending",
       "capped": "no data past 2025-10-22",
       "forecastSource": "Open-Meteo · 10-day river forecast"
     }

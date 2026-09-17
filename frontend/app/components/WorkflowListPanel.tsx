@@ -334,7 +334,7 @@ export default function WorkflowListPanel({
             {a.district} · {t(`ops.card.confidence.${a.confidence_class}`)}
           </div>
           <div className="mt-0.5 font-mono text-[9px] text-[#6b7280]">
-            {t('ops.lists.status')}: {a.status} · {a.go_before}
+            {t('ops.lists.status')}: {a.status} · {a.go_before} <span className="text-[#f59e0b]/70">({t('ops.card.goBeforeEstimate')})</span>
           </div>
           <div className="mt-1 text-[10px] text-[#e5e7eb]">
             {a.messages?.en?.subject ?? ''}

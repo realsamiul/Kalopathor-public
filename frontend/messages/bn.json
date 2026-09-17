@@ -16,6 +16,12 @@
     "subtitle": "বাংলাদেশ বন্যা পর্যবেক্ষণ ও পূর্বাভাস কনসোল",
     "nextPass": "পরবর্তী S1 পাস",
     "lastObs": "সর্বশেষ পর্যবেক্ষণ",
+    "stats": {
+      "polygons": "পলিগন",
+      "area": "এলাকা",
+      "affected": "ক্ষতিগ্রস্ত",
+      "gauges": "গেজ"
+    },
     "status": {
       "livePilot": "লাইভ পাইলট · ফেনী",
       "designPreview": "ডিজাইন প্রিভিউ · জাতীয় কভারেজ রোডম্যাপ",
@@ -120,6 +126,7 @@
         "review_required": "পর্যালোচনা প্রয়োজন"
       },
       "criticalWindow": "{time} BDT-এর আগে রওনা হোন",
+      "goBeforeEstimate": "অনুমান · পুনর্ক্যালিব্রেশন অপেক্ষমাণ",
       "affectedPeople": "ক্ষতিগ্রস্ত জনসংখ্যা",
       "people": "জন",
       "recommendedAction": "প্রস্তাবিত পদক্ষেপ",
@@ -154,7 +161,10 @@
       "capDraft": "CAP খসড়া",
       "openApproval": "অনুমোদন ফ্লো খুলুন",
       "evidenceTrail": "কেন এই সতর্কতা",
-      "sarPass": "SAR পাস {date}"
+      "sarPass": "SAR পাস {date}",
+      "modelVersion": "মডেল",
+      "threshold": "থ্রেশহোল্ড",
+      "polygonCount": "পলিগন"
     }
   },
   "layers": {
@@ -179,6 +189,8 @@
     },
     "note": {
       "gapFiller": "অপটিক্যাল/মেঘ-সীমিত",
+      "live": "কোপার্নিকাস লাইভ SAR",
+      "calibPending": "ক্যালিব. অপেক্ষমাণ",
       "capped": "২০২৫-১০-২২-এর পরে কোনো ডেটা নেই",
       "forecastSource": "Open-Meteo · ১০ দিনের নদী পূর্বাভাস"
     }

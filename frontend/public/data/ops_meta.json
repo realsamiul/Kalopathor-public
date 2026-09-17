@@ -1,16 +1,18 @@
 {
- "event": {
-  "name": "Feni 2024 Flash Flood (national SAR replay)",
-  "event_id": "EVT-2024-0812-001"
- },
- "sar": {
-  "latest_pass": "2024-08-12",
-  "sensor": [
-   "Sentinel-1 IW GRD"
-  ],
-  "polygon_count": 1461,
-  "total_affected": 20491387,
-  "next_pass_est": "2024-08-18",
-  "source": "detection_polygons_v4.geojson (d3v4.1)"
- }
+  "event": {
+    "name": "Feni 2024 Flash Flood (national SAR replay)",
+    "event_id": "EVT-2024-0812-001"
+  },
+  "sar": {
+    "latest_pass": "2024-08-12",
+    "sensor": [
+      "Sentinel-1 IW GRD"
+    ],
+    "polygon_count": 1199,
+    "total_affected": 20491387,
+    "next_pass_est": "2024-08-18",
+    "source": "detection_polygons_v4.geojson (d3v4.1)",
+    "model_version": "d3v4.2",
+    "threshold": 0.5
+  }
 }

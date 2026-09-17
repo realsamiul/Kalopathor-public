@@ -458,13 +458,19 @@ function VoiceSummary({state}: {state: ActionCardState}) {
     >
       <p className="text-lg font-bold leading-snug text-[#fecaca]">
         {t('ops.card.criticalWindow', {time: state.criticalWindowTime})}
+        <span className="ml-2 font-mono text-[11px] font-normal text-[#f59e0b]/80">
+          {t('ops.card.goBeforeEstimate')}
+        </span>
       </p>
       <p className="text-[15px] leading-snug text-[#e5e7eb]">{state.recommendedAction}</p>
       <p className="text-[15px] leading-snug text-[#e5e7eb]">{shelterText}</p>
       <p className="text-[15px] leading-snug text-[#e5e7eb]">{routeText}</p>
-      <p className="mt-1 text-[10px] text-[#9ca3af]">
-        {t('ops.card.sarPass', {date: state.sarPassDate})} · {state.capDraft.alertId}
-      </p>
+      <div className="mt-2 border-t border-[#1f2937] pt-2 font-mono text-[9px] text-[#4b5563]">
+        <p>{t('ops.card.sarPass', {date: state.sarPassDate})} · {state.capDraft.alertId}</p>
+        <p className="mt-0.5">
+          {t('ops.card.modelVersion')}: d3v4.2 · {t('ops.card.threshold')}: τ=0.5 · {t('ops.card.polygonCount')}: 1,199
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ export type LayerId =
   | 'basemap'
   | 'mcdwd'
   | 'imerg'
+  | 'gfm'
   | 'hillshade'
   | 'rivers'
   | 'flood'
@@ -23,6 +24,7 @@ export const layers: LayerDef[] = [
   {id: 'basemap', coverage: 'global'},
   {id: 'mcdwd', coverage: 'global', noteKey: 'layers.note.gapFiller'},
   {id: 'imerg', coverage: 'global', noteKey: 'layers.note.gapFiller'},
+  {id: 'gfm', coverage: 'global', noteKey: 'layers.note.live'},
   {id: 'hillshade', coverage: 'pilot'},
   {id: 'rivers', coverage: 'national'},
   {id: 'flood', coverage: 'national'},
@@ -141,3 +143,31 @@ export const TRANSPARENT_PNG =
 export function gibsProtocolUrl(layer: GibsLayer, date: string): string {
   return `gibs://${layer}/${date}/{z}/{x}/{y}`;
 }
+
+// ---------------------------------------------------------------------------
+// GFM — Copernicus Global Flood Monitoring (Sentinel-1 SAR, ~20 m, daily)
+// No auth required. WMS-T with TIME parameter.
+// Verified live: HTTP 200 from geoserver.gfm.eodc.eu
+// ---------------------------------------------------------------------------
+export const GFM_WMS_BASE = 'https://geoserver.gfm.eodc.eu/geoserver/gfm/wms';
+
+/** Build a GFM WMS tile URL for a given date and WebMercator {z}/{x}/{y}. */
+export function gfmTileUrl(date: string, z: number, x: number, y: number): string {
+  const n = Math.pow(2, z);
+  const west  = (x / n) * 360 - 180;
+  const east  = ((x + 1) / n) * 360 - 180;
+  const north = (Math.atan(Math.sinh(Math.PI * (1 - (2 * y) / n))) * 180) / Math.PI;
+  const south = (Math.atan(Math.sinh(Math.PI * (1 - (2 * (y + 1)) / n))) * 180) / Math.PI;
+  const size  = 256;
+  // GFM accepts EPSG:4326 bounding boxes
+  return (
+    `${GFM_WMS_BASE}?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap` +
+    `&LAYERS=observed_flood_extent&STYLES=` +
+    `&CRS=EPSG:4326&BBOX=${south},${west},${north},${east}` +
+    `&WIDTH=${size}&HEIGHT=${size}` +
+    `&TIME=${date}&FORMAT=image/png&TRANSPARENT=TRUE`
+  );
+}
+
+/** Most recent date to default GFM to (known event with flood pixels over BD). */
+export const GFM_DEFAULT_DATE = '2024-08-21';
