@@ -6,6 +6,48 @@
 
 ---
 
+## ✅ Status — all issues resolved (2026-09-18)
+
+Every issue below is fixed on branch `arena/01a0b314-kalopathor-public` (`next build` ✓, `next lint` ✓, `tsc --noEmit` ✓):
+
+| # | Fix applied |
+|---|---|
+| C1 | Erosion legend swatch now `#00e5ff` (matches map layer) |
+| C2 | `--shadow-panel-lg` (and `--shadow-panel`) now defined as CSS variables in `:root` — popup shadow works |
+| C3 | All 6 DataQualityPanel row labels moved to `messages/*.json` → `ops.freshness.layers.*` |
+| C4 | Approval page finished as a read-only CAP draft review — "stub"/"not built" copy replaced (`approval.readonly`, `approval.empty*`) |
+| H1 | VoiceSummary model metadata flows from `ops_meta.json` via `modelMeta` prop; line hidden if meta unavailable |
+| H2 | New `--danger-hi` token (rose-200) in `globals.css` + Tailwind; all raw `#fecaca`/`#fca5a5` text replaced |
+| H3 | `TimeScrubber` date formatting uses `useLocale()` (`bn-BD` for Bengali) |
+| H4 | `DARK_BG` deleted; map reads `--ink-0` at runtime via `lib/css.ts#ink0()` |
+| H5 | Legend chevrons swapped (down when collapsed, up when open) |
+| H6 | `BASEMAP_RASTER_PAINT` shared constant in `lib/map-config.ts` used by hero + ops |
+| H7 | Duplicate `ops.status.livePilot` removed from `en.json` |
+| H8 | "Stations above danger" row is now computed from `ffwc_gauges.geojson` (hidden if data unreachable) |
+| M1 | 44px (map overlays) / 36px+ (panel chrome) minimum touch targets across scrubber, legend, chips, selectors |
+| M2 | No readable/secondary text below `text-[10px]` anywhere; most labels bumped to 10–11px |
+| M3 | Panel root divs use `role="region"` so their `aria-label`s are announced |
+| M4 | Both range inputs carry `aria-valuetext` with the formatted date |
+| M5 | GFM toggle added to the mobile "More" sheet |
+| M6 | Freshness stats now shown condensed from `md` (tablet), full set at `lg` |
+| M7 | Gauge chart viewBox is measured/responsive (`ResizeObserver`), min height 150px |
+| M8 | Legend width is `min-w-40 w-auto max-w-56` — no Bangla truncation |
+| M9 | All close buttons use `t('common.close')`, including sheet backdrops and SheetHead |
+| T1 | Skeletons added: ops stats strip, gauge chart placeholder, data-quality rows (all `animate-pulse`) |
+| T2 | Error states with retry: bundle (`BundleErrorState`), gauge hydrograph, freshness panel |
+| T3 | HeroMap failure now renders a retry pill instead of `null` |
+| T4 | framer-motion reduced-motion handled by `<MotionConfig reducedMotion="user">`; CSS reset scoped + documented |
+| T5 | Dead `--ink-3-solid` token removed |
+| T6 | All `console.*` routed through `lib/logger.ts` (no-op in production), incl. a 9th instance the audit missed in `map-protocols.ts` |
+| T7 | All 3 `eslint-disable` blocks removed; dependency arrays fixed — lint fully clean |
+| T8 | `w-panel` / `max-w-state` / `max-h-layers` are Tailwind theme values now |
+| T9 | Evidence trail keyed by content (`component-flag-detailLength`), not index |
+
+Plus: two wrong-script typos fixed in `bn.json` (Arabic→কমলা, Devanagari→অর্জন), and AbortError noise filtered from tile protocols.
+
+---
+
+
 ## Architecture Overview
 
 ```

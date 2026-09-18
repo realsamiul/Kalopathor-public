@@ -87,7 +87,7 @@ function Section({
 }) {
   return (
     <section className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.2em] text-mist-3">
+      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
         <Icon size={12} aria-hidden />
         {label}
       </div>
@@ -96,16 +96,25 @@ function Section({
   );
 }
 
+export interface ModelMeta {
+  model: string;
+  tau: number | null;
+  polygons: number;
+}
+
 export default function ActionCard({
   bundle,
   polygonId,
   onClose,
-  overrides
+  overrides,
+  modelMeta
 }: {
   bundle: Bundle;
   polygonId?: number | null;
   onClose?: () => void;
   overrides?: ActionCardOverrides;
+  /** live model metadata from ops_meta.json — never hardcoded in copy */
+  modelMeta?: ModelMeta;
 }) {
   const t = useTranslations();
   const locale = useLocale();
@@ -116,12 +125,12 @@ export default function ActionCard({
   const meta = CONFIDENCE_META[state.confidenceClass];
 
   return (
-    <div className="flex h-full min-h-0 flex-col" aria-label={t('ops.card.title')}>
+    <div className="flex h-full min-h-0 flex-col" role="region" aria-label={t('ops.card.title')}>
       {/* confidence accent bar */}
       <div className="h-1 w-full shrink-0" style={{background: `linear-gradient(90deg, ${meta.color}, transparent 85%)`}} />
 
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-2.5 sm:px-4">
-        <span className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-mist-3">
+        <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3">
           {t('ops.card.title')}
         </span>
         <div className="flex items-center gap-1.5">
@@ -130,7 +139,7 @@ export default function ActionCard({
             onClick={() => setVoice((v) => !v)}
             aria-pressed={voice}
             title={t('ops.card.voiceMode')}
-            className={`flex items-center gap-1 rounded-md border px-2 py-1 font-mono text-[9px] uppercase tracking-wider transition-colors ${
+            className={`flex min-h-[36px] items-center gap-1 rounded-md border px-2 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
               voice
                 ? 'border-accent2/60 bg-accent2/15 text-accent2'
                 : 'border-line text-mist-3 hover:text-mist-1'
@@ -144,7 +153,7 @@ export default function ActionCard({
               type="button"
               onClick={onClose}
               aria-label={t('common.close')}
-              className="rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:border-line-strong hover:text-mist-1"
+              className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:border-line-strong hover:text-mist-1"
             >
               <X size={13} aria-hidden />
             </button>
@@ -153,7 +162,7 @@ export default function ActionCard({
       </header>
 
       {voice ? (
-        <VoiceSummary state={state} />
+        <VoiceSummary state={state} modelMeta={modelMeta} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 sm:px-4">
           <div
@@ -168,13 +177,13 @@ export default function ActionCard({
 
           <div className="flex items-center justify-center gap-3 rounded-lg border border-danger/35 bg-danger/10 px-3 py-3.5">
             <Clock size={22} className="shrink-0 text-danger" aria-hidden />
-            <p className="text-[19px] font-extrabold leading-tight tracking-tight text-[#fecaca] sm:text-[21px]">
+            <p className="text-[19px] font-extrabold leading-tight tracking-tight text-danger-hi sm:text-[21px]">
               {t('ops.card.criticalWindow', {time: state.criticalWindowTime})}
             </p>
           </div>
 
           {state.badge && (
-            <span className="-mt-2 w-fit rounded bg-ink-3 px-2 py-0.5 font-mono text-[9px] uppercase tracking-widest text-mist-3">
+            <span className="-mt-2 w-fit rounded bg-ink-3 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-mist-3">
               {t(`ops.badge.${state.badge}`)}
             </span>
           )}
@@ -231,7 +240,7 @@ export default function ActionCard({
               aria-expanded={showEvidence}
               className="flex w-full items-center justify-between rounded-lg border border-line px-3 py-2 transition-colors hover:bg-ink-3"
             >
-              <span className="flex items-center gap-2 font-mono text-[9.5px] uppercase tracking-[0.2em] text-mist-3">
+              <span className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
                 <ListTree size={12} aria-hidden />
                 {t('ops.card.evidenceTrail')}
               </span>
@@ -287,7 +296,7 @@ function ShelterBlock({
           ? t('ops.card.capacityUnknown')
           : t('ops.card.capacityKnown', {capacity: capacity ?? '—'})}
         {capacityStatus === 'unknown' && (
-          <span className="ml-1.5 rounded bg-ink-3 px-1 py-px font-mono text-[8.5px] uppercase text-mist-3">
+          <span className="ml-1.5 rounded bg-ink-3 px-1 py-px font-mono text-[10px] uppercase text-mist-3">
             {t('ops.card.provisional')}
           </span>
         )}
@@ -304,13 +313,13 @@ function RouteBlock({state}: {state: RouteState}) {
   if (r.kind === 'none') {
     return (
       <div className="rounded-lg border-2 border-danger bg-danger/10 px-3 py-3">
-        <p className="flex items-center gap-2 text-[14px] font-bold text-[#fecaca]">
+        <p className="flex items-center gap-2 text-[14px] font-bold text-danger-hi">
           <RouteIcon size={15} aria-hidden />
           {t('ops.card.noSafeRoute')}
         </p>
-        <p className="mt-1 text-[12.5px] leading-snug text-[#fca5a5]">{t('ops.card.shelterInPlace')}</p>
+        <p className="mt-1 text-[12.5px] leading-snug text-danger-hi/70">{t('ops.card.shelterInPlace')}</p>
         {r.reasonCodes && r.reasonCodes.length > 0 && (
-          <p className="mt-1.5 font-mono text-[9px] uppercase tracking-wider text-mist-3/80">
+          <p className="mt-1.5 font-mono text-[10px] uppercase tracking-wider text-mist-3/80">
             {r.reasonCodes.join(' · ')}
           </p>
         )}
@@ -329,7 +338,7 @@ function RouteBlock({state}: {state: RouteState}) {
           >
             {passabilityKey && t(passabilityKey)}
           </span>
-          <span className="font-mono text-[9.5px] text-mist-3">
+          <span className="font-mono text-[10px] text-mist-3">
             {r.validUntil && t('ops.card.validUntil', {date: formatDate(r.validUntil)})}
           </span>
         </div>
@@ -383,30 +392,31 @@ function EvidenceTrail({state}: {state: ActionCardState}) {
   };
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-line bg-ink-2/60 px-3 py-2.5">
-      <p className="font-mono text-[9.5px] text-mist-3">
+      <p className="font-mono text-[10px] text-mist-3">
         {t('ops.card.sarPass', {date: state.sarPassDate})} · {state.eventId}
       </p>
-      {state.evidenceTrail.map((e, i) => (
-        <div key={i} className="flex flex-col gap-0.5">
+      {state.evidenceTrail.map((e) => (
+        <div key={`${e.component}-${e.flag}-${e.detail.length}`} className="flex flex-col gap-0.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-mono text-[9.5px] uppercase tracking-wider text-mist-1">{e.component}</span>
+            <span className="font-mono text-[10px] uppercase tracking-wider text-mist-1">{e.component}</span>
             <span
-              className={`rounded px-1.5 py-px font-mono text-[8.5px] uppercase ${
+              className={`rounded px-1.5 py-px font-mono text-[10px] uppercase ${
                 e.flag === 'real' ? 'bg-accent/10 text-accent' : 'bg-est/10 text-est'
               }`}
             >
               {flagLabel[e.flag] ?? e.flag}
             </span>
           </div>
-          <p className="text-[10.5px] leading-snug text-mist-2">{e.detail}</p>
+          <p className="text-[11px] leading-snug text-mist-2">{e.detail}</p>
         </div>
       ))}
     </div>
   );
 }
 
-function VoiceSummary({state}: {state: ActionCardState}) {
+function VoiceSummary({state, modelMeta}: {state: ActionCardState; modelMeta?: ModelMeta}) {
   const t = useTranslations();
+  const locale = useLocale();
   const r = state.route;
   const routeText =
     r.kind === 'none'
@@ -429,7 +439,7 @@ function VoiceSummary({state}: {state: ActionCardState}) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 py-5" aria-live="polite" role="status">
-      <p className="text-[22px] font-extrabold leading-snug tracking-tight text-[#fecaca]">
+      <p className="text-[22px] font-extrabold leading-snug tracking-tight text-danger-hi">
         {t('ops.card.criticalWindow', {time: state.criticalWindowTime})}
         <span className="mt-1 block font-mono text-[11px] font-normal text-est/80">
           {t('ops.card.goBeforeEstimate')}
@@ -438,13 +448,22 @@ function VoiceSummary({state}: {state: ActionCardState}) {
       <p className="text-[16px] leading-snug text-mist-1">{state.recommendedAction}</p>
       <p className="text-[16px] leading-snug text-mist-1">{shelterText}</p>
       <p className="text-[16px] leading-snug text-mist-1">{routeText}</p>
-      <div className="mt-auto border-t border-line pt-3 font-mono text-[9.5px] text-mist-3">
+      <div className="mt-auto border-t border-line pt-3 font-mono text-[10px] text-mist-3">
         <p>
           {t('ops.card.sarPass', {date: state.sarPassDate})} · {state.capDraft.alertId}
         </p>
-        <p className="mt-1">
-          {t('ops.card.modelVersion')}: d3v4.2 · {t('ops.card.threshold')}: τ=0.5 · {t('ops.card.polygonCount')}: 1,199
-        </p>
+        {modelMeta && (
+          <p className="mt-1">
+            {t('ops.card.modelVersion')}: {modelMeta.model}
+            {modelMeta.tau !== null && (
+              <>
+                {' '}
+                · {t('ops.card.threshold')}: τ={modelMeta.tau}
+              </>
+            )}{' '}
+            · {t('ops.card.polygonCount')}: {formatCount(modelMeta.polygons, locale)}
+          </p>
+        )}
       </div>
     </div>
   );

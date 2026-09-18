@@ -23,6 +23,8 @@ const config: Config = {
         ok: 'var(--ok)',
         warn: 'var(--warn)',
         danger: 'var(--danger)',
+        // high-contrast danger text (rose-200) for alerts on dark surfaces
+        'danger-hi': 'var(--danger-hi)',
         est: 'var(--est)'
       },
       fontFamily: {
@@ -37,8 +39,18 @@ const config: Config = {
         panel: '0 8px 32px -12px rgba(0,0,0,.65), 0 2px 8px -4px rgba(0,0,0,.5)',
         'panel-lg': '0 24px 64px -16px rgba(0,0,0,.7), 0 4px 16px -8px rgba(0,0,0,.55)'
       },
+      width: {
+        // desktop operations side panel (action card / gauge / data quality)
+        panel: '380px'
+      },
       maxWidth: {
-        read: '46rem'
+        read: '46rem',
+        // overlay state-selector <select> on the ops map
+        state: '180px'
+      },
+      maxHeight: {
+        // scrollable layer-switcher block inside the workflow rail
+        layers: '42vh'
       }
     }
   },

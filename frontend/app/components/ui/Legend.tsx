@@ -38,7 +38,7 @@ const ITEMS = [
   {key: 'forecast', kind: 'fill' as const, tone: '#f59e0b'},
   {key: 'exposure', kind: 'grad' as const, tone: 'rgba(45,212,191,.5), rgba(245,158,11,.6), rgba(244,63,94,.7)'},
   {key: 'river', kind: 'line' as const, tone: '#60a5fa'},
-  {key: 'erosion', kind: 'dash' as const, tone: '#f97316'},
+  {key: 'erosion', kind: 'dash' as const, tone: '#00e5ff'},
   {key: 'gauges', kind: 'dots' as const, tone: '#2dd4bf|#f59e0b|#f43f5e'},
   {key: 'shelter', kind: 'dots' as const, tone: '#a78bfa'},
   {key: 'route', kind: 'dash' as const, tone: '#2dd4bf'}
@@ -48,20 +48,20 @@ export default function Legend({collapsed: initialCollapsed = false}: {collapsed
   const t = useTranslations();
   const [open, setOpen] = useState(!initialCollapsed);
   return (
-    <div className="glass w-40 overflow-hidden rounded-lg shadow-panel">
+    <div className="glass w-auto min-w-40 max-w-56 overflow-hidden rounded-lg shadow-panel">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between px-2.5 py-1.5 text-left"
+        className="flex min-h-[44px] w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest text-mist-2">
+        <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-mist-2">
           <MapPinned size={12} className="text-accent" aria-hidden />
           {t('legend.title')}
         </span>
         {open ? (
-          <ChevronDown size={12} className="text-mist-3" aria-hidden />
-        ) : (
           <ChevronUp size={12} className="text-mist-3" aria-hidden />
+        ) : (
+          <ChevronDown size={12} className="text-mist-3" aria-hidden />
         )}
       </button>
       {open && (
@@ -69,7 +69,7 @@ export default function Legend({collapsed: initialCollapsed = false}: {collapsed
           {ITEMS.map((it) => (
             <div key={it.key} className="flex items-center gap-2">
               <Swatch kind={it.kind} tone={it.tone} />
-              <span className="text-[10.5px] leading-tight text-mist-2">{t(`legend.${it.key}`)}</span>
+              <span className="text-[11px] leading-tight text-mist-2">{t(`legend.${it.key}`)}</span>
             </div>
           ))}
         </div>

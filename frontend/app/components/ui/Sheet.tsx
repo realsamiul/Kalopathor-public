@@ -1,6 +1,7 @@
 'use client';
 
 import {motion} from 'framer-motion';
+import {useTranslations} from 'next-intl';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import type {CSSProperties, PointerEvent as ReactPointerEvent, ReactNode} from 'react';
 
@@ -38,6 +39,7 @@ export default function Sheet({
   backdrop = true,
   accent = '148 163 184'
 }: SheetProps) {
+  const t = useTranslations();
   const isBottom = side === 'bottom';
   const [snapped, setSnapped] = useState<'peek' | 'expanded'>(isBottom ? 'peek' : 'expanded');
   const [dy, setDy] = useState(0);
@@ -154,7 +156,7 @@ export default function Sheet({
     >
       {backdrop && (
         <motion.button
-          aria-label="close"
+          aria-label={t('common.close')}
           tabIndex={-1}
           initial={{opacity: 0}}
           animate={{opacity: 1}}

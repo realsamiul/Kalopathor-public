@@ -1,5 +1,6 @@
 import {addProtocol, removeProtocol, type RequestParameters} from 'maplibre-gl';
 import {gibsTileUrl, TRANSPARENT_PNG, type GibsLayer} from './map-config';
+import {logger} from './logger';
 
 export function toArrayBuffer(b64: string): ArrayBuffer {
   const bin = atob(b64);
@@ -34,7 +35,7 @@ export function registerGibsProtocol() {
         const data = await res.arrayBuffer();
         return {data};
       } catch (err) {
-        console.warn('gibs tile error', err);
+        if ((err as Error)?.name !== 'AbortError') logger.warn('gibs tile error', err);
         return {data: toArrayBuffer(TRANSPARENT_PNG)};
       }
     }
