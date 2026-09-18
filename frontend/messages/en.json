@@ -2,6 +2,7 @@
   "nav": {
     "story": "The Story",
     "operations": "Operations",
+    "more": "More",
     "title": "কালপাথর · Kalopathor"
   },
   "common": {
@@ -17,6 +18,7 @@
     "nextPass": "Next S1 pass",
     "lastObs": "Last observation",
     "stats": {
+      "title": "Event totals",
       "polygons": "polygons",
       "area": "area",
       "affected": "affected",
@@ -104,7 +106,8 @@
       },
       "alertQueue": "Alert queue",
       "status": "Status",
-      "topN": "top {n} of {total}"
+      "topN": "top {n} of {total}",
+      "qualityHint": "Open Data Quality for layer-by-layer freshness, provenance and model state."
     },
     "card": {
       "title": "Action card",
@@ -199,15 +202,28 @@
       "cached": "2024 dataset",
       "capped": "no data past 2025-10-22",
       "forecastSource": "Open-Meteo · 10-day river forecast"
-    }
+    },
+    "gfm": "Copernicus GFM live flood"
   },
   "legend": {
+    "title": "Legend",
+    "flood": "Flood extent (SAR)",
+    "forecast": "Forecast risk",
+    "exposure": "People exposed",
+    "river": "Rivers",
+    "erosion": "Erosion transects",
+    "gauges": "FFWC gauges",
+    "shelter": "Shelters",
+    "route": "Evacuation route",
     "confirmed": "Confirmed flood (SAR)",
     "predicted": "Predicted flood",
     "receding": "Receding",
-    "erosion": "Bank erosion",
     "highRisk": "High risk",
     "lowRisk": "Low risk"
+  },
+  "time": {
+    "play": "Play timeline",
+    "pause": "Pause timeline"
   },
   "timeline": {
     "past30d": "PAST 30 DAYS",
@@ -221,7 +237,9 @@
     "sarTick": "SAR acquisition",
     "speed": "Speed",
     "imagery": "IMAGERY",
-    "eventPass": "EVENT 2024-08-12"
+    "eventPass": "EVENT 2024-08-12",
+    "roadmap": "Roadmap",
+    "roadmapNote": "forecast tiles not in public build"
   },
   "gauge": {
     "title": "Hydrograph",
@@ -239,9 +257,58 @@
     "prob": "flood probability",
     "peak": "Peak risk"
   },
+  "landing": {
+    "heroBadge": "Sentinel-1 SAR pass · 12 Aug 2024",
+    "heroSubBn": "বাংলাদেশের বন্যা প্রতিরোধের স্যাটেলাইট-চালিত সিস্টেম",
+    "heroSubEn": "Satellite-grade flood intelligence for Bangladesh — sense, predict, alert, act.",
+    "ctaConsole": "Open operations console",
+    "ctaQuality": "Data quality",
+    "heroNote": "Feni 2024 replay · seeded data, honestly labeled",
+    "pipelineTitle": "From radar to decision",
+    "pipelineSub": "Six pinned stages — every step versioned, every claim measurable.",
+    "stage1Title": "SAR capture",
+    "stage1Desc": "Sentinel-1 IW GRD · VV+VH · 30 m",
+    "stage2Title": "Detection",
+    "stage2Desc": "d3v4.2 U-Net · τ=0.5 · 1,199 polygons",
+    "stage3Title": "Forecast",
+    "stage3Desc": "LightGBM + uncertainty bands",
+    "stage4Title": "Exposure",
+    "stage4Desc": "HRSL population overlay",
+    "stage5Title": "Routes & shelters",
+    "stage5Desc": "EVE passability → evacuation",
+    "stage6Title": "Alert (CAP 1.2)",
+    "stage6Desc": "Bilingual draft → human approval",
+    "kpisTitle": "National SAR pass · 12 Aug 2024",
+    "kpiPolygons": "flood polygons",
+    "kpiArea": "flooded area",
+    "kpiPeople": "people affected",
+    "kpiGauges": "FFWC stations",
+    "integrityTitle": "Honest by design",
+    "integritySub": "Nothing is presented as live that isn't.",
+    "integrity1Title": "SEEDED / DEMO",
+    "integrity1Desc": "Replay data is flagged amber everywhere it appears — never a silent green.",
+    "integrity2Title": "LIVE PILOT · FENI",
+    "integrity2Desc": "One district fully real beats twenty half-real. Depth over breadth, on purpose.",
+    "integrity3Title": "EVIDENCE TRAIL",
+    "integrity3Desc": "Every advisory links back to its SAR pass, model version and provenance.",
+    "credits": "NASA GIBS · Copernicus GFM · FFWC · HRSL · MoDMR context"
+  },
   "approval": {
     "stub": "Approval flow · stub",
     "title": "CAP advisory approval",
-    "description": "Analyst review workflow for CAP emission is not built yet. This is the stub the action card routes to. Nothing is emitted one-click."
+    "description": "Analyst review workflow for CAP emission is not built yet. Nothing is emitted one-click.",
+    "cap": "CAP 1.2 · alert draft",
+    "severity": "Severity",
+    "status": "Status",
+    "goBefore": "Go before",
+    "sender": "Sender",
+    "area": "Affected area",
+    "audience": "Audience",
+    "messageBn": "Message · বাংলা",
+    "messageEn": "Message · English",
+    "approve": "Approve & emit",
+    "reject": "Reject",
+    "offline": "Approval flow is not live in the public build — nothing can be emitted from here.",
+    "back": "Back to console"
   }
 }

@@ -1,1 +1,137 @@
-{"count": 1461, "top": [{"polygon_id": 210, "area_km2": 992.6, "district": "Sunamganj", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 276903, "sar_pass_date": "2024-08-12", "lon": 91.35, "lat": 24.75}, {"polygon_id": 968, "area_km2": 981.9, "district": "Sylhet", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 347331, "sar_pass_date": "2024-08-12", "lon": 92.1239, "lat": 25.0183}, {"polygon_id": 197, "area_km2": 817.3, "district": "Kishoreganj", "division": "Dhaka", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 163965, "sar_pass_date": "2024-08-12", "lon": 91.05, "lat": 24.45}, {"polygon_id": 206, "area_km2": 777.2, "district": "Sunamganj", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 267639, "sar_pass_date": "2024-08-12", "lon": 91.05, "lat": 25.0491}, {"polygon_id": 211, "area_km2": 735.0, "district": "Sunamganj", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 353992, "sar_pass_date": "2024-08-12", "lon": 91.35, "lat": 25.0491}, {"polygon_id": 154, "area_km2": 733.8, "district": "Joypurhat", "division": "Rangpur", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 362923, "sar_pass_date": "2024-08-12", "lon": 89.194, "lat": 25.1472}, {"polygon_id": 771, "area_km2": 722.5, "district": "Jessore", "division": "Khulna", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 421787, "sar_pass_date": "2024-08-12", "lon": 89.25, "lat": 23.25}, {"polygon_id": 204, "area_km2": 716.9, "district": "Netrakona", "division": "Mymensingh", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 188851, "sar_pass_date": "2024-08-12", "lon": 91.05, "lat": 24.75}, {"polygon_id": 209, "area_km2": 707.1, "district": "Habiganj", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 88283, "sar_pass_date": "2024-08-12", "lon": 91.35, "lat": 24.45}, {"polygon_id": 28, "area_km2": 706.4, "district": "Thakurgaon", "division": "Rangpur", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 477466, "sar_pass_date": "2024-08-12", "lon": 88.2619, "lat": 25.9301}, {"polygon_id": 768, "area_km2": 705.1, "district": "Jessore", "division": "Khulna", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 577000, "sar_pass_date": "2024-08-12", "lon": 89.25, "lat": 22.9573}, {"polygon_id": 293, "area_km2": 694.1, "district": "Naogaon", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 623564, "sar_pass_date": "2024-08-12", "lon": 88.3748, "lat": 24.75}, {"polygon_id": 190, "area_km2": 666.7, "district": "Mymensingh", "division": "Mymensingh", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 542355, "sar_pass_date": "2024-08-12", "lon": 90.75, "lat": 24.7524}, {"polygon_id": 192, "area_km2": 635.6, "district": "Netrakona", "division": "Mymensingh", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 463847, "sar_pass_date": "2024-08-12", "lon": 90.75, "lat": 25.0219}, {"polygon_id": 346, "area_km2": 619.4, "district": "Bogra", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 265805, "sar_pass_date": "2024-08-12", "lon": 89.25, "lat": 24.7247}, {"polygon_id": 173, "area_km2": 614.7, "district": "Naogaon", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 392557, "sar_pass_date": "2024-08-12", "lon": 88.6005, "lat": 25.0725}, {"polygon_id": 180, "area_km2": 585.9, "district": "Netrakona", "division": "Mymensingh", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 432619, "sar_pass_date": "2024-08-12", "lon": 90.45, "lat": 25.0187}, {"polygon_id": 98, "area_km2": 581.3, "district": "Dinajpur", "division": "Rangpur", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 454562, "sar_pass_date": "2024-08-12", "lon": 88.8992, "lat": 25.549}, {"polygon_id": 298, "area_km2": 517.1, "district": "Naogaon", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 346243, "sar_pass_date": "2024-08-12", "lon": 88.6108, "lat": 24.75}, {"polygon_id": 319, "area_km2": 497.6, "district": "Nawabganj", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 724351, "sar_pass_date": "2024-08-12", "lon": 88.1632, "lat": 24.7332}, {"polygon_id": 851, "area_km2": 488.9, "district": "Comilla", "division": "Chittagong", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 697132, "sar_pass_date": "2024-08-12", "lon": 91.0291, "lat": 23.0938}, {"polygon_id": 452, "area_km2": 486.4, "district": "Mymensingh", "division": "Mymensingh", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 522286, "sar_pass_date": "2024-08-12", "lon": 90.4458, "lat": 24.44}, {"polygon_id": 987, "area_km2": 485.5, "district": "Sylhet", "division": "Sylhet", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 223579, "sar_pass_date": "2024-08-12", "lon": 92.0673, "lat": 24.666}, {"polygon_id": 292, "area_km2": 451.4, "district": "Rajshahi", "division": "Rajshani", "confidence": 0.85, "confidence_class": "observed_medium", "badge": "monitoring", "affected_people": 532169, "sar_pass_date": "2024-08-12", "lon": 88.3593, "lat": 24.4833}]}
+{
+ "source": "derived from detection_polygons_v4.geojson (d3v4.2, τ=0.5) — top 12 by area, regenerated 2026-09-18 for polygon_id alignment",
+ "top": [
+  {
+   "polygon_id": 217,
+   "area_km2": 792.42,
+   "district": "Sunamganj",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 162451,
+   "sar_pass_date": "2024-08-12",
+   "lon": 91.02,
+   "lat": 25.05
+  },
+  {
+   "polygon_id": 210,
+   "area_km2": 766.42,
+   "district": "Kishoreganj",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 98163,
+   "sar_pass_date": "2024-08-12",
+   "lon": 91.02,
+   "lat": 24.46
+  },
+  {
+   "polygon_id": 220,
+   "area_km2": 752.94,
+   "district": "Sunamganj",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 136323,
+   "sar_pass_date": "2024-08-12",
+   "lon": 91.36,
+   "lat": 24.78
+  },
+  {
+   "polygon_id": 212,
+   "area_km2": 735.12,
+   "district": "Netrakona",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 83914,
+   "sar_pass_date": "2024-08-12",
+   "lon": 91.03,
+   "lat": 24.78
+  },
+  {
+   "polygon_id": 207,
+   "area_km2": 723.19,
+   "district": "Netrakona",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 532956,
+   "sar_pass_date": "2024-08-12",
+   "lon": 90.76,
+   "lat": 25.06
+  },
+  {
+   "polygon_id": 202,
+   "area_km2": 704.87,
+   "district": "Mymensingh",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 641523,
+   "sar_pass_date": "2024-08-12",
+   "lon": 90.41,
+   "lat": 25.03
+  },
+  {
+   "polygon_id": 158,
+   "area_km2": 642.98,
+   "district": "Joypurhat",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 153496,
+   "sar_pass_date": "2024-08-12",
+   "lon": 89.19,
+   "lat": 25.15
+  },
+  {
+   "polygon_id": 502,
+   "area_km2": 640.92,
+   "district": "Habiganj",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 64215,
+   "sar_pass_date": "2024-08-12",
+   "lon": 91.37,
+   "lat": 24.52
+  },
+  {
+   "polygon_id": 205,
+   "area_km2": 625.8,
+   "district": "Mymensingh",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 629847,
+   "sar_pass_date": "2024-08-12",
+   "lon": 90.77,
+   "lat": 24.76
+  },
+  {
+   "polygon_id": 3,
+   "area_km2": 622.75,
+   "district": "Thakurgaon",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 336811,
+   "sar_pass_date": "2024-08-12",
+   "lon": 88.31,
+   "lat": 26.02
+  },
+  {
+   "polygon_id": 340,
+   "area_km2": 498.03,
+   "district": "Nawabganj",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 727687,
+   "sar_pass_date": "2024-08-12",
+   "lon": 88.19,
+   "lat": 24.76
+  },
+  {
+   "polygon_id": 423,
+   "area_km2": 484.33,
+   "district": "Bogra",
+   "confidence_class": "observed_medium",
+   "badge": "monitoring",
+   "affected_people": 115270,
+   "sar_pass_date": "2024-08-12",
+   "lon": 89.24,
+   "lat": 24.71
+  }
+ ]
+}
