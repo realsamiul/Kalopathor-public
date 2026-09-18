@@ -852,3 +852,190 @@ Cost: Free tier (10k commands/day).
 | Tier 2: CloudFront + Vercel Pro | ~$23 | 4 hrs |
 | Tier 3: Cloud Run + Redis | ~$0.20 | 1 day |
 | **Full** | **~$28/month** | **~1 week** |
+
+---
+
+## 24. Frontend State — Complete Inventory (as of 2026-09-18)
+
+### Two live deployments
+
+| Version | URL | GitHub | Description |
+|---|---|---|---|
+| **v1** | https://kalopathor-hbgo.vercel.app | `realsamiul/Kalopathor` | Our build — desktop-first, all data layers, full honesty system |
+| **v2** | https://kalopathor-v2.vercel.app | `realsamiul/Kalopathor-v2` | Arena-agent mobile-first rebuild — new UI architecture, same data |
+
+Both pass `npm run build` clean. Both serve all data files (verified HTTP 200).
+
+---
+
+### V1 — `kalopathor-hbgo.vercel.app`
+
+**Architecture:** Single `OperationsConsole.tsx` (~1,200 lines), desktop-first layout, right-panel drawers.
+
+**What's built and working:**
+
+| Feature | File | Status |
+|---|---|---|
+| Full-bleed MapLibre map | `OperationsConsole.tsx` | ✅ |
+| GIBS VIIRS TrueColor (live, daily) | `lib/map-config.ts` `gibs://` protocol | ✅ |
+| GIBS IMERG rainfall (2km matrix, was broken) | `lib/map-config.ts` — fixed 250m→2km | ✅ |
+| GIBS MCDWD flood detection | `lib/map-config.ts` | ✅ |
+| GFM Copernicus live flood layer | `gfm://` custom protocol | ✅ |
+| Date scrubber Jun 2024→Sep 2026 (840 days) | `ImageryScrubber` component | ✅ |
+| GFM synced to GIBS scrubber date | `setGibsDateFor()` callback | ✅ |
+| GFM toggle button in status bar | `TopStatusBar` | ✅ |
+| SAR flood polygons (1,199, v4.2, τ=0.5) | `detection_polygons_v4.geojson` | ✅ |
+| Polygon click → ActionCard | map click handler | ✅ |
+| ActionCard provenance footer | `ActionCard.tsx` | ✅ model/threshold/polygon count |
+| go-before timestamp badge | `ActionCard.tsx` + `WorkflowListPanel.tsx` | ✅ "estimate · pending recalibration" |
+| Exposure choropleth (64 districts, pop 2024) | `exposure_districts.geojson` | ✅ |
+| FFWC gauges (115 stations) | `GaugeDrawer.tsx` | ✅ |
+| Gauge hydrograph drawer | `GaugeDrawer.tsx` | ✅ |
+| Rivers + hillshade | PMTiles | ✅ |
+| Erosion transects (3,003) | `erosion_layer.geojson` | ✅ |
+| Erosion banklines (Jamuna/Meghna/Padma 2016–2021) | `erosion_banklines.geojson` | ✅ |
+| Landslide susceptibility (Chittagong Hill Tracts) | `hazard://` custom protocol | ✅ |
+| TVDI drought 2024 (Barind) | `hazard://` custom protocol | ✅ |
+| Forecast PMTiles t1/t3/t5/t7 (48 dated rasters) | `pmtiles://` protocol | ✅ |
+| Prediction uncertainty t+5 | `uncertainty_t5.pmtiles` | ✅ |
+| Per-layer honesty chips (LIVE/SEEDED/ESTIMATE/CACHED) | `LayerSwitcher` | ✅ |
+| Stats strip (polygons · area · affected · gauges) | `StatsChip` component | ✅ |
+| CAP approval page | `approval/page.tsx` | ⚠️ stub (40 lines) |
+| Methodology page | — | ❌ not built (copy ready in `work/`) |
+| Workflow rail (7 views) | `WorkflowRail.tsx` | ✅ |
+| EN/BN bilingual | `messages/en.json` + `bn.json` | ✅ |
+
+**Fonts:** Static woff2 files — Inter Bold/Regular + JetBrains Mono + Noto Sans Bengali. Total: ~784KB.
+
+**Bundle:** ~2.8MB static JS. Largest chunk: 516KB (MapLibre).
+
+**Known frontend gaps in v1:**
+- CAP approval screen is a 40-line stub — no bilingual CAP preview, no state machine
+- No mobile layout — not tested at 375px
+- No `BottomNav` or `Sheet` — no mobile-first interaction model
+- No hero map on landing page — `StoryContent.tsx` is text only
+- No keyboard shortcuts
+- No URL state (can't share a view via link)
+- No `forecastAvailable` check — scrubber shows even when pmtiles missing
+
+---
+
+### V2 — `kalopathor-v2.vercel.app` (arena-agent rebuild)
+
+**Architecture:** Mobile-first, breakpoint-aware, sheet/drawer system for all screen sizes.
+
+**New components added by arena-agent:**
+
+| Component | File | What it does |
+|---|---|---|
+| `HeroMap` | `app/components/HeroMap.tsx` | Landing page — live GIBS satellite + hero polygons, slow camera drift |
+| `TimeScrubber` | `app/components/TimeScrubber.tsx` | Standalone temporal scrubber extracted from OperationsConsole |
+| `BottomNav` | `app/components/ui/BottomNav.tsx` | Mobile bottom navigation (5 tabs + more) |
+| `TopBar` | `app/components/ui/TopBar.tsx` | Mobile top bar with stats, locale switch, menu |
+| `Sheet` | `app/components/ui/Sheet.tsx` | Draggable bottom sheet (scrim-free — map stays tappable) |
+| `Legend` | `app/components/ui/Legend.tsx` | Map legend with swatches per layer type |
+| `breakpoint.ts` | `lib/breakpoint.ts` | Post-hydration phone/tablet/desktop detection |
+| `map-protocols.ts` | `lib/map-protocols.ts` | GIBS protocol extracted to shared lib (HeroMap + OperationsConsole share it) |
+
+**New capabilities in v2 not in v1:**
+
+| Capability | Implementation |
+|---|---|
+| Mobile-first layout | `useBreakpoint()` → phone=Sheet, tablet=side drawer, desktop=right column |
+| Draggable bottom sheets | `Sheet.tsx` — scrim-free so map stays interactive beneath |
+| Hero map on landing | `HeroMap.tsx` — GIBS 2024-08-12 + hero polygons + slow camera drift |
+| Keyboard shortcuts | `1–7` select workflow, `l` toggle layers, `Escape` dismiss sheet |
+| URL state | view encoded in URL — shareable links |
+| `forecastAvailable` check | HEAD request on pmtiles — degrades honestly if tiles missing |
+| CAP approval page (real) | 206-line bilingual draft preview with correctly disabled Approve/Reject stubs |
+| Variable fonts | Inter/JetBrains/Noto Bengali Variable → 300KB vs 784KB (−57%) |
+| `hero_polygons.json` | Curated polygon set for landing hero map (18KB) |
+| Timeline play loop | `TimeScrubber` auto-plays date scrubber |
+
+**V2 build fixes applied by us (post arena-agent):**
+- `*.pmtiles` removed from `.gitignore` — all 55 PMTiles files now tracked
+- `hillshade_bgd.pmtiles` (20MB) added — was absent from arena-agent build
+- Vercel SSO protection disabled — was redirecting all `/data/*` requests to SSO login
+- `ops_meta.json` corrected — polygon_count=1199, threshold=0.5, model_version=d3v4.2
+
+**What V2 correctly deferred (honest stubs, not broken):**
+- Approve/Reject buttons: `disabled` + `cursor-not-allowed` + `opacity-60` — explicitly labeled as backend-dependent
+- Live SAR/FFWC/GFM ingestion: not wired, not pretended
+- pmtiles degradation: `forecastAvailable` HEAD check — shows honest "not available" state if tiles absent
+
+---
+
+### Frontend file inventory — both versions
+
+**V1 primary source:**
+```
+/home/ubuntu/General/kalopathor/frontend/
+```
+
+**V2 primary source:**
+```
+/tmp/kalopathor-v2/frontend/    ← local (ephemeral — always re-clone from GitHub)
+github.com/realsamiul/Kalopathor-v2
+```
+
+**Shared data files** (identical content, both versions):
+```
+public/data/
+├── detection_polygons_v4.geojson  (16MB) — 1,199 polys, τ=0.5, model_version=d3v4.2
+├── exposure_districts.geojson      (8.1MB) — 64 districts + pop_2024 field
+├── rivers_bgd.geojson              (6.4MB)
+├── erosion_banklines.geojson       (1.5MB) — Jamuna/Meghna/Padma 2016–2021
+├── erosion_layer.geojson           (1.9MB)
+├── ffwc_gauges.geojson             (38KB) — 115 stations
+├── ffwc_hydrographs.json          (187KB)
+├── feni_2024_replay.json          (374KB)
+├── ops_meta.json                   (415B) — polygon_count=1199, threshold=0.5
+├── hillshade_bgd.pmtiles           (20MB)
+└── pmtiles/                        (55 files)
+    ├── prediction_t{1,3,5,7}_*.pmtiles  (48 dated)
+    ├── prediction_t{1,5}.pmtiles        (2 composites)
+    ├── uncertainty_t5.pmtiles
+    ├── landslide_tiles.json
+    └── tvdi_tiles.json
+```
+
+**V2-only data:**
+```
+public/data/hero_polygons.json     (18KB) — curated landing hero polygon set
+```
+
+**V1-only data:**
+```
+public/data/landslide_cog.tif      (14MB)
+public/data/landslide_layer.tif    (13MB)
+public/data/tvdi_cog.tif           (3.8MB)
+public/data/tvdi_layer.tif         (3.0MB)
+```
+
+---
+
+### Frontend remaining work — ordered by value
+
+| # | Item | Effort | Which version | Status |
+|---|---|---|---|---|
+| 1 | **CAP lifecycle screen** — real approval flow replacing stubs | ~1 day | Both | V2 has bilingual preview, needs state machine wired |
+| 2 | **Methodology page** — `/methodology` route using `work/METHODOLOGY_PAGE_COPY_2026-09-17.md` | ~1 hr | Both | Copy written, route not built |
+| 3 | **Mobile audit v1** — test at 375px, add BottomNav from v2 | ~half day | V1 | Not tested |
+| 4 | **Merge v1→v2 data layers** — copy landslide/TVDI hazard layers to v2 | ~1 hr | V2 | COG files in v1, not in v2 |
+| 5 | **Live data wiring** — `freshness.json` writer → `mode: live` | ~1 day | Both | Blocked on A1 |
+| 6 | **District drill-down** — click division → all events/gauges | ~half day | Both | Not built |
+| 7 | **Compare strip** — our detection vs GFM side by side | ~half day | Both | Not built |
+| 8 | **`/brief/[district]`** — shareable situation report | ~1 day | Both | Not built |
+
+### Decision pending: which version becomes canonical?
+
+| V1 | V2 |
+|---|---|
+| More data layers (landslide, TVDI, hazard protocol) | Better mobile architecture |
+| Simpler codebase, easier to extend | Variable fonts (−57% font payload) |
+| Honesty chip system | Real CAP preview on approval page |
+| go-before badge | Hero map on landing |
+| GFM toggle in status bar | Keyboard shortcuts + URL state |
+| Stats strip | Draggable sheets (map stays tappable) |
+
+**Recommendation:** V2 architecture is superior for the target audience (field officers on phones). The missing data layers (landslide, TVDI, hazard protocol) should be merged from V1 into V2. V2 becomes the canonical branch; V1 is archived as the reference.
