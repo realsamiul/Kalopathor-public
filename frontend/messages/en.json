@@ -1,5 +1,5 @@
 {
-  "nav": {
+    "nav": {
     "story": "The Story",
     "operations": "Operations",
     "more": "More",
@@ -10,7 +10,8 @@
     "close": "Close",
     "error": "Error",
     "offline": "Offline",
-    "interpolated": "Interpolated"
+    "interpolated": "Interpolated",
+    "retry": "Retry"
   },
   "ops": {
     "title": "Flood Intelligence Operations",
@@ -33,8 +34,7 @@
       "nextPass": "NEXT S1",
       "healthLive": "LIVE",
       "healthDemo": "DEMO",
-      "liveHealth": "All data sources reporting normally",
-      "livePilot": "LIVE PILOT · FENI"
+      "liveHealth": "All data sources reporting normally"
     },
     "badge": {
       "monitoring": "Monitoring",
@@ -53,7 +53,15 @@
       "frozen": "Frozen",
       "provenance": "Provenance",
       "staleStations": "Stations above danger",
-      "staleStationsNone": "not yet tracked — slot reserved",
+      "staleStationsValue": "{danger} above danger · {warning} warning",
+      "layers": {
+        "ffwcGauges": "FFWC gauges",
+        "sarDetection": "SAR detection",
+        "glofasForecast": "GLOFAS forecast",
+        "openmeteoForecast": "Open-Meteo forecast",
+        "shelters": "Shelters",
+        "model": "Model"
+      },
       "fresh": "fresh",
       "stale": "stale",
       "failed": "failed",
@@ -74,6 +82,7 @@
     "degraded": "DEGRADED",
     "noData": "No SAR pass on this date",
     "utc": "UTC",
+    "loadFailed": "Failed to load flood data. Tap to retry.",
     "rail": {
       "title": "Workflow",
       "layers": "Layers",
@@ -252,7 +261,8 @@
     "forecast": "Forecast",
     "dangerLine": "Danger level",
     "asOf": "as of {date}",
-    "insufficient": "Insufficient series for a curve."
+    "insufficient": "Insufficient series for a curve.",
+    "loadFailed": "Hydrograph failed to load."
   },
   "prediction": {
     "title": "Flood prediction",
@@ -266,6 +276,7 @@
     "ctaConsole": "Open operations console",
     "ctaQuality": "Data quality",
     "heroNote": "Feni 2024 replay · seeded data, honestly labeled",
+    "heroMapFailed": "Satellite scene unavailable",
     "pipelineTitle": "From radar to decision",
     "pipelineSub": "Six pinned stages — every step versioned, every claim measurable.",
     "stage1Title": "SAR capture",
@@ -296,9 +307,10 @@
     "credits": "NASA GIBS · Copernicus GFM · FFWC · HRSL · MoDMR context"
   },
   "approval": {
-    "stub": "Approval flow · stub",
+    "readonly": "Read-only draft preview · CAP emission disabled",
     "title": "CAP advisory approval",
-    "description": "Analyst review workflow for CAP emission is not built yet. Nothing is emitted one-click.",
+    "emptyTitle": "No CAP draft staged",
+    "description": "No advisory draft is staged for review. A draft appears here once analyst triage confirms a detection — nothing is ever emitted one-click.",
     "cap": "CAP 1.2 · alert draft",
     "severity": "Severity",
     "status": "Status",

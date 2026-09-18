@@ -1,6 +1,6 @@
 'use client';
 
-import {useTranslations} from 'next-intl';
+import {useLocale, useTranslations} from 'next-intl';
 import {Pause, Play, Satellite, Waypoints} from 'lucide-react';
 import type {CSSProperties} from 'react';
 import {GIBS_DATES, GIBS_EVENT_DATE, GIBS_DEFAULT_DATE} from '@/lib/map-config';
@@ -21,11 +21,14 @@ interface Props {
   onExpand?: () => void;
 }
 
-function shortDate(iso: string): string {
+function shortDate(iso: string, locale: string): string {
   const d = new Date(iso + 'T00:00:00Z');
-  return Number.isNaN(d.getTime())
-    ? iso
-    : d.toLocaleDateString('en', {day: 'numeric', month: 'short', timeZone: 'UTC'});
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(locale === 'bn' ? 'bn-BD' : 'en-GB', {
+    day: 'numeric',
+    month: 'short',
+    timeZone: 'UTC'
+  });
 }
 
 function fillStyle(value: number, max: number): CSSProperties {
@@ -48,6 +51,7 @@ export default function TimeScrubber({
   onExpand
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
   const dateIndex = Math.max(0, GIBS_DATES.indexOf(gibsDate));
   const isEvent = gibsDate === GIBS_EVENT_DATE;
 
@@ -58,7 +62,7 @@ export default function TimeScrubber({
         <button
           onClick={onTogglePlay}
           aria-label={playing ? t('time.pause') : t('time.play')}
-          className={`rounded-md border p-1.5 transition-colors ${
+          className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md border transition-colors ${
             playing
               ? 'border-accent/50 bg-accent/15 text-accent'
               : 'border-line text-mist-2 hover:text-mist-1'
@@ -68,14 +72,14 @@ export default function TimeScrubber({
         </button>
         <button
           onClick={onExpand}
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md border border-line bg-ink-2/60 px-2 py-1.5 text-left"
+          className="flex min-h-[44px] min-w-0 flex-1 items-center gap-1.5 rounded-md border border-line bg-ink-2/60 px-2 py-1.5 text-left"
         >
           <Satellite size={13} className="shrink-0 text-accent" aria-hidden />
           <span className="min-w-0 truncate font-mono text-[10px] text-mist-1">
-            {shortDate(gibsDate)} · VIIRS
+            {shortDate(gibsDate, locale)} · VIIRS
           </span>
           {isEvent && (
-            <span className="shrink-0 rounded bg-accent2/20 px-1 py-px font-mono text-[8px] uppercase tracking-wider text-accent2">
+            <span className="shrink-0 rounded bg-accent2/20 px-1 py-px font-mono text-[10px] uppercase tracking-wider text-accent2">
               {t('timeline.eventPass')}
             </span>
           )}
@@ -83,13 +87,13 @@ export default function TimeScrubber({
         <button
           onClick={onExpand}
           disabled={!forecastAvailable}
-          className={`flex min-w-0 flex-1 items-center gap-1.5 rounded-md border px-2 py-1.5 text-left transition-colors ${
+          className={`flex min-h-[44px] min-w-0 flex-1 items-center gap-1.5 rounded-md border px-2 py-1.5 text-left transition-colors ${
             forecastAvailable ? 'border-line bg-ink-2/60' : 'border-line opacity-50'
           }`}
         >
           <Waypoints size={13} className={`shrink-0 ${forecastAvailable ? 'text-warn' : 'text-mist-3'}`} aria-hidden />
           <span className="min-w-0 truncate font-mono text-[10px] text-mist-1">
-            {forecastAvailable ? `T+${horizon} · ${shortDate(PREDICTION_DATES[timeIndex])}` : t('timeline.roadmap')}
+            {forecastAvailable ? `T+${horizon} · ${shortDate(PREDICTION_DATES[timeIndex], locale)}` : t('timeline.roadmap')}
           </span>
         </button>
       </div>
@@ -102,26 +106,26 @@ export default function TimeScrubber({
       {/* Imagery date scrubber */}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest text-accent">
+          <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-accent">
             <Satellite size={11} aria-hidden />
             {t('timeline.imagery')}
           </span>
           <span className="font-mono text-[11px] font-semibold text-accent">{gibsDate}</span>
-          <span className="font-mono text-[9px] text-mist-3">VIIRS</span>
+          <span className="font-mono text-[10px] text-mist-3">VIIRS</span>
           {isEvent && (
-            <span className="rounded bg-accent2/15 px-1.5 py-px font-mono text-[8.5px] uppercase tracking-wider text-accent2">
+            <span className="rounded bg-accent2/15 px-1.5 py-px font-mono text-[10px] uppercase tracking-wider text-accent2">
               {t('timeline.eventPass')}
             </span>
           )}
           {imergClipped && (
-            <span className="rounded bg-warn/15 px-1.5 py-px font-mono text-[8.5px] uppercase tracking-wider text-est">
+            <span className="rounded bg-warn/15 px-1.5 py-px font-mono text-[10px] uppercase tracking-wider text-est">
               {t('layers.note.capped')}
             </span>
           )}
           <button
             type="button"
             onClick={() => onGibsDate(isEvent ? GIBS_DEFAULT_DATE : GIBS_EVENT_DATE)}
-            className={`ml-auto whitespace-nowrap rounded px-2 py-0.5 font-mono text-[9px] transition-colors ${
+            className={`ml-auto min-h-[36px] whitespace-nowrap rounded px-2 py-0.5 font-mono text-[10px] transition-colors ${
               isEvent ? 'bg-accent text-ink-0' : 'bg-ink-3 text-mist-2 hover:text-mist-1'
             }`}
           >
@@ -129,7 +133,7 @@ export default function TimeScrubber({
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="hidden font-mono text-[9px] text-mist-3 sm:block">{GIBS_DATES[0]}</span>
+          <span className="hidden font-mono text-[10px] text-mist-3 sm:block">{GIBS_DATES[0]}</span>
           <input
             type="range"
             min={0}
@@ -139,8 +143,9 @@ export default function TimeScrubber({
             className="scrub scrub-teal min-w-0 flex-1"
             style={fillStyle(dateIndex, GIBS_DATES.length - 1)}
             aria-label={t('timeline.imagery')}
+            aria-valuetext={shortDate(gibsDate, locale)}
           />
-          <span className="hidden font-mono text-[9px] text-mist-3 sm:block">
+          <span className="hidden font-mono text-[10px] text-mist-3 sm:block">
             {GIBS_DATES[GIBS_DATES.length - 1]}
           </span>
         </div>
@@ -149,7 +154,7 @@ export default function TimeScrubber({
       {/* Forecast horizon + prediction date */}
       <div className={`flex min-w-0 flex-1 flex-col gap-1 ${!forecastAvailable ? 'opacity-60' : ''}`}>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-widest text-warn">
+          <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-warn">
             <Waypoints size={11} aria-hidden />
             {t('timeline.forecast7d')}
           </span>
@@ -159,7 +164,7 @@ export default function TimeScrubber({
                 key={h}
                 onClick={() => onHorizon(h)}
                 disabled={!forecastAvailable}
-                className={`rounded px-2 py-0.5 font-mono text-[10.5px] transition-colors ${
+                className={`min-h-[36px] min-w-[36px] rounded px-2 py-0.5 font-mono text-[11px] transition-colors ${
                   horizon === h
                     ? 'bg-warn text-ink-0'
                     : 'bg-ink-3 text-mist-2 hover:text-mist-1'
@@ -170,7 +175,7 @@ export default function TimeScrubber({
             ))}
           </div>
           {!forecastAvailable && (
-            <span className="rounded bg-warn/15 px-1.5 py-px font-mono text-[8.5px] uppercase tracking-wider text-est">
+            <span className="rounded bg-warn/15 px-1.5 py-px font-mono text-[10px] uppercase tracking-wider text-est">
               {t('timeline.roadmapNote')}
             </span>
           )}
@@ -186,6 +191,7 @@ export default function TimeScrubber({
             className="scrub scrub-amber min-w-0 flex-1"
             style={fillStyle(timeIndex, PREDICTION_DATES.length - 1)}
             aria-label={t('timeline.forecast7d')}
+            aria-valuetext={shortDate(PREDICTION_DATES[timeIndex], locale)}
           />
           <span className="font-mono text-[11px] font-semibold text-warn">
             {PREDICTION_DATES[timeIndex]}

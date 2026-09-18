@@ -18,6 +18,7 @@ import Link from 'next/link';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AnimatePresence, motion} from 'framer-motion';
 import {
+  BASEMAP_RASTER_PAINT,
   GIBS_DATES,
   GIBS_DEFAULT_DATE,
   TRANSPARENT_PNG,
@@ -46,20 +47,21 @@ import {PREDICTION_DATES, WORKFLOW_ITEMS, type WorkflowItemId} from '@/lib/workf
 import {useBreakpoint} from '@/lib/breakpoint';
 import {humanAge} from '@/lib/freshness';
 import type {FreshnessContract} from '@/lib/freshness';
+import {ink0} from '@/lib/css';
+import {logger} from '@/lib/logger';
 import TopBar, {type TopStats} from './ui/TopBar';
 import BottomNav from './ui/BottomNav';
 import Legend from './ui/Legend';
 import Sheet from './ui/Sheet';
 import TimeScrubber from './TimeScrubber';
 import WorkflowRail from './WorkflowRail';
-import ActionCard from './ActionCard';
+import ActionCard, {type ModelMeta} from './ActionCard';
 import WorkflowListPanel from './WorkflowListPanel';
 import DataQualityPanel from './DataQualityPanel';
 import GaugeDrawer, {type GaugeFeatureProps} from './GaugeDrawer';
-import {List, MapPinned, X} from 'lucide-react';
+import {AlertTriangle, Droplets, List, MapPinned, RefreshCw, X} from 'lucide-react';
 
 const EMPTY_FC: GeoJSON.FeatureCollection = {type: 'FeatureCollection', features: []};
-const DARK_BG = '#070b12';
 
 const CONFIDENCE_CLASSES: ConfidenceClass[] = [
   'observed_high',
@@ -93,6 +95,8 @@ export interface OpsMeta {
     gauge_count: number;
     next_pass_est: string;
     source: string;
+    model_version?: string;
+    threshold?: number;
   };
 }
 
@@ -169,6 +173,8 @@ export default function OperationsConsole() {
   const [timeIndex, setTimeIndex] = useState(PREDICTION_DATES.indexOf('2024-06-18'));
   const [playing, setPlaying] = useState(false);
   const [cardBundle, setCardBundle] = useState<Bundle | null>(null);
+  const [bundleError, setBundleError] = useState(false);
+  const [opsMetaFailed, setOpsMetaFailed] = useState(false);
   const [activeState, setActiveState] = useState<StateKey>('feni');
   const [selectedPolygonId, setSelectedPolygonId] = useState<number | null>(null);
   const [cardVisible, setCardVisible] = useState(true);
@@ -198,35 +204,37 @@ export default function OperationsConsole() {
 
   // ------------------------------------------------------------------ data
   const loadBundle = useCallback((key: StateKey) => {
+    setBundleError(false);
     fetch(bundleUrl(key))
       .then((r) => {
         if (!r.ok) throw new Error(`bundle ${r.status}`);
         return r.json();
       })
       .then((b: Bundle) => setCardBundle(b))
-      .catch((err) => console.error('ActionCard bundle load failed', err));
+      .catch((err) => {
+        logger.error('ActionCard bundle load failed', err);
+        setBundleError(true);
+      });
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    fetch(bundleUrl('feni'))
-      .then((r) => r.json())
-      .then((b: Bundle) => {
-        if (!cancelled) setCardBundle(b);
-      })
-      .catch((err) => console.error('Feni bundle load failed', err));
+    loadBundle('feni');
     fetch('/data/top_flood_polygons.json')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`top ${r.status}`))))
       .then((d: {top: TopFloodPolygon[]}) => {
         if (!cancelled) setTopPolys(d.top);
       })
-      .catch((err) => console.error('top polygons load failed', err));
+      .catch((err) => logger.error('top polygons load failed', err));
     fetch('/data/ops_meta.json')
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`meta ${r.status}`))))
       .then((m: OpsMeta) => {
         if (!cancelled) setOpsMeta(m);
       })
-      .catch((err) => console.error('ops meta load failed', err));
+      .catch((err) => {
+        logger.error('ops meta load failed', err);
+        if (!cancelled) setOpsMetaFailed(true);
+      });
     fetch('/api/freshness')
       .then((r) => (r.ok ? r.json() : null))
       .then((c: FreshnessContract | null) => {
@@ -240,7 +248,7 @@ export default function OperationsConsole() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadBundle]);
 
   // ------------------------------------------------------------ selection
   const setFeatureSelected = useCallback((id: number | null, feature?: GeoJSON.Feature) => {
@@ -324,9 +332,9 @@ export default function OperationsConsole() {
       const src = map.getSource('exposure') as GeoJSONSource | undefined;
       if (src) {
         fetch('/data/exposure_districts.geojson')
-          .then((r) => r.json())
+          .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`exposure ${r.status}`))))
           .then((fc) => src.setData(fc))
-          .catch((err) => console.error('exposure load failed', err));
+          .catch((err) => logger.error('exposure load failed', err));
       }
     }
   }, []);
@@ -479,7 +487,7 @@ export default function OperationsConsole() {
         const data = await res.arrayBuffer();
         return {data};
       } catch (err) {
-        console.warn('gfm tile error', err);
+        if ((err as Error)?.name !== 'AbortError') logger.warn('gfm tile error', err);
         return {data: toArrayBuffer(TRANSPARENT_PNG)};
       }
     });
@@ -592,21 +600,14 @@ export default function OperationsConsole() {
           }
         },
         layers: [
-          {id: 'bg', type: 'background', paint: {'background-color': DARK_BG}},
+          {id: 'bg', type: 'background', paint: {'background-color': ink0()}},
           {
             id: 'basemap',
             type: 'raster',
             source: 'basemap',
-            // Stylized-realistic: keep the satellite truth, push it into a
-            // moody command-center grade (darker, less saturated, more contrast).
-            paint: {
-              'raster-saturation': -0.3,
-              'raster-brightness-min': 0.7,
-              'raster-brightness-max': 0.85,
-              'raster-contrast': 1.12,
-              'raster-hue-rotate': -5,
-              'raster-fade-duration': 0
-            }
+            // Stylized-realistic grade shared with the landing hero (single
+            // source of truth in lib/map-config.ts).
+            paint: {...BASEMAP_RASTER_PAINT}
           },
           {
             id: 'mcdwd',
@@ -813,7 +814,7 @@ export default function OperationsConsole() {
                 'warning', '#f59e0b',
                 '#2dd4bf'
               ],
-              'circle-stroke-color': DARK_BG,
+              'circle-stroke-color': ink0(),
               'circle-stroke-width': 1.5
             }
           },
@@ -836,7 +837,7 @@ export default function OperationsConsole() {
             paint: {
               'circle-radius': 4,
               'circle-color': '#a78bfa',
-              'circle-stroke-color': DARK_BG,
+              'circle-stroke-color': ink0(),
               'circle-stroke-width': 1
             }
           },
@@ -934,8 +935,9 @@ export default function OperationsConsole() {
       mapRef.current = null;
       readyRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onPolygonClick, setHoveredPolygon]);
+    // Handlers are stable refs/useCallbacks keyed by identity — no teardown
+    // churn; the map lives for the component's lifetime.
+  }, [onPolygonClick, setHoveredPolygon, setFeatureSelected]);
 
   const closeCardRef = useRef(closeCard);
   closeCardRef.current = closeCard;
@@ -952,8 +954,7 @@ export default function OperationsConsole() {
   // Apply the default view's layer preset once the map is up.
   useEffect(() => {
     if (mapReady) applyView('now_flooding');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady]);
+  }, [mapReady, applyView]);
 
   // ------------------------------------------------------------ URL state (deep links)
   useEffect(() => {
@@ -972,8 +973,7 @@ export default function OperationsConsole() {
     if (d && GIBS_DATES.includes(d)) setGibsDateFor(d);
     const h = Number(q.get('horizon'));
     if ([1, 3, 5, 7].includes(h)) setHorizon(h);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapReady]);
+  }, [mapReady, applyView, changeState, setGibsDateFor]);
 
   useEffect(() => {
     if (!hydrated.current) return;
@@ -1027,6 +1027,20 @@ export default function OperationsConsole() {
     };
   }, [sarLastPass, sarNextPass, ffwcAsOf, forecastAsOf, serverTime]);
 
+  // Live model metadata for the voice summary — sourced from ops_meta.json,
+  // never hardcoded, so a model retrain never leaves stale copy behind.
+  const modelMeta: ModelMeta | undefined = useMemo(
+    () =>
+      opsMeta?.sar.model_version != null && typeof opsMeta.sar.polygon_count === 'number'
+        ? {
+            model: opsMeta.sar.model_version,
+            tau: typeof opsMeta.sar.threshold === 'number' ? opsMeta.sar.threshold : null,
+            polygons: opsMeta.sar.polygon_count
+          }
+        : undefined,
+    [opsMeta]
+  );
+
   const listCount = useMemo(() => {
     switch (view) {
       case 'now_flooding':
@@ -1046,6 +1060,7 @@ export default function OperationsConsole() {
   const gaugeTone = activeGauge?.status === 'danger' ? '244 63 94' : activeGauge?.status === 'warning' ? '245 158 11' : '45 212 191';
 
   const showCardContent = cardVisible && cardBundle && !activeGauge && view !== 'data_quality';
+  const bundleVisible = cardVisible && !activeGauge && view !== 'data_quality';
 
   const desktopPanel = activeGauge ? (
     <GaugeDrawer gauge={activeGauge} onClose={() => setActiveGauge(null)} />
@@ -1057,7 +1072,10 @@ export default function OperationsConsole() {
       polygonId={selectedPolygonId}
       overrides={cardOverrides ?? undefined}
       onClose={closeCard}
+      modelMeta={modelMeta}
     />
+  ) : bundleVisible && bundleError ? (
+    <BundleErrorState onRetry={() => loadBundle(activeState)} />
   ) : null;
 
   const sheetSide = (kind: 'card' | 'gauge' | 'quality' | 'list'): 'bottom' | 'left' | 'right' => {
@@ -1112,14 +1130,14 @@ export default function OperationsConsole() {
                     transition={{delay: 0.1}}
                     className="absolute left-1/2 top-2.5 z-20 -translate-x-1/2"
                   >
-                    <label className="glass flex items-center gap-2 rounded-full px-3 py-1.5 shadow-panel">
-                      <span className="font-mono text-[8.5px] uppercase tracking-widest text-mist-3">
+                    <label className="glass flex min-h-[44px] items-center gap-2 rounded-full px-3 py-1.5 shadow-panel">
+                      <span className="font-mono text-[10px] uppercase tracking-widest text-mist-3">
                         {t('ops.card.selectState')}
                       </span>
                       <select
                         value={activeState}
                         onChange={(e) => changeState(e.target.value as StateKey)}
-                        className="max-w-[180px] bg-transparent text-[11.5px] font-medium text-mist-1 outline-none [&>option]:bg-ink-2"
+                        className="max-w-state bg-transparent text-[11.5px] font-medium text-mist-1 outline-none [&>option]:bg-ink-2"
                       >
                         {STATE_KEYS.map((k) => (
                           <option key={k} value={k}>
@@ -1136,14 +1154,14 @@ export default function OperationsConsole() {
                   <div className="absolute left-2.5 top-2.5 z-20 flex flex-col gap-1.5">
                     <button
                       onClick={() => setSheet(sheet === 'list' ? null : 'list')}
-                      className="glass flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 shadow-panel"
+                      className="glass flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 shadow-panel"
                     >
                       <List size={13} className="text-accent" aria-hidden />
                       <span className="font-mono text-[10px] text-mist-1">
                         {t(`ops.rail.${view}`)}
                       </span>
                       {listCount > 0 && (
-                        <span className="rounded bg-accent/15 px-1 font-mono text-[9px] font-semibold text-accent">
+                        <span className="rounded bg-accent/15 px-1 font-mono text-[10px] font-semibold text-accent">
                           {listCount}
                         </span>
                       )}
@@ -1151,7 +1169,7 @@ export default function OperationsConsole() {
                     <button
                       onClick={() => setLegendOpenMobile((o) => !o)}
                       aria-expanded={legendOpenMobile}
-                      className={`glass flex items-center justify-center rounded-lg p-2 shadow-panel ${
+                      className={`glass flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 shadow-panel ${
                         legendOpenMobile ? 'text-accent' : 'text-mist-2'
                       }`}
                     >
@@ -1172,18 +1190,29 @@ export default function OperationsConsole() {
                   </div>
                 )}
 
-                {/* Stats strip — desktop */}
-                {isDesktop && opsMeta && (
+                {/* Stats strip — desktop (skeleton until ops_meta resolves) */}
+                {isDesktop && (opsMeta || !opsMetaFailed) && (
                   <div className="pointer-events-none absolute bottom-3 left-1/2 z-10 -translate-x-1/2">
-                    <div className="glass flex items-center gap-3 rounded-lg px-3.5 py-2 shadow-panel">
-                      <StatsChip label={t('ops.stats.polygons')} value={String(opsMeta.sar.polygon_count)} />
-                      <span className="h-3.5 w-px bg-line-strong" />
-                      <StatsChip label={t('ops.stats.area')} value={`${opsMeta.sar.total_area_km2.toLocaleString()} km²`} />
-                      <span className="h-3.5 w-px bg-line-strong" />
-                      <StatsChip label={t('ops.stats.affected')} value={`${(opsMeta.sar.total_affected / 1e6).toFixed(1)}M`} />
-                      <span className="h-3.5 w-px bg-line-strong" />
-                      <StatsChip label={t('ops.stats.gauges')} value={String(opsMeta.sar.gauge_count)} />
-                    </div>
+                    {opsMeta ? (
+                      <div className="glass flex items-center gap-3 rounded-lg px-3.5 py-2 shadow-panel">
+                        <StatsChip label={t('ops.stats.polygons')} value={String(opsMeta.sar.polygon_count)} />
+                        <span className="h-3.5 w-px bg-line-strong" />
+                        <StatsChip label={t('ops.stats.area')} value={`${opsMeta.sar.total_area_km2.toLocaleString()} km²`} />
+                        <span className="h-3.5 w-px bg-line-strong" />
+                        <StatsChip label={t('ops.stats.affected')} value={`${(opsMeta.sar.total_affected / 1e6).toFixed(1)}M`} />
+                        <span className="h-3.5 w-px bg-line-strong" />
+                        <StatsChip label={t('ops.stats.gauges')} value={String(opsMeta.sar.gauge_count)} />
+                      </div>
+                    ) : (
+                      <div className="glass flex items-center gap-3 rounded-lg px-3.5 py-2 shadow-panel" aria-hidden>
+                        {[0, 1, 2, 3].map((i) => (
+                          <span key={i} className="flex animate-pulse flex-col items-center gap-1">
+                            <span className="h-3 w-12 rounded bg-ink-3" />
+                            <span className="h-2.5 w-10 rounded bg-ink-3" />
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1195,7 +1224,7 @@ export default function OperationsConsole() {
                     transition={{delay: 0.8}}
                     className="pointer-events-none absolute bottom-14 left-1/2 z-10 -translate-x-1/2"
                   >
-                    <span className="rounded-full bg-ink-2/85 px-3 py-1.5 font-mono text-[9.5px] text-mist-2 shadow-panel backdrop-blur">
+                    <span className="rounded-full bg-ink-2/85 px-3 py-1.5 font-mono text-[10.5px] text-mist-2 shadow-panel backdrop-blur">
                       {t('ops.card.clickHint')}
                     </span>
                   </motion.div>
@@ -1235,7 +1264,7 @@ export default function OperationsConsole() {
 
         {/* Right column — desktop only */}
         {isDesktop && desktopPanel && (
-          <aside className="flex w-[380px] shrink-0 flex-col border-l border-line bg-ink-1">
+          <aside className="flex w-panel shrink-0 flex-col border-l border-line bg-ink-1">
             <motion.div
               key={`${view}-${activeGauge?.gauge_id ?? 'card'}`}
               initial={{opacity: 0, x: 16}}
@@ -1301,7 +1330,24 @@ export default function OperationsConsole() {
                 polygonId={selectedPolygonId}
                 overrides={cardOverrides ?? undefined}
                 onClose={closeCard}
+                modelMeta={modelMeta}
               />
+            </Sheet>
+          )}
+
+          {sheet === 'card' && !showCardContent && bundleVisible && bundleError && (
+            <Sheet
+              key="card-error"
+              open
+              side={sheetSide('card')}
+              backdrop={false}
+              ariaLabel={t('ops.card.title')}
+              onClose={closeCard}
+              accent="244 63 94"
+              peek={42}
+              expanded={60}
+            >
+              <BundleErrorState onRetry={() => loadBundle(activeState)} />
             </Sheet>
           )}
 
@@ -1397,7 +1443,7 @@ export default function OperationsConsole() {
               <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-5 pt-3">
                 {/* State selector */}
                 <div>
-                  <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-mist-3">
+                  <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
                     {t('ops.card.selectState')}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
@@ -1422,7 +1468,7 @@ export default function OperationsConsole() {
 
                 {/* Secondary views */}
                 <div>
-                  <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-mist-3">
+                  <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
                     {t('ops.rail.title')}
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
@@ -1442,10 +1488,44 @@ export default function OperationsConsole() {
                   </div>
                 </div>
 
+                {/* Layers — mobile home for the GFM toggle (TopBar shows it ≥sm) */}
+                <div>
+                  <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
+                    {t('ops.rail.layers')}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setLayerVisible('gfm', !visible.gfm)}
+                    aria-pressed={visible.gfm}
+                    className={`flex min-h-[44px] w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-[12.5px] font-medium transition-colors ${
+                      visible.gfm
+                        ? 'border-accent/50 bg-accent/10 text-accent'
+                        : 'border-line text-mist-2 hover:border-line-strong'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <Droplets size={13} aria-hidden />
+                      {t('layers.gfm')}
+                    </span>
+                    <span
+                      className={`relative h-4 w-7 shrink-0 rounded-full transition-colors ${
+                        visible.gfm ? 'bg-accent/60' : 'bg-ink-3'
+                      }`}
+                      aria-hidden
+                    >
+                      <span
+                        className={`absolute top-0.5 h-3 w-3 rounded-full bg-mist-1 transition-transform ${
+                          visible.gfm ? 'left-3.5' : 'left-0.5'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                </div>
+
                 {/* KPI stats */}
                 {opsMeta && (
                   <div>
-                    <div className="mb-1.5 font-mono text-[9px] uppercase tracking-[0.2em] text-mist-3">
+                    <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
                       {t('ops.stats.title')}
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -1496,16 +1576,40 @@ export default function OperationsConsole() {
 // ---------------------------------------------------------------- helpers
 
 function SheetHead({title, onClose}: {title: string; onClose: () => void}) {
+  const t = useTranslations();
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-2.5">
-      <span className="font-mono text-[9.5px] uppercase tracking-[0.22em] text-mist-3">{title}</span>
+      <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3">{title}</span>
       <button
         type="button"
         onClick={onClose}
-        aria-label="close"
-        className="rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:text-mist-1"
+        aria-label={t('common.close')}
+        className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:text-mist-1"
       >
         <X size={13} aria-hidden />
+      </button>
+    </div>
+  );
+}
+
+// Honest failure surface for the action-card bundle: never a silent empty
+// column — named error + manual retry.
+function BundleErrorState({onRetry}: {onRetry: () => void}) {
+  const t = useTranslations();
+  return (
+    <div
+      className="flex h-full min-h-0 flex-col items-center justify-center gap-3 px-6 py-8 text-center"
+      role="alert"
+    >
+      <AlertTriangle size={22} className="text-danger" aria-hidden />
+      <p className="text-[13px] leading-relaxed text-mist-2">{t('ops.loadFailed')}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="flex min-h-[44px] items-center gap-2 rounded-lg border border-line px-4 py-2 font-mono text-[11.5px] text-mist-2 transition-colors hover:border-line-strong hover:text-mist-1"
+      >
+        <RefreshCw size={13} aria-hidden />
+        {t('common.retry')}
       </button>
     </div>
   );
@@ -1515,7 +1619,7 @@ function StatsChip({label, value}: {label: string; value: string}) {
   return (
     <span className="flex flex-col items-center gap-0.5">
       <span className="font-mono text-[12px] font-bold leading-none text-mist-1">{value}</span>
-      <span className="font-mono text-[8px] uppercase tracking-widest text-mist-3">{label}</span>
+      <span className="font-mono text-[10px] uppercase tracking-widest text-mist-3">{label}</span>
     </span>
   );
 }
@@ -1524,7 +1628,7 @@ function Kpi({label, value}: {label: string; value: string}) {
   return (
     <div className="rounded-lg border border-line bg-ink-2/60 px-3 py-2">
       <div className="font-mono text-[15px] font-bold leading-tight text-mist-1">{value}</div>
-      <div className="mt-0.5 font-mono text-[8.5px] uppercase tracking-widest text-mist-3">{label}</div>
+      <div className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-mist-3">{label}</div>
     </div>
   );
 }
@@ -1590,35 +1694,35 @@ function LayerSwitcher({
               <span className="flex items-center justify-between gap-1">
                 <span className="leading-tight">{t(`layers.${id}`)}</span>
                 {hs && (
-                  <span className={`flex shrink-0 items-center gap-1 font-mono text-[7.5px] uppercase tracking-widest ${hs.text}`}>
+                  <span className={`flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-widest ${hs.text}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${hs.dot}`} />
                     {hs.label}
                   </span>
                 )}
               </span>
               <span className="mt-0.5 flex flex-wrap items-center gap-1">
-                <span className="rounded bg-ink-3 px-1 py-px font-mono text-[7.5px] uppercase tracking-widest text-mist-3">
+                <span className="rounded bg-ink-3 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-mist-3">
                   {t(COVERAGE_LABEL[coverage])}
                 </span>
                 {id === 'imerg' && imergClipped && (
-                  <span className="rounded bg-est/15 px-1 py-px font-mono text-[7.5px] uppercase tracking-widest text-est">
+                  <span className="rounded bg-est/15 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-est">
                     {t('layers.note.capped')}
                   </span>
                 )}
                 {id === 'prediction' && (
-                  <span className="rounded bg-est/10 px-1 py-px font-mono text-[7.5px] uppercase tracking-widest text-est">
+                  <span className="rounded bg-est/10 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-est">
                     {t('layers.note.calibPending')}
                   </span>
                 )}
               </span>
               {noteKey && noteKey !== 'layers.note.calibPending' && (
-                <span className="mt-0.5 block font-mono text-[9px] leading-snug text-est/90">{t(noteKey)}</span>
+                <span className="mt-0.5 block font-mono text-[10px] leading-snug text-est/90">{t(noteKey)}</span>
               )}
             </span>
           </label>
         );
       })}
-      <div className="mt-1 border-t border-line pt-1.5 font-mono text-[9px] text-mist-3">
+      <div className="mt-1 border-t border-line pt-1.5 font-mono text-[10px] text-mist-3">
         {t('layers.basemapDate')}: {gibsDate}
       </div>
     </div>

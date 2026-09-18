@@ -49,7 +49,7 @@ export default function WorkflowRail({
       }`}
     >
       <div
-        className={`shrink-0 border-b border-line px-3 py-2.5 font-mono text-[9.5px] uppercase tracking-[0.22em] text-mist-3 ${
+        className={`shrink-0 border-b border-line px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3 ${
           compact ? 'flex justify-center px-0' : ''
         }`}
       >
@@ -83,7 +83,7 @@ export default function WorkflowRail({
                   <span className="min-w-0 flex-1 truncate text-[12.5px] font-medium leading-tight">
                     {t(`ops.rail.${id}`)}
                   </span>
-                  <span className="font-mono text-[9px] text-mist-3 opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="font-mono text-[10px] text-mist-3 opacity-0 transition-opacity group-hover:opacity-100">
                     {i + 1}
                   </span>
                 </>
@@ -100,7 +100,7 @@ export default function WorkflowRail({
           <button
             onClick={onToggleLayers}
             aria-expanded={layersOpen}
-            className="flex w-full items-center justify-between px-3 py-2.5 font-mono text-[9.5px] uppercase tracking-[0.22em] text-mist-3 transition-colors hover:text-mist-1"
+            className="flex w-full items-center justify-between px-3 py-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3 transition-colors hover:text-mist-1"
           >
             <span className="flex items-center gap-1.5">
               <Layers size={12} aria-hidden />
@@ -113,7 +113,7 @@ export default function WorkflowRail({
             />
           </button>
           {layersOpen && (
-            <div className="max-h-[42vh] overflow-y-auto border-t border-line px-3 py-2.5">
+            <div className="max-h-layers overflow-y-auto border-t border-line px-3 py-2.5">
               {layersToggle}
             </div>
           )}

@@ -95,11 +95,11 @@ function Head({
 }) {
   return (
     <div className="mb-1.5 flex items-center justify-between px-2 pt-1">
-      <span className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.2em] text-mist-3">
+      <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">
         <Icon size={12} className="text-accent" aria-hidden />
         {title}
       </span>
-      {meta && <span className="font-mono text-[9px] text-mist-3">{meta}</span>}
+      {meta && <span className="font-mono text-[10px] text-mist-3">{meta}</span>}
     </div>
   );
 }
@@ -190,13 +190,13 @@ export default function WorkflowListPanel({
                 </div>
                 <div className="mt-0.5 flex items-center gap-1.5">
                   <span
-                    className={`rounded px-1 py-px font-mono text-[8px] uppercase tracking-widest ${
+                    className={`rounded px-1 py-px font-mono text-[10px] uppercase tracking-widest ${
                       BADGE_STYLE[p.badge] ?? ''
                     }`}
                   >
                     {t(`ops.badge.${p.badge}`)}
                   </span>
-                  <span className="truncate font-mono text-[9.5px] text-mist-3">
+                  <span className="truncate font-mono text-[10px] text-mist-3">
                     {p.affected_people?.toLocaleString() ?? '—'} {t('ops.card.people')}
                   </span>
                 </div>
@@ -204,7 +204,7 @@ export default function WorkflowListPanel({
             </Row>
           ))}
           {topPolys.length > TOP_N && (
-            <div className="px-2 pt-1 font-mono text-[9px] text-mist-3">
+            <div className="px-2 pt-1 font-mono text-[10px] text-mist-3">
               {t('ops.lists.topN', {n: TOP_N, total: topPolys.length})}
             </div>
           )}
@@ -225,7 +225,7 @@ export default function WorkflowListPanel({
             <Row key={b.band_id}>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-medium text-mist-1">{b.station}</div>
-                <div className="font-mono text-[9.5px] text-mist-3">{b.river}</div>
+                <div className="font-mono text-[10px] text-mist-3">{b.river}</div>
               </div>
               <div className="shrink-0 text-right">
                 <div className="font-mono text-[10px] text-warn">{t('ops.lists.lead', {h: b.lead_time_hours})}</div>
@@ -235,7 +235,7 @@ export default function WorkflowListPanel({
               </div>
             </Row>
           ))}
-          <div className="px-2 pt-1 font-mono text-[9px] text-mist-3">
+          <div className="px-2 pt-1 font-mono text-[10px] text-mist-3">
             {all.length > shown.length && t('ops.lists.topN', {n: shown.length, total: all.length})}
             {all.length > 0 && ` · ${t('layers.note.forecastSource')}`}
           </div>
@@ -302,9 +302,9 @@ export default function WorkflowListPanel({
               <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#a78bfa]" />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-medium text-mist-1">{s.name}</div>
-                <div className="font-mono text-[9.5px] text-mist-3">{s.type}</div>
+                <div className="font-mono text-[10px] text-mist-3">{s.type}</div>
               </div>
-              <span className="shrink-0 font-mono text-[9px] text-mist-3">
+              <span className="shrink-0 font-mono text-[10px] text-mist-3">
                 {s.capacity_status ?? t('ops.lists.capacityUnknown')}
               </span>
             </Row>
@@ -318,7 +318,7 @@ export default function WorkflowListPanel({
                 {r.from_area_id} → {r.to_shelter_id}
               </span>
               <span
-                className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-widest ${
+                className={`shrink-0 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest ${
                   r.is_safe_for_recommendation
                     ? 'bg-accent/15 text-accent'
                     : 'bg-danger/15 text-danger'
@@ -351,13 +351,13 @@ export default function WorkflowListPanel({
             <Row key={g.gauge_id} onClick={() => onFocus(g.lat, g.lon, 8)}>
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[12px] font-medium text-mist-1">{g.station}</div>
-                <div className="font-mono text-[9.5px] text-mist-3">{g.river}</div>
+                <div className="font-mono text-[10px] text-mist-3">{g.river}</div>
               </div>
               <div className="shrink-0 text-right">
                 <div className={`font-mono text-[10px] ${statusTone[g.status] ?? 'text-mist-2'}`}>
                   {t(`ops.lists.gaugeStatus.${g.status ?? 'normal'}`)}
                 </div>
-                <div className="font-mono text-[9.5px] text-mist-3">
+                <div className="font-mono text-[10px] text-mist-3">
                   {g.difference_m != null && (g.difference_m >= 0 ? '+' : '')}
                   {g.difference_m != null ? g.difference_m.toFixed(1) : '—'} m
                 </div>
@@ -365,7 +365,7 @@ export default function WorkflowListPanel({
             </Row>
           ))}
           {gauges && gauges.length > shown.length && (
-            <div className="px-2 pt-1 font-mono text-[9px] text-mist-3">
+            <div className="px-2 pt-1 font-mono text-[10px] text-mist-3">
               {t('ops.lists.topN', {n: shown.length, total: gauges.length})}
             </div>
           )}
@@ -384,7 +384,7 @@ export default function WorkflowListPanel({
             <div className="flex items-center justify-between gap-2">
               <span className="font-mono text-[11px] text-mist-1">{a.alert_id}</span>
               <span
-                className={`rounded px-1.5 py-px font-mono text-[8.5px] uppercase tracking-widest ${
+                className={`rounded px-1.5 py-px font-mono text-[10px] uppercase tracking-widest ${
                   a.severity === 'severe' ? 'bg-danger/15 text-danger' : 'bg-warn/15 text-est'
                 }`}
               >
@@ -394,7 +394,7 @@ export default function WorkflowListPanel({
             <div className="mt-1 text-[11.5px] text-mist-2">
               {a.district} · {t(`ops.card.confidence.${a.confidence_class}`)}
             </div>
-            <div className="mt-1 font-mono text-[9.5px] text-mist-3">
+            <div className="mt-1 font-mono text-[10px] text-mist-3">
               {t('ops.lists.status')}: {a.status} · {a.go_before}{' '}
               <span className="text-est/80">({t('ops.card.goBeforeEstimate')})</span>
             </div>

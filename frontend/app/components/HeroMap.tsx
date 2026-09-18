@@ -3,9 +3,13 @@
 import {Map as MapLibreMap, addProtocol, removeProtocol, setWorkerUrl, type GeoJSONSource} from 'maplibre-gl';
 import {Protocol} from 'pmtiles';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import {useTranslations} from 'next-intl';
+import {RefreshCw} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
-import {GIBS_EVENT_DATE, gibsProtocolUrl} from '@/lib/map-config';
+import {BASEMAP_RASTER_PAINT, GIBS_EVENT_DATE, gibsProtocolUrl} from '@/lib/map-config';
 import {registerGibsProtocol, unregisterGibsProtocol} from '@/lib/map-protocols';
+import {ink0} from '@/lib/css';
+import {logger} from '@/lib/logger';
 
 interface HeroPolygons {
   bbox: [number, number, number, number];
@@ -18,9 +22,12 @@ interface HeroPolygons {
  * Renders invisible until the first frame paints (fallback = CSS texture).
  */
 export default function HeroMap() {
+  const t = useTranslations();
   const container = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [failed, setFailed] = useState(false);
+  // incrementing re-runs the map init effect (manual retry after timeout)
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!container.current) return;
@@ -43,19 +50,12 @@ export default function HeroMap() {
           flood: {type: 'geojson', data: {type: 'FeatureCollection', features: []}}
         },
         layers: [
-          {id: 'bg', type: 'background', paint: {'background-color': '#070b12'}},
+          {id: 'bg', type: 'background', paint: {'background-color': ink0()}},
           {
             id: 'basemap',
             type: 'raster',
             source: 'basemap',
-            paint: {
-              'raster-saturation': -0.3,
-              'raster-brightness-min': 0.7,
-              'raster-brightness-max': 0.82,
-              'raster-contrast': 1.12,
-              'raster-hue-rotate': -5,
-              'raster-fade-duration': 0
-            }
+            paint: {...BASEMAP_RASTER_PAINT}
           },
           {
             id: 'flood-glow',
@@ -115,7 +115,7 @@ export default function HeroMap() {
           }))
         });
       })
-      .catch((err) => console.warn('hero polygons failed', err));
+      .catch((err) => logger.warn('hero polygons failed', err));
 
     // Slow cinematic drift (stopped for reduced-motion users)
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -142,9 +142,28 @@ export default function HeroMap() {
       unregisterGibsProtocol();
       map.remove();
     };
-  }, []);
+  }, [attempt]);
 
-  if (failed) return null;
+  if (failed) {
+    // Static fallback: keep the CSS texture hero (behind us), show a quiet
+    // retry affordance instead of vanishing without a trace.
+    return (
+      <div className="pointer-events-none absolute inset-0 flex items-end justify-center pb-24">
+        <button
+          type="button"
+          onClick={() => {
+            setFailed(false);
+            setReady(false);
+            setAttempt((a) => a + 1);
+          }}
+          className="glass pointer-events-auto flex min-h-[40px] items-center gap-2 rounded-full px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-mist-3 shadow-panel transition-colors hover:border-line-strong hover:text-mist-1"
+        >
+          <RefreshCw size={12} aria-hidden />
+          {t('landing.heroMapFailed')} — {t('common.retry')}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

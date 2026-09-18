@@ -12,7 +12,6 @@
   --ink-1: #0a0f18;
   --ink-2: #0e1522;
   --ink-3: #16203255;
-  --ink-3-solid: #162032;
 
   --line: rgba(148, 163, 184, 0.11);
   --line-strong: rgba(148, 163, 184, 0.24);
@@ -26,7 +25,13 @@
   --ok: #2dd4bf;
   --warn: #f59e0b;
   --danger: #f43f5e;
+  /* rose-200 — danger text that keeps AA contrast on ink surfaces */
+  --danger-hi: #fecaca;
   --est: #fbbf24;
+
+  /* panel shadows — must match tailwind.config `boxShadow.panel*` */
+  --shadow-panel: 0 8px 32px -12px rgba(0, 0, 0, 0.65), 0 2px 8px -4px rgba(0, 0, 0, 0.5);
+  --shadow-panel-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7), 0 4px 16px -8px rgba(0, 0, 0, 0.55);
 
   color-scheme: dark;
 }
@@ -220,7 +225,7 @@ input[type='range'].scrub:disabled {
   background: rgba(10, 15, 24, 0.7) !important;
   border-radius: 8px 0 0 0;
   backdrop-filter: blur(8px);
-  font-size: 9px !important;
+  font-size: 10px !important;
   color: var(--text-3) !important;
 }
 .maplibregl-ctrl-attrib a {
@@ -232,7 +237,7 @@ input[type='range'].scrub:disabled {
   border-top: none;
   color: var(--text-2) !important;
   font-family: var(--font-mono), monospace;
-  font-size: 9px;
+  font-size: 10px;
 }
 .maplibregl-popup-content {
   background: var(--ink-2);
@@ -293,6 +298,11 @@ input[type='range'].scrub:disabled {
   animation: drift 70s ease-in-out infinite;
 }
 
+/* Reduced motion: this reset only governs stylesheet-driven animation
+   (CSS keyframes + utility transitions). framer-motion handles its own
+   reduced-motion via <MotionConfig reducedMotion="user"> (see app layout),
+   so JS-driven springs stay coherent with the OS preference instead of being
+   clipped by a universal !important rule. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -300,5 +310,6 @@ input[type='range'].scrub:disabled {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

@@ -170,7 +170,7 @@ export default function StoryContent() {
                   <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-ink-2 text-accent">
                     <Icon size={16} aria-hidden />
                   </span>
-                  <span className="font-mono text-[9.5px] tracking-[0.2em] text-mist-3">
+                  <span className="font-mono text-[10px] tracking-[0.2em] text-mist-3">
                     0{i + 1}
                   </span>
                 </div>
@@ -228,7 +228,7 @@ export default function StoryContent() {
         <div className="mx-auto flex max-w-5xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-3">
             <span className="bn text-[15px] font-bold text-mist-1">কালপাথর</span>
-            <span className="font-mono text-[9px] uppercase tracking-[0.3em] text-mist-3">
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-mist-3">
               {t('landing.credits')}
             </span>
           </div>
@@ -304,7 +304,7 @@ function Kpi({
       <div className="font-mono text-[26px] font-bold leading-none tracking-tight sm:text-[30px]" style={{color: tone}}>
         {format(shown)}
       </div>
-      <div className="mt-2 font-mono text-[9px] uppercase tracking-[0.2em] text-mist-3">{label}</div>
+      <div className="mt-2 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">{label}</div>
     </div>
   );
 }

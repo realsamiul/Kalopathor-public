@@ -1,8 +1,9 @@
 'use client';
 
 import {useTranslations} from 'next-intl';
-import {Gauge as GaugeIcon, X} from 'lucide-react';
-import {useEffect, useState} from 'react';
+import {Gauge as GaugeIcon, RefreshCw, X} from 'lucide-react';
+import {useEffect, useRef, useState} from 'react';
+import {logger} from '@/lib/logger';
 
 export interface GaugePoint {
   date: string;
@@ -30,13 +31,19 @@ export interface GaugeFeatureProps {
   as_of: string;
 }
 
-const W = 340;
-const H = 170;
-const PAD = {l: 34, r: 12, t: 14, b: 26};
+const PAD = {l: 36, r: 12, t: 14, b: 26};
+
+// Responsive chart box: fill the sheet width, keep a readable aspect on
+// narrow phones instead of shrinking to a sliver.
+function chartDims(width: number): {W: number; H: number} {
+  const W = Math.max(240, Math.round(width));
+  const H = Math.max(150, Math.min(230, Math.round(W * 0.55)));
+  return {W, H};
+}
 
 let hydroCache: GaugeSeries[] | null = null;
 
-function loadSeries(setSeries: (s: GaugeSeries[]) => void) {
+function loadSeries(setSeries: (s: GaugeSeries[]) => void, onError: () => void) {
   if (hydroCache) {
     setSeries(hydroCache);
     return;
@@ -47,7 +54,10 @@ function loadSeries(setSeries: (s: GaugeSeries[]) => void) {
       hydroCache = d.stations;
       setSeries(d.stations);
     })
-    .catch((err) => console.error('hydrograph load failed', err));
+    .catch((err) => {
+      logger.error('hydrograph load failed', err);
+      onError();
+    });
 }
 
 function pathFor(points: GaugePoint[], x: (i: number) => number, y: (v: number) => number): string {
@@ -63,10 +73,32 @@ export default function GaugeDrawer({
 }) {
   const t = useTranslations();
   const [series, setSeries] = useState<GaugeSeries[] | null>(hydroCache);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    if (!hydroCache) loadSeries(setSeries);
+    if (!hydroCache) loadSeries(setSeries, () => setFailed(true));
   }, []);
+
+  const retry = () => {
+    hydroCache = null;
+    setFailed(false);
+    setSeries(null);
+    loadSeries(setSeries, () => setFailed(true));
+  };
+
+  // Measure the chart container so the SVG viewBox tracks sheet width.
+  const chartWrap = useRef<HTMLDivElement>(null);
+  const [wrapW, setWrapW] = useState(340);
+  useEffect(() => {
+    const el = chartWrap.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      if (entry) setWrapW(entry.contentRect.width);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const {W, H} = chartDims(wrapW);
 
   const data = series?.find((s) => s.station === gauge.station);
   const danger = gauge.danger_level_m ?? data?.danger_level_m ?? null;
@@ -112,7 +144,7 @@ export default function GaugeDrawer({
           return (
             <g key={i}>
               <line x1={PAD.l} x2={W - PAD.r} y1={yy} y2={yy} stroke="rgba(148,163,184,.12)" strokeWidth="1" />
-              <text x={PAD.l - 5} y={yy + 3} textAnchor="end" fill="#6d7891" fontSize="8" fontFamily="var(--font-mono), monospace">
+              <text x={PAD.l - 5} y={yy + 3} textAnchor="end" fill="#6d7891" fontSize="9" fontFamily="var(--font-mono), monospace">
                 {v.toFixed(1)}
               </text>
             </g>
@@ -123,7 +155,7 @@ export default function GaugeDrawer({
           <>
             <rect x={PAD.l} y={PAD.t} width={W - PAD.l - PAD.r} height={Math.max(0, y(danger) - PAD.t)} fill="rgba(244,63,94,.05)" />
             <line x1={PAD.l} x2={W - PAD.r} y1={y(danger)} y2={y(danger)} stroke="#ef4444" strokeWidth="1.4" strokeDasharray="5 3" />
-            <text x={W - PAD.r - 2} y={y(danger) - 4} textAnchor="end" fill="#f43f5e" fontSize="7.5" fontFamily="var(--font-mono), monospace">
+            <text x={W - PAD.r - 2} y={y(danger) - 4} textAnchor="end" fill="#f43f5e" fontSize="9" fontFamily="var(--font-mono), monospace">
               {t('gauge.danger')} {danger.toFixed(1)}
             </text>
           </>
@@ -132,7 +164,7 @@ export default function GaugeDrawer({
         {fc.length > 0 && <path d={fcPath} fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="3 2" strokeLinejoin="round" />}
         {pts.map((p, i) =>
           i % labelStep === 0 ? (
-            <text key={p.date} x={x(i)} y={H - 8} textAnchor="middle" fill="#6d7891" fontSize="8" fontFamily="var(--font-mono), monospace">
+            <text key={p.date} x={x(i)} y={H - 8} textAnchor="middle" fill="#6d7891" fontSize="9" fontFamily="var(--font-mono), monospace">
               {p.date.slice(5)}
             </text>
           ) : null
@@ -144,10 +176,10 @@ export default function GaugeDrawer({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col" aria-label={t('gauge.title')}>
+    <div className="flex h-full min-h-0 flex-col" role="region" aria-label={t('gauge.title')}>
       <div className="h-1 w-full shrink-0" style={{background: `linear-gradient(90deg, ${tone.text}, transparent 85%)`}} />
       <header className="flex shrink-0 items-center justify-between gap-2 border-b border-line px-3 py-2.5 sm:px-4">
-        <span className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.22em] text-mist-3">
+        <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3">
           <GaugeIcon size={12} aria-hidden />
           {t('gauge.title')}
         </span>
@@ -155,7 +187,7 @@ export default function GaugeDrawer({
           type="button"
           onClick={onClose}
           aria-label={t('common.close')}
-          className="rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:border-line-strong hover:text-mist-1"
+          className="flex min-h-[36px] min-w-[36px] items-center justify-center rounded-md border border-line p-1.5 text-mist-3 transition-colors hover:border-line-strong hover:text-mist-1"
         >
           <X size={13} aria-hidden />
         </button>
@@ -171,7 +203,7 @@ export default function GaugeDrawer({
             </p>
           </div>
           <span
-            className="shrink-0 rounded-md border px-2 py-1 font-mono text-[9px] font-semibold uppercase tracking-widest"
+            className="shrink-0 rounded-md border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest"
             style={{color: tone.text, background: tone.bg, borderColor: tone.border}}
           >
             {t(`ops.lists.gaugeStatus.${gauge.status ?? 'normal'}`)}
@@ -180,21 +212,21 @@ export default function GaugeDrawer({
 
         <div className="grid grid-cols-3 gap-2">
           <div className="rounded-lg border border-line bg-ink-2/60 px-2.5 py-2">
-            <div className="font-mono text-[8.5px] uppercase tracking-widest text-mist-3">{t('gauge.current')}</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-mist-3">{t('gauge.current')}</div>
             <div className="mt-0.5 font-mono text-[19px] font-bold leading-tight" style={{color: tone.text}}>
               {gauge.water_level_m?.toFixed(2)}
               <span className="ml-0.5 text-[11px] font-normal">m</span>
             </div>
           </div>
           <div className="rounded-lg border border-line bg-ink-2/60 px-2.5 py-2">
-            <div className="font-mono text-[8.5px] uppercase tracking-widest text-mist-3">{t('gauge.danger')}</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-mist-3">{t('gauge.danger')}</div>
             <div className="mt-0.5 font-mono text-[19px] font-bold leading-tight text-danger">
               {danger !== null ? danger.toFixed(2) : '—'}
               <span className="ml-0.5 text-[11px] font-normal">m</span>
             </div>
           </div>
           <div className="rounded-lg border border-line bg-ink-2/60 px-2.5 py-2">
-            <div className="font-mono text-[8.5px] uppercase tracking-widest text-mist-3">{t('gauge.diff')}</div>
+            <div className="font-mono text-[10px] uppercase tracking-widest text-mist-3">{t('gauge.diff')}</div>
             <div
               className="mt-0.5 font-mono text-[19px] font-bold leading-tight"
               style={{color: gauge.difference_m != null && gauge.difference_m >= 0 ? '#f43f5e' : '#2dd4bf'}}
@@ -205,8 +237,38 @@ export default function GaugeDrawer({
           </div>
         </div>
 
-        {!data && <p className="text-[11.5px] text-mist-3">{t('common.loading')}…</p>}
-        <div className="rounded-lg border border-line bg-ink-2/40 p-2">{chart}</div>
+        <div ref={chartWrap} className="rounded-lg border border-line bg-ink-2/40 p-2">
+          {failed ? (
+            <div className="flex min-h-[120px] flex-col items-center justify-center gap-2.5 py-4">
+              <p className="text-[11.5px] text-danger">{t('gauge.loadFailed')}</p>
+              <button
+                type="button"
+                onClick={retry}
+                className="flex min-h-[36px] items-center gap-1.5 rounded-md border border-line px-3 py-1.5 font-mono text-[11px] text-mist-2 transition-colors hover:border-line-strong hover:text-mist-1"
+              >
+                <RefreshCw size={12} aria-hidden />
+                {t('common.retry')}
+              </button>
+            </div>
+          ) : !series ? (
+            // loading skeleton — pulsing axes placeholder, same aspect as the chart
+            <div className="animate-pulse" aria-hidden>
+              <div className="flex min-h-[150px] flex-col justify-between gap-3 px-1 py-2" style={{height: H - 8}}>
+                <div className="h-px w-full bg-line" />
+                <div className="h-px w-full bg-line" />
+                <div className="h-px w-full bg-line" />
+                <div className="h-px w-full bg-line" />
+                <div className="flex justify-between">
+                  <div className="h-2 w-10 rounded bg-ink-3" />
+                  <div className="h-2 w-10 rounded bg-ink-3" />
+                  <div className="h-2 w-10 rounded bg-ink-3" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            (chart ?? <p className="py-2 text-[11.5px] text-mist-3">{t('gauge.insufficient')}</p>)
+          )}
+        </div>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10.5px] text-mist-2">
           <span className="flex items-center gap-1.5">
@@ -228,7 +290,7 @@ export default function GaugeDrawer({
           </span>
         </div>
 
-        <p className="mt-auto font-mono text-[9px] leading-relaxed text-mist-3">
+        <p className="mt-auto font-mono text-[10px] leading-relaxed text-mist-3">
           {t('gauge.asOf', {date: gauge.as_of ?? '—'})} · FFWC · {t('ops.freshness.seededAsOf', {date: gauge.as_of ?? '—'})}
         </p>
       </div>

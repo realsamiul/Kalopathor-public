@@ -69,7 +69,7 @@ export default function ApprovalPage({
                 <Bell size={18} aria-hidden />
               </span>
               <div>
-                <div className="font-mono text-[9.5px] uppercase tracking-[0.25em] text-mist-3">
+                <div className="font-mono text-[10px] uppercase tracking-[0.25em] text-mist-3">
                   {t('approval.cap')}
                 </div>
                 <h1 className="mt-0.5 text-[17px] font-bold tracking-tight text-mist-1">
@@ -121,14 +121,18 @@ export default function ApprovalPage({
                 <div className="flex shrink-0 gap-2">
                   <button
                     disabled
-                    className="flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-[12.5px] font-semibold text-mist-3 opacity-60"
+                    aria-disabled
+                    title={t('approval.offline')}
+                    className="flex min-h-[44px] cursor-not-allowed items-center gap-1.5 rounded-lg border border-line px-4 py-2 text-[12.5px] font-semibold text-mist-3 opacity-60"
                   >
                     <X size={13} aria-hidden />
                     {t('approval.reject')}
                   </button>
                   <button
                     disabled
-                    className="flex cursor-not-allowed items-center gap-1.5 rounded-lg border border-accent2/50 bg-accent2/10 px-4 py-2 text-[12.5px] font-semibold text-accent2 opacity-60"
+                    aria-disabled
+                    title={t('approval.offline')}
+                    className="flex min-h-[44px] cursor-not-allowed items-center gap-1.5 rounded-lg border border-accent2/50 bg-accent2/10 px-4 py-2 text-[12.5px] font-semibold text-accent2 opacity-60"
                   >
                     <Send size={13} aria-hidden />
                     {t('approval.approve')}
@@ -137,14 +141,18 @@ export default function ApprovalPage({
               </div>
             </div>
           ) : (
-            <div className="border-t border-line px-5 py-8 text-[13px] text-mist-3">
-              {t('approval.description')}
+            <div className="border-t border-line px-5 py-10 text-center">
+              <p className="text-[14px] font-semibold text-mist-1">{t('approval.emptyTitle')}</p>
+              <p className="mx-auto mt-2 max-w-md text-[12.5px] leading-relaxed text-mist-3">
+                {t('approval.description')}
+              </p>
             </div>
           )}
         </div>
 
-        <p className="mt-4 font-mono text-[9px] uppercase tracking-[0.2em] text-mist-3">
-          {t('approval.stub')}
+        <p className="mt-4 flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-est">
+          <span className="h-1.5 w-1.5 rounded-full bg-est" aria-hidden />
+          {t('approval.readonly')}
         </p>
       </div>
     </main>
@@ -164,7 +172,7 @@ function Meta({
 }) {
   return (
     <div className="rounded-lg border border-line bg-ink-2/60 px-3 py-2.5">
-      <div className="flex items-center gap-1.5 font-mono text-[8.5px] uppercase tracking-widest text-mist-3">
+      <div className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-mist-3">
         <Icon size={11} aria-hidden />
         {label}
       </div>
@@ -188,7 +196,7 @@ function MessagePane({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-line bg-ink-2/40">
-      <div className="border-b border-line px-3.5 py-2 font-mono text-[9px] uppercase tracking-[0.22em] text-mist-3">
+      <div className="border-b border-line px-3.5 py-2 font-mono text-[10px] uppercase tracking-[0.22em] text-mist-3">
         {label}
       </div>
       <div className="px-3.5 py-3">

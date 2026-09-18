@@ -163,6 +163,17 @@ export function gibsProtocolUrl(layer: GibsLayer, date: string): string {
   return `gibs://${layer}/${date}/{z}/{x}/{y}`;
 }
 
+// Shared basemap grade — the landing hero map and the operations console must
+// render identical satellite truth (single source of truth for the grade).
+export const BASEMAP_RASTER_PAINT = {
+  'raster-saturation': -0.3,
+  'raster-brightness-min': 0.7,
+  'raster-brightness-max': 0.85,
+  'raster-contrast': 1.12,
+  'raster-hue-rotate': -5,
+  'raster-fade-duration': 0
+} as const;
+
 // ---------------------------------------------------------------------------
 // GFM — Copernicus Global Flood Monitoring (Sentinel-1 SAR, ~20 m, daily)
 // No auth required. WMS-T with TIME parameter.

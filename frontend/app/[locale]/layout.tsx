@@ -4,6 +4,7 @@ import {getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import {inter, jetbrains, bengali} from '../fonts';
+import MotionProvider from '@/app/components/providers/MotionProvider';
 import '../globals.css';
 
 export const metadata: Metadata = {
@@ -48,7 +49,7 @@ export default async function LocaleLayout({
         className={`${inter.variable} ${jetbrains.variable} ${bengali.variable} antialiased`}
       >
         <NextIntlClientProvider messages={messages}>
-          {children}
+          <MotionProvider>{children}</MotionProvider>
         </NextIntlClientProvider>
       </body>
     </html>
