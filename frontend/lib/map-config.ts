@@ -169,7 +169,7 @@ export const BASEMAP_RASTER_PAINT = {
   'raster-saturation': -0.3,
   'raster-brightness-min': 0.7,
   'raster-brightness-max': 0.85,
-  'raster-contrast': 1.12,
+  'raster-contrast': 1.00,
   'raster-hue-rotate': -5,
   'raster-fade-duration': 0
 } as const;
