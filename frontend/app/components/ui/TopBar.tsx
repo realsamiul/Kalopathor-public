@@ -43,9 +43,11 @@ export default function TopBar({
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-mist-3 md:block">
           Kalopathor
         </span>
-        <span className="flex items-center gap-1.5 rounded-full border border-accent/35 bg-accent/10 px-2 py-0.5">
-          <span className="pulse-dot h-1.5 w-1.5 rounded-full bg-accent text-accent" />
-          <span className="whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-widest text-accent">
+        <span className={`flex items-center gap-1.5 rounded-full border px-2 py-0.5 ${
+          live ? 'border-accent/35 bg-accent/10' : 'border-warn/35 bg-est/10'
+        }`}>
+          <span className={`h-1.5 w-1.5 rounded-full ${live ? 'pulse-dot bg-accent text-accent' : 'bg-est'}`} />
+          <span className={`whitespace-nowrap font-mono text-[10px] font-semibold uppercase tracking-widest ${live ? 'text-accent' : 'text-est'}`}>
             {t('ops.status.livePilot')}
           </span>
         </span>

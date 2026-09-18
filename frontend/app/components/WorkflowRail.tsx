@@ -2,14 +2,10 @@
 
 import {useTranslations} from 'next-intl';
 import {
-  Bell,
-  CalendarClock,
   ChevronDown,
   Gauge,
+  Info,
   Layers,
-  Map as MapIcon,
-  ShieldCheck,
-  Users,
   Waves
 } from 'lucide-react';
 import type {ReactNode} from 'react';
@@ -17,12 +13,8 @@ import {WORKFLOW_ITEMS, type WorkflowItemId} from '@/lib/workflow';
 
 const ICONS: Record<WorkflowItemId, typeof Waves> = {
   now_flooding: Waves,
-  next_72h: CalendarClock,
-  people_at_risk: Users,
-  routes_shelters: MapIcon,
   gauges: Gauge,
-  alerts: Bell,
-  data_quality: ShieldCheck
+  data_quality: Info
 };
 
 export default function WorkflowRail({
