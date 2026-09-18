@@ -38,7 +38,7 @@ export default function TopBar({
       {/* Brand */}
       <div className="flex min-w-0 items-center gap-2.5">
         <span className="bn whitespace-nowrap text-[17px] font-bold leading-none text-mist-1 sm:text-lg">
-          কালপাথর
+          কালোপাথর
         </span>
         <span className="hidden font-mono text-[10px] uppercase tracking-[0.28em] text-mist-3 md:block">
           Kalopathor
