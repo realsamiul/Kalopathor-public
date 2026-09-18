@@ -1,4 +1,4 @@
-import type {Metadata} from 'next';
+import type {Metadata, Viewport} from 'next';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import {notFound} from 'next/navigation';
@@ -9,7 +9,20 @@ import '../globals.css';
 export const metadata: Metadata = {
   title: 'কালপাথর · Kalopathor — Bangladesh Flood Intelligence',
   description:
-    'Flood forecasting and satellite monitoring operations console for Bangladesh.'
+    'Flood forecasting and satellite monitoring operations console for Bangladesh.',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Kalopathor'
+  },
+  formatDetection: {
+    telephone: false
+  }
+};
+
+export const viewport: Viewport = {
+  themeColor: '#070b12',
+  viewportFit: 'cover'
 };
 
 export function generateStaticParams() {

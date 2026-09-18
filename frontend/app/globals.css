@@ -2,17 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ---------------------------------------------------------------------------
+   Design tokens — single source of truth. Tailwind mirrors these (theme.extend).
+   Dark ops-console palette: ink surfaces, slate lines, mist text,
+   teal (water/safe), indigo (interactive), amber (warn/estimate), rose (danger).
+--------------------------------------------------------------------------- */
 :root {
-  --bg: #0a0e17;
-  --card: #111827;
-  --card-border: #1f2937;
-  --text: #e5e7eb;
-  --muted: #9ca3af;
-  --safe: #2dd4bf;
-  --warning: #f59e0b;
-  --danger: #ef4444;
-  --active: #818cf8;
-  --water: #1e3a5f;
+  --ink-0: #070b12;
+  --ink-1: #0a0f18;
+  --ink-2: #0e1522;
+  --ink-3: #16203255;
+  --ink-3-solid: #162032;
+
+  --line: rgba(148, 163, 184, 0.11);
+  --line-strong: rgba(148, 163, 184, 0.24);
+
+  --text-1: #e8edf6;
+  --text-2: #a7b0c2;
+  --text-3: #6d7891;
+
+  --accent: #2dd4bf;
+  --accent2: #818cf8;
+  --ok: #2dd4bf;
+  --warn: #f59e0b;
+  --danger: #f43f5e;
+  --est: #fbbf24;
+
+  color-scheme: dark;
 }
 
 html,
@@ -21,41 +37,69 @@ body {
 }
 
 body {
-  background: var(--bg);
-  color: var(--text);
+  background: var(--ink-0);
+  color: var(--text-1);
   font-family: var(--font-inter), var(--font-bengali), system-ui, sans-serif;
+  font-feature-settings: 'cv11', 'ss01';
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.28);
+}
+
+/* Focus visibility — keyboard users must never be lost */
+:focus-visible {
+  outline: 2px solid var(--accent2);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+:focus:not(:focus-visible) {
+  outline: none;
 }
 
 .font-mono {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
 }
 
 .bn {
   font-family: var(--font-bengali), var(--font-inter), sans-serif;
 }
 
-/* MapLibre overrides for dark console */
-.maplibregl-map {
-  font-family: var(--font-inter), sans-serif;
+/* Glass panel surface used by all floating UI */
+@layer components {
+  .glass {
+    background: rgba(10, 15, 24, 0.82);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  }
+  .glass-strong {
+    background: rgba(10, 15, 24, 0.92);
+    border: 1px solid var(--line);
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+  }
 }
 
-.maplibregl-canvas-container.maplibregl-interactive,
-.maplibregl-ctrl-group,
-.maplibregl-ctrl-attrib {
-  background: rgba(17, 24, 39, 0.85) !important;
-  color: var(--text) !important;
-  backdrop-filter: blur(4px);
+/* Safe-area helpers (notch / home indicator) */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pl-safe {
+  padding-left: env(safe-area-inset-left);
 }
 
-.maplibregl-ctrl-attrib a {
-  color: var(--muted) !important;
+/* Slim scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3550 transparent;
 }
-
-.maplibregl-ctrl-group button {
-  filter: invert(1);
-}
-
-/* Scrollbars */
 *::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -64,12 +108,197 @@ body {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: #374151;
+  background: #2a3550;
   border-radius: 3px;
 }
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+/* ---------------------------------------------------------------------------
+   Range inputs (timeline scrubbers) — styled track + thumb per accent
+--------------------------------------------------------------------------- */
+input[type='range'].scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 20px;
+  background: transparent;
+  cursor: pointer;
+  --thumb: var(--accent);
+}
+input[type='range'].scrub::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--thumb) 0%,
+    var(--thumb) var(--fill, 50%),
+    #243049 var(--fill, 50%),
+    #243049 100%
+  );
+}
+input[type='range'].scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  height: 14px;
+  width: 14px;
+  border-radius: 50%;
+  background: var(--thumb);
+  border: 2px solid var(--ink-1);
+  box-shadow: 0 0 0 1px var(--thumb), 0 0 12px color-mix(in srgb, var(--thumb) 55%, transparent);
+  transition: transform 0.12s ease;
+}
+input[type='range'].scrub:active::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+input[type='range'].scrub::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: #243049;
+}
+input[type='range'].scrub::-moz-range-progress {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--thumb);
+}
+input[type='range'].scrub::-moz-range-thumb {
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: var(--thumb);
+  border: 2px solid var(--ink-1);
+  box-shadow: 0 0 0 1px var(--thumb);
+}
+.scrub-teal {
+  --thumb: var(--accent);
+}
+.scrub-amber {
+  --thumb: var(--warn);
+}
+input[type='range'].scrub:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ---------------------------------------------------------------------------
+   MapLibre chrome — restyled to the glass language
+--------------------------------------------------------------------------- */
+.maplibregl-map {
+  font-family: var(--font-inter), sans-serif;
+  background: var(--ink-0);
+}
+.maplibregl-canvas-container.maplibregl-interactive {
+  cursor: grab;
+}
+.maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: grabbing;
+}
+.maplibregl-ctrl-group {
+  background: rgba(10, 15, 24, 0.85) !important;
+  border: 1px solid var(--line);
+  border-radius: 10px !important;
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  box-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.6);
+}
+.maplibregl-ctrl-group button {
+  filter: invert(0.85) saturate(0.3);
+  width: 30px;
+  height: 30px;
+}
+.maplibregl-ctrl-group button:hover {
+  background: rgba(148, 163, 184, 0.12);
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--line);
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 15, 24, 0.7) !important;
+  border-radius: 8px 0 0 0;
+  backdrop-filter: blur(8px);
+  font-size: 9px !important;
+  color: var(--text-3) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--text-3) !important;
+}
+.maplibregl-ctrl-scale {
+  background: rgba(10, 15, 24, 0.6) !important;
+  border-color: var(--line-strong) !important;
+  border-top: none;
+  color: var(--text-2) !important;
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+}
+.maplibregl-popup-content {
+  background: var(--ink-2);
+  color: var(--text-1);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  font-family: var(--font-inter), sans-serif;
+  box-shadow: var(--shadow-panel-lg);
+}
+.maplibregl-popup-tip {
+  border-top-color: var(--ink-2) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+--------------------------------------------------------------------------- */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 6px currentColor;
+  }
+  50% {
+    opacity: 0.45;
+    box-shadow: 0 0 1px currentColor;
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2.2s ease-in-out infinite;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes drift {
+  0% {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.1) translate3d(-1.2%, -0.8%, 0);
+  }
+  100% {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+}
+.drift {
+  animation: drift 70s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
