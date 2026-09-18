@@ -385,3 +385,64 @@ git clone https://$GITHUB_TOKEN@github.com/realsamiul/Kalopathor-public.git /tmp
 |---|---|---|
 | `kalopathor-hbgo.vercel.app` | V1, `Kalopathor` repo | 🗄️ Archived — no new development |
 | `kalopathor-v2.vercel.app` | V2, `Kalopathor-v2` repo | ✅ Canonical live frontend |
+
+---
+
+## Addendum — T7 Execution Plan Review (`T7_EXECUTION_PLAN.md`)
+**Date added:** 2026-09-18
+
+### Overall verdict: Proceed — plan is sound. 8 specific adjustments below.
+
+---
+
+### What's correct, proceed as-is
+
+- **Hypothesis is well-formed.** Feb-only 10th-percentile as dry baseline is the right mechanical fix for the v5true failure. Nov–Mar window contamination from boro rice Oct–Nov transplanting backscatter is the correct root cause. 96 Feb images × 5 years = ~480 images → stable 10th percentile.
+- **Gate discipline is correct.** "No existing files modified until gates pass, v4.2 stays ops" — maintain this.
+- **Resource budget is accurate.** $0.50–2.00 for full run is realistic against $29 Modal balance.
+
+---
+
+### 8 Issues and Adjustments
+
+**1. Check T7a status before doing anything**
+The plan says "T7a RUNNING (PID 44920)." GEE runs on Google's servers — it may already be done or failed while the session was running. First command of any T7 work:
+```bash
+gsutil ls -l gs://monarqlabs-gemini-workspace/kalopathor/raw/feb10pct_vv_bgd.tif 2>/dev/null
+```
+If non-zero size → T7a done, skip to T7b. If missing → check GEE task log via `work/gee/monitor_task.py`.
+
+**2. Chip upload vs rebuild — rebuild on Modal is faster**
+Uploading 22GB chips6_v3 at ~25 MB/s from OVH ≈ 15 min and ties up the connection. Better: build chips6_v3 on Modal directly from GCS. Raw chips are already in `gs://monarqlabs-gemini-workspace/kalopathor/raw/chips/` — Modal pulls from GCS at Google-internal speeds (~200 MB/s). Upload only aux rasters (DEM, HAND, GSW, strong_labels.npz, feni chips — ~1.5GB total). Saves ~10 min and avoids network saturation.
+
+**3. GPU tier — use A10G, not A100. Also: model param count is wrong**
+Plan says "26M params." The model is EfficientNet-B0 U-Net with **6.3M params** — not 26M. At 512×512 batch=4, A10G (24GB VRAM) is plenty. A100 is 3× the cost for zero benefit on a model this size. Use `gpu="A10G"` in Modal config.
+
+**4. Gate 2 dry_inland criterion is too weak**
+Plan says `dry_inland FPR < 0.800`. v4.2's dry_inland IS 0.800 — this gate just says "don't be worse." The entire motivation for v6 is improvement. Recommended threshold: **`dry_inland FPR < 0.600`** — meaningful 25% relative improvement, not demanding. If v6 passes at 0.799 the experiment produced no useful signal.
+
+**5. Add channel 5 sanity check between T7b and T7c**
+Risk #2 ("10th percentile too dark → CHANGE saturates") is listed as a mitigation but not as a required step. It should be. A 2-minute check:
+```python
+import numpy as np
+v3 = np.load('/mnt/data/chips6_v3/chips6_v3.npy', mmap_mode='r')
+v2 = np.load('/mnt/data/chips6_export/chips6.npy', mmap_mode='r')
+print('v4.2 ch5:', v2[:,5].mean(), v2[:,5].std())
+print('v6   ch5:', v3[:,5].mean(), v3[:,5].std())
+```
+If `std(v6 ch5) >> std(v4.2 ch5)`, the reference is too aggressive — halt and investigate before burning $1.50 on a doomed training run.
+
+**6. GEE auth blocker may be resolved — update master docs**
+The plan says "Auth: Confirmed working with existing `authorized_user` ADC. No service account needed." The FIX_PLAN and AGENTS.md still list T7 as "BLOCKED on S1 (GCS SA)." If GEE exports work with the personal ADC, that's a meaningful status change. After T7a confirms, update AGENTS.md top open items and master report §22 accordingly.
+
+**7. `/root/` path bug — fix ALL four paths, not just REF_PATH**
+The plan correctly identifies `REF_PATH: /root/General/...` needs fixing. But DEM_PATH, HAND_PATH, and GSW_PATH also have `/root/` prefixes in `d3_6ch_prep_v2.py`. The v5true run hit exactly this bug (chips built with zero aux data, n_unclipped explosion). When writing `d3_6ch_prep_v3.py`, grep for every `/root/` and replace with the correct path before running.
+
+**8. Decision 4: auto-promote vs Sam review — hold for Sam**
+Correct answer per honesty doctrine: run all gates automatically, but **require Sam review before polygon regeneration and frontend update**. Model weights can be labelled "ops candidate" internally, but swapping the live polygon layer (1,199 polygons on the frontend) without human sign-off is higher risk than the 10-minute delay. The CAP engine and exposure calcs all key off the polygon layer. Any silent swap has downstream effects.
+
+---
+
+### Branch decision if Gate 2 fails again on dry_inland
+
+The plan says "document what was learned, keep v4.2." Correct. But it should also specify the next experiment: if v6 fails dry_inland FPR after Feb-only 10th-pct, the hypothesis shifts from "the reference causes the FPR" to "the model architecture or negative-control chip composition causes the FPR." In that case, the next track is **not another reference swap** — it's targeted negative-control augmentation: add dry_inland chips (urban non-flood) to the training set with flood=0 labels, retrain at same architecture. Worth noting as the explicit branch before spending another Lightning run.
