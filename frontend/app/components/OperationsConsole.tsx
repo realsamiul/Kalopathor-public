@@ -99,7 +99,7 @@ export interface OpsMeta {
 // Which core layers each workflow view activates — exhaustive (all LayerId keys)
 // so no layer state can bleed between views.
 const VIEW_LAYERS: Record<WorkflowItemId, Record<LayerId, boolean>> = {
-  now_flooding:   {basemap: true, mcdwd: false, imerg: false, gfm: true, hillshade: true, rivers: true, flood: true, exposure: true, erosion: true, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
+  now_flooding:   {basemap: true, mcdwd: false, imerg: false, gfm: true, hillshade: true, rivers: true, flood: true, exposure: true, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
   next_72h:       {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: true, exposure: false, erosion: false, erosion_banklines: false, prediction: true, uncertainty: true, landslide: false, tvdi: false, gauges: false},
   people_at_risk: {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: true, exposure: true, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
   routes_shelters:{basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: false, exposure: false, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
@@ -156,7 +156,7 @@ export default function OperationsConsole() {
     rivers:            true,
     flood:             true,
     exposure:          true,
-    erosion:           true,
+    erosion:           false,
     erosion_banklines: false,
     prediction:        true,
     uncertainty:       false,
@@ -247,11 +247,11 @@ export default function OperationsConsole() {
     const map = mapRef.current;
     if (!map) return;
     if (selectedRef.current !== null && map.getLayer('flood-fill')) {
-      map.setFeatureState({source: 'flood', id: selectedRef.current}, {selected: false});
+      map.setFeatureState({source: 'flood', sourceLayer: 'flood', id: selectedRef.current}, {selected: false});
     }
     selectedRef.current = id;
     if (id !== null && map.getLayer('flood-fill')) {
-      map.setFeatureState({source: 'flood', id}, {selected: true});
+      map.setFeatureState({source: 'flood', sourceLayer: 'flood', id}, {selected: true});
     }
     const src = map.getSource('flood-selected') as GeoJSONSource | undefined;
     if (src) {
@@ -300,10 +300,10 @@ export default function OperationsConsole() {
     const map = mapRef.current;
     if (!map || !map.getLayer('flood-fill')) return;
     if (hoveredRef.current !== null) {
-      map.setFeatureState({source: 'flood', id: hoveredRef.current}, {hovered: false});
+      map.setFeatureState({source: 'flood', sourceLayer: 'flood', id: hoveredRef.current}, {hovered: false});
     }
     if (id !== null) {
-      map.setFeatureState({source: 'flood', id}, {hovered: true});
+      map.setFeatureState({source: 'flood', sourceLayer: 'flood', id}, {hovered: true});
     }
     hoveredRef.current = id;
   }, []);
@@ -530,8 +530,8 @@ export default function OperationsConsole() {
             data: '/data/rivers_bgd.geojson'
           },
           flood: {
-            type: 'geojson',
-            data: '/data/detection_polygons_v4.geojson',
+            type: 'vector',
+            url: 'pmtiles:///data/pmtiles/flood_polygons.pmtiles',
             promoteId: 'polygon_id'
           },
           'flood-selected': {
@@ -684,6 +684,7 @@ export default function OperationsConsole() {
             id: 'flood-fill',
             type: 'fill',
             source: 'flood',
+            'source-layer': 'flood',
             paint: {
               'fill-color': [
                 'case',
@@ -707,6 +708,7 @@ export default function OperationsConsole() {
             id: 'flood-glow',
             type: 'line',
             source: 'flood',
+            'source-layer': 'flood',
             paint: {
               'line-color': '#ef4444',
               'line-width': 1.5,
@@ -740,7 +742,7 @@ export default function OperationsConsole() {
             type: 'line',
             source: 'erosion',
             paint: {
-              'line-color': '#f97316',
+              'line-color': '#00e5ff',
               'line-width': 1.5,
               'line-opacity': 0.85,
               'line-dasharray': [4, 2]

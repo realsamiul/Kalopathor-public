@@ -32,7 +32,8 @@
       "forecastAge": "FCST",
       "nextPass": "পরবর্তী S1",
       "healthLive": "লাইভ",
-      "healthDemo": "ডেমো"
+      "healthDemo": "ডেমো",
+      "liveHealth": "সমস্ত ডেটা সোর্স স্বাভাবিকভাবে রিপোর্ট করছে"
     },
     "badge": {
       "monitoring": "মনিটরিং",

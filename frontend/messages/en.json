@@ -32,7 +32,9 @@
       "forecastAge": "FCST",
       "nextPass": "NEXT S1",
       "healthLive": "LIVE",
-      "healthDemo": "DEMO"
+      "healthDemo": "DEMO",
+      "liveHealth": "All data sources reporting normally",
+      "livePilot": "LIVE PILOT · FENI"
     },
     "badge": {
       "monitoring": "Monitoring",
