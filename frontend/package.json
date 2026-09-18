@@ -2,6 +2,9 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +13,6 @@
   },
   "dependencies": {
     "framer-motion": "^13.1.1",
-    "hyparquet": "^1.29.2",
     "lucide-react": "^1.47.0",
     "maplibre-gl": "^6.6.0",
     "next": "14.2.35",

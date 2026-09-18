@@ -1,0 +1,377 @@
+diff --git a/.env.example b/.env.example
+index ce901cc..7705b57 100644
+--- a/.env.example
++++ b/.env.example
+@@ -1,11 +1,26 @@
+-# Required environment variables
+-LIGHTNING_API_KEY=           # Lightning AI API key
+-GITHUB_TOKEN=                # GitHub personal access token
+-VERCEL_TOKEN=                # Vercel deployment token
++# ─────────────────────────────────────────────────────────────────────────────
++# Kalopathor environment variables
++#
++# *** THE FRONTEND (frontend/) NEEDS NO ENVIRONMENT VARIABLES. ***
++# It is a static Next.js app; all data is served from public/data/.
++# For Vercel: import the repo, set Root Directory = "frontend", deploy.
++# The only optional frontend variable is documented in frontend/.env.example.
++#
++# The variables below are for the BACKEND/DATA PIPELINE only (training,
++# data generation and freshness jobs run on workstations / the OVH server).
++# They must never be committed with real values, and never set in Vercel.
++# ─────────────────────────────────────────────────────────────────────────────
++
++# --- backend pipeline only (not required for the frontend) ---
++LIGHTNING_API_KEY=             # Lightning AI API key (training compute)
++GITHUB_TOKEN=                  # GitHub PAT (data sync jobs)
+ GOOGLE_APPLICATION_CREDENTIALS=  # Path to GCP service account JSON
+-GOOGLE_CLOUD_PROJECT=        # GCP project ID
+-MODAL_TOKEN_ID=              # Modal.com token ID
+-MODAL_TOKEN_SECRET=          # Modal.com token secret
+-AWS_ACCESS_KEY_ID=           # AWS credentials
++GOOGLE_CLOUD_PROJECT=          # GCP project ID (Earth Engine / storage)
++MODAL_TOKEN_ID=                # Modal.com token ID (serverless jobs)
++MODAL_TOKEN_SECRET=            # Modal.com token secret
++AWS_ACCESS_KEY_ID=             # AWS credentials (COG / bucket access)
+ AWS_SECRET_ACCESS_KEY=
+ AWS_DEFAULT_REGION=us-west-2
++
++# --- repo owner only ---
++VERCEL_TOKEN=                  # Vercel token (CI-driven deploys)
+diff --git a/README.md b/README.md
+index 8fcb520..bcc5e22 100644
+--- a/README.md
++++ b/README.md
+@@ -66,7 +66,25 @@ npm run dev        # http://localhost:3000/en/operations
+ npm run build      # production build
+ ```
+ 
+-Requires Node.js 18+. No environment variables needed — all data is static in `public/data/`.
++Requires Node.js 20+. No environment variables needed — all data is static in `public/data/`.
++
++---
++
++## Deploy (Vercel)
++
++**Import from GitHub and set Root Directory = `frontend`** — the Next.js app lives in the `frontend/` subdirectory; the repo root holds the data pipeline and must NOT be the project root.
++
++| Setting | Value |
++|---|---|
++| Root Directory | `frontend` |
++| Framework | Next.js (auto-detected, pinned in `frontend/vercel.json`) |
++| Build command | `npm run build` |
++| Install command | `npm ci` |
++| Functions region | `bom1` (Mumbai — nearest to users) |
++| Node.js | 20.x or 22.x (`engines: >=20`) |
++| Env variables | none required |
++
++Git-excluded `*.pmtiles` archives degrade gracefully (forecast chips flagged, hillshade skipped). For a full-fidelity deploy, host them externally and set `NEXT_PUBLIC_TILES_BASE` before building — see `frontend/README.md` for the complete guide.
+ 
+ ---
+ 
+diff --git a/frontend/.env.example b/frontend/.env.example
+new file mode 100644
+index 0000000..2cd61cb
+--- /dev/null
++++ b/frontend/.env.example
+@@ -0,0 +1,7 @@
++# Frontend environment — everything is OPTIONAL.
++# Out of the box the app needs no env vars: all data is static under public/data/.
++
++# Optional: serve the large, git-excluded PMTiles tile archives from an external
++# static host/CDN instead of same-origin. Must be set at BUILD time.
++# Leave unset for GitHub-import deploys (the UI degrades honestly without tiles).
++# NEXT_PUBLIC_TILES_BASE=https://tiles.example.com
+diff --git a/frontend/Dockerfile b/frontend/Dockerfile
+index 6236dc9..002c740 100644
+--- a/frontend/Dockerfile
++++ b/frontend/Dockerfile
+@@ -1,16 +1,18 @@
+-FROM node:18-alpine AS deps
++FROM node:20-alpine AS deps
+ WORKDIR /app
+ COPY package.json package-lock.json ./
+ RUN npm ci --ignore-scripts
+ 
+-FROM node:18-alpine AS builder
++FROM node:20-alpine AS builder
+ WORKDIR /app
+ COPY --from=deps /app/node_modules ./node_modules
+ COPY . .
+ ENV NEXT_TELEMETRY_DISABLED=1
++# Standalone server output for the Cloud Run runner stage below.
++ENV BUILD_STANDALONE=true
+ RUN npm run build
+ 
+-FROM node:18-alpine AS runner
++FROM node:20-alpine AS runner
+ WORKDIR /app
+ ENV NODE_ENV=production
+ ENV NEXT_TELEMETRY_DISABLED=1
+diff --git a/frontend/README.md b/frontend/README.md
+index e215bc4..77e2b36 100644
+--- a/frontend/README.md
++++ b/frontend/README.md
+@@ -1,36 +1,56 @@
+-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
++# Kalopathor — Frontend
+ 
+-## Getting Started
++Bilingual (EN/BN) flood intelligence console: Next.js 14 (App Router) + MapLibre GL + Tailwind + next-intl + framer-motion. All data is static under `public/data/` — no backend and no environment variables required.
+ 
+-First, run the development server:
++## Local development
+ 
+ ```bash
+-npm run dev
+-# or
+-yarn dev
+-# or
+-pnpm dev
+-# or
+-bun dev
++npm install          # or: npm ci
++npm run dev          # http://localhost:3000/en (redirects by middleware)
++npm run build        # production build
+ ```
+ 
+-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
++Requires **Node.js ≥ 20**.
+ 
+-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
++## Deploy to Vercel (recommended: GitHub import)
+ 
+-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
++1. In Vercel: **Add New → Project → Import** this repository.
++2. **Root Directory = `frontend`** ← this is the setting that matters. The repo root contains backend/data pipeline code; the Next.js app lives here.
++3. Leave the rest as detected: Framework **Next.js**, Build `npm run build`, Install `npm ci`, Output `.next` (default). These are pinned in `vercel.json`.
++4. **Environment variables:** none required.
++5. **Node.js version:** 20.x or 22.x (both pass; enforced as `>=20` via `engines`).
+ 
+-## Learn More
++Everything except the large optional tile archives then deploys straight from `main`:
+ 
+-To learn more about Next.js, take a look at the following resources:
++- ✅ Landing page, operations console, data-quality panel, approval review, bilingual UI
++- ✅ GIBS basemap/gap-fillers, GFM WMS, GeoJSON layers (rivers, exposure, erosion, gauges), hazard JSON tiles
++- ⚠️ The heavy `*.pmtiles` archives (hillshade, flood vector polygons, prediction/uncertainty rasters) are **deliberately git-excluded** (see repo `/.gitignore`, `*.pmtiles`) and won't exist on a GitHub import. The app tolerates this: forecast chips read "forecast tiles not in public build", hillshade simply renders nothing, flood-vector clicks find no features. Nothing crashes.
+ 
+-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
++### Full-fidelity deploy (with the PMTiles archives)
+ 
+-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
++Two options:
+ 
+-## Deploy on Vercel
++1. **External tile host (cleanest for CI/CD):** upload `public/data/**/*.pmtiles` to any static host/R2/S3+CDN, then set the project env var
++   `NEXT_PUBLIC_TILES_BASE=https://your-tile-host` (no trailing slash) and redeploy. The app builds all tile URLs from it (`lib/map-config.ts#pmtilesUrl`).
++2. **CLI upload deploy:** from the data machine, `cd frontend && vercel --prod`. Add nothing else — untracked-but-present files are uploaded unless excluded (and there is no `.vercelignore`). Note this bypasses Git deployments.
+ 
+-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
++## Self-host (Docker / Cloud Run)
+ 
+-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
++The `Dockerfile` builds the standalone server output (`BUILD_STANDALONE=true`) and runs `node server.js` on port 3000 — used by `cloudbuild.yaml` for the GCP `hawkeye` image. When built this way the repo's `*.pmtiles` files must be present in the build context (they are, on the data machine).
++
++## Project layout
++
++```
++app/[locale]/         routes: / landing, /operations console, /approval review
++app/components/       UI (OperationsConsole, ActionCard, GaugeDrawer, …)
++lib/                  map config/protocols, loaders, breakpoints, logger
++i18n/ + messages/     next-intl routing + EN/BN strings
++public/data/          served geodata (GeoJSON/JSON; pmtiles only if present)
++public/lib/           MapLibre worker (served locally, avoids CDN flakiness)
++```
++
++## Notes
++
++- `output: 'standalone'` in `next.config.mjs` applies ONLY when `BUILD_STANDALONE=true` (Docker). Vercel builds use the default output.
++- `/api/freshness` is a thin static-export route over `public/data/freshness.json` with CDN cache headers.
++- All user-facing strings go through `t()` — see `messages/en.json` + `messages/bn.json`.
+diff --git a/frontend/app/components/OperationsConsole.tsx b/frontend/app/components/OperationsConsole.tsx
+index 80617b0..9d150de 100644
+--- a/frontend/app/components/OperationsConsole.tsx
++++ b/frontend/app/components/OperationsConsole.tsx
+@@ -27,6 +27,8 @@ import {
+   gfmTileUrl,
+   GFM_DEFAULT_DATE,
+   layers,
++  dataFileUrl,
++  pmtilesUrl,
+   type Coverage,
+   type GibsLayer,
+   type LayerId
+@@ -242,7 +244,7 @@ export default function OperationsConsole() {
+       })
+       .catch(() => undefined);
+     // Honest check: prediction tiles are large and gitignored in the public repo.
+-    fetch('/data/pmtiles/prediction_t5_2024-06-18.pmtiles', {method: 'HEAD'})
++    fetch(dataFileUrl('/data/pmtiles/prediction_t5_2024-06-18.pmtiles'), {method: 'HEAD'})
+       .then((r) => setForecastAvailable(r.ok))
+       .catch(() => setForecastAvailable(false));
+     return () => {
+@@ -380,7 +382,7 @@ export default function OperationsConsole() {
+     const src = map.getSource('prediction');
+     if (src && 'setTiles' in src) {
+       (src as import('maplibre-gl').RasterTileSource | undefined)?.setTiles([
+-        `pmtiles:///data/pmtiles/prediction_t${horizonId}_${date}.pmtiles/{z}/{x}/{y}`
++        pmtilesUrl(`/data/pmtiles/prediction_t${horizonId}_${date}.pmtiles`) + '/{z}/{x}/{y}'
+       ]);
+     }
+   }, []);
+@@ -528,7 +530,7 @@ export default function OperationsConsole() {
+           },
+           hillshade: {
+             type: 'raster',
+-            tiles: ['pmtiles:///data/hillshade_bgd.pmtiles/{z}/{x}/{y}'],
++            tiles: [pmtilesUrl('/data/hillshade_bgd.pmtiles') + '/{z}/{x}/{y}'],
+             tileSize: 256,
+             minzoom: 5,
+             maxzoom: 10
+@@ -539,7 +541,7 @@ export default function OperationsConsole() {
+           },
+           flood: {
+             type: 'vector',
+-            url: 'pmtiles:///data/pmtiles/flood_polygons.pmtiles',
++            url: pmtilesUrl('/data/pmtiles/flood_polygons.pmtiles'),
+             promoteId: 'polygon_id'
+           },
+           'flood-selected': {
+@@ -560,14 +562,14 @@ export default function OperationsConsole() {
+           },
+           prediction: {
+             type: 'raster',
+-            tiles: ['pmtiles:///data/pmtiles/prediction_t5_2024-06-18.pmtiles/{z}/{x}/{y}'],
++            tiles: [pmtilesUrl('/data/pmtiles/prediction_t5_2024-06-18.pmtiles') + '/{z}/{x}/{y}'],
+             tileSize: 256,
+             minzoom: 0,
+             maxzoom: 7
+           },
+           uncertainty: {
+             type: 'raster',
+-            tiles: ['pmtiles:///data/pmtiles/uncertainty_t5.pmtiles/{z}/{x}/{y}'],
++            tiles: [pmtilesUrl('/data/pmtiles/uncertainty_t5.pmtiles') + '/{z}/{x}/{y}'],
+             tileSize: 256,
+             minzoom: 0,
+             maxzoom: 7
+diff --git a/frontend/lib/map-config.ts b/frontend/lib/map-config.ts
+index 7616bb8..211d13b 100644
+--- a/frontend/lib/map-config.ts
++++ b/frontend/lib/map-config.ts
+@@ -200,4 +200,25 @@ export function gfmTileUrl(date: string, z: number, x: number, y: number): strin
+ }
+ 
+ /** Most recent date to default GFM to (known event with flood pixels over BD). */
+-export const GFM_DEFAULT_DATE = '2024-08-21';
+\ No newline at end of file
++export const GFM_DEFAULT_DATE = '2024-08-21';
++
++// ---------------------------------------------------------------------------
++// Data-file / PMTiles URL helpers.
++// The heavy *.pmtiles archives are deliberately NOT committed to this repo
++// (.gitignore) — they live on the data machine. For GitHub-import deploys the
++// app runs same-origin and simply degrades honestly when a bundle 404s
++// (forecast chips/hillshade/flood-vector features hide or render empty).
++// To serve the full tile set from any static host/CDN, set NEXT_PUBLIC_TILES_BASE
++// (e.g. https://tiles.example.com) in the Vercel project env BEFORE building.
++// ---------------------------------------------------------------------------
++const TILES_BASE = (process.env.NEXT_PUBLIC_TILES_BASE ?? '').replace(/\/+$/, '');
++
++/** Public URL for a served data file, honoring the optional tiles base. */
++export function dataFileUrl(path: string): string {
++  return `${TILES_BASE}${path}`;
++}
++
++/** PMTiles protocol URL for a served .pmtiles archive. */
++export function pmtilesUrl(path: string): string {
++  return `pmtiles://${TILES_BASE}${path}`;
++}
+\ No newline at end of file
+diff --git a/frontend/next.config.mjs b/frontend/next.config.mjs
+index 7b00ef0..c147886 100644
+--- a/frontend/next.config.mjs
++++ b/frontend/next.config.mjs
+@@ -4,7 +4,10 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
+ 
+ /** @type {import('next').NextConfig} */
+ const nextConfig = {
+-  output: 'standalone',
++  // `standalone` output is ONLY for the Docker/Cloud Run self-host build
++  // (see Dockerfile — it sets BUILD_STANDALONE=true). Vercel must receive the
++  // default output so its builder can trace functions and route assets itself.
++  output: process.env.BUILD_STANDALONE ? 'standalone' : undefined,
+ };
+ 
+-export default withNextIntl(nextConfig);
+\ No newline at end of file
++export default withNextIntl(nextConfig);
+diff --git a/frontend/package-lock.json b/frontend/package-lock.json
+index 151b6bd..4eacf08 100644
+--- a/frontend/package-lock.json
++++ b/frontend/package-lock.json
+@@ -9,7 +9,6 @@
+       "version": "0.1.0",
+       "dependencies": {
+         "framer-motion": "^13.1.1",
+-        "hyparquet": "^1.29.2",
+         "lucide-react": "^1.47.0",
+         "maplibre-gl": "^6.6.0",
+         "next": "14.2.35",
+@@ -30,6 +29,9 @@
+         "postcss": "^8",
+         "tailwindcss": "^3.4.1",
+         "typescript": "^5"
++      },
++      "engines": {
++        "node": ">=20"
+       }
+     },
+     "node_modules/@alloc/quick-lru": {
+@@ -3868,12 +3870,6 @@
+         "node": ">= 0.4"
+       }
+     },
+-    "node_modules/hyparquet": {
+-      "version": "1.29.2",
+-      "resolved": "https://registry.npmjs.org/hyparquet/-/hyparquet-1.29.2.tgz",
+-      "integrity": "sha512-2LxinZ8X0JqToST+9OXcy9t3t5Q7ZneMTkSqUx/36Hv18pCTk/N71IWZc7APTSNG1Me39l/jjEvzZSZ0R+Knbw==",
+-      "license": "MIT"
+-    },
+     "node_modules/icu-minify": {
+       "version": "4.14.1",
+       "resolved": "https://registry.npmjs.org/icu-minify/-/icu-minify-4.14.1.tgz",
+diff --git a/frontend/package.json b/frontend/package.json
+index 1a6b8f1..6ef9ce7 100644
+--- a/frontend/package.json
++++ b/frontend/package.json
+@@ -2,6 +2,9 @@
+   "name": "frontend",
+   "version": "0.1.0",
+   "private": true,
++  "engines": {
++    "node": ">=20"
++  },
+   "scripts": {
+     "dev": "next dev",
+     "build": "next build",
+@@ -10,7 +13,6 @@
+   },
+   "dependencies": {
+     "framer-motion": "^13.1.1",
+-    "hyparquet": "^1.29.2",
+     "lucide-react": "^1.47.0",
+     "maplibre-gl": "^6.6.0",
+     "next": "14.2.35",
+diff --git a/frontend/vercel.json b/frontend/vercel.json
+new file mode 100644
+index 0000000..087c453
+--- /dev/null
++++ b/frontend/vercel.json
+@@ -0,0 +1,6 @@
++{
++  "framework": "nextjs",
++  "installCommand": "npm ci",
++  "buildCommand": "npm run build",
++  "regions": ["bom1"]
++}

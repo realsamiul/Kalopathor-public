@@ -201,3 +201,24 @@ export function gfmTileUrl(date: string, z: number, x: number, y: number): strin
 
 /** Most recent date to default GFM to (known event with flood pixels over BD). */
 export const GFM_DEFAULT_DATE = '2024-08-21';
+
+// ---------------------------------------------------------------------------
+// Data-file / PMTiles URL helpers.
+// The heavy *.pmtiles archives are deliberately NOT committed to this repo
+// (.gitignore) — they live on the data machine. For GitHub-import deploys the
+// app runs same-origin and simply degrades honestly when a bundle 404s
+// (forecast chips/hillshade/flood-vector features hide or render empty).
+// To serve the full tile set from any static host/CDN, set NEXT_PUBLIC_TILES_BASE
+// (e.g. https://tiles.example.com) in the Vercel project env BEFORE building.
+// ---------------------------------------------------------------------------
+const TILES_BASE = (process.env.NEXT_PUBLIC_TILES_BASE ?? '').replace(/\/+$/, '');
+
+/** Public URL for a served data file, honoring the optional tiles base. */
+export function dataFileUrl(path: string): string {
+  return `${TILES_BASE}${path}`;
+}
+
+/** PMTiles protocol URL for a served .pmtiles archive. */
+export function pmtilesUrl(path: string): string {
+  return `pmtiles://${TILES_BASE}${path}`;
+}

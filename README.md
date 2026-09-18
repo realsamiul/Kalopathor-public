@@ -66,7 +66,25 @@ npm run dev        # http://localhost:3000/en/operations
 npm run build      # production build
 ```
 
-Requires Node.js 18+. No environment variables needed — all data is static in `public/data/`.
+Requires Node.js 20+. No environment variables needed — all data is static in `public/data/`.
+
+---
+
+## Deploy (Vercel)
+
+**Import from GitHub and set Root Directory = `frontend`** — the Next.js app lives in the `frontend/` subdirectory; the repo root holds the data pipeline and must NOT be the project root.
+
+| Setting | Value |
+|---|---|
+| Root Directory | `frontend` |
+| Framework | Next.js (auto-detected, pinned in `frontend/vercel.json`) |
+| Build command | `npm run build` |
+| Install command | `npm ci` |
+| Functions region | `bom1` (Mumbai — nearest to users) |
+| Node.js | 20.x or 22.x (`engines: >=20`) |
+| Env variables | none required |
+
+Git-excluded `*.pmtiles` archives degrade gracefully (forecast chips flagged, hillshade skipped). For a full-fidelity deploy, host them externally and set `NEXT_PUBLIC_TILES_BASE` before building — see `frontend/README.md` for the complete guide.
 
 ---
 

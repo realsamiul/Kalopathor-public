@@ -27,6 +27,8 @@ import {
   gfmTileUrl,
   GFM_DEFAULT_DATE,
   layers,
+  dataFileUrl,
+  pmtilesUrl,
   type Coverage,
   type GibsLayer,
   type LayerId
@@ -242,7 +244,7 @@ export default function OperationsConsole() {
       })
       .catch(() => undefined);
     // Honest check: prediction tiles are large and gitignored in the public repo.
-    fetch('/data/pmtiles/prediction_t5_2024-06-18.pmtiles', {method: 'HEAD'})
+    fetch(dataFileUrl('/data/pmtiles/prediction_t5_2024-06-18.pmtiles'), {method: 'HEAD'})
       .then((r) => setForecastAvailable(r.ok))
       .catch(() => setForecastAvailable(false));
     return () => {
@@ -380,7 +382,7 @@ export default function OperationsConsole() {
     const src = map.getSource('prediction');
     if (src && 'setTiles' in src) {
       (src as import('maplibre-gl').RasterTileSource | undefined)?.setTiles([
-        `pmtiles:///data/pmtiles/prediction_t${horizonId}_${date}.pmtiles/{z}/{x}/{y}`
+        pmtilesUrl(`/data/pmtiles/prediction_t${horizonId}_${date}.pmtiles`) + '/{z}/{x}/{y}'
       ]);
     }
   }, []);
@@ -528,7 +530,7 @@ export default function OperationsConsole() {
           },
           hillshade: {
             type: 'raster',
-            tiles: ['pmtiles:///data/hillshade_bgd.pmtiles/{z}/{x}/{y}'],
+            tiles: [pmtilesUrl('/data/hillshade_bgd.pmtiles') + '/{z}/{x}/{y}'],
             tileSize: 256,
             minzoom: 5,
             maxzoom: 10
@@ -539,7 +541,7 @@ export default function OperationsConsole() {
           },
           flood: {
             type: 'vector',
-            url: 'pmtiles:///data/pmtiles/flood_polygons.pmtiles',
+            url: pmtilesUrl('/data/pmtiles/flood_polygons.pmtiles'),
             promoteId: 'polygon_id'
           },
           'flood-selected': {
@@ -560,14 +562,14 @@ export default function OperationsConsole() {
           },
           prediction: {
             type: 'raster',
-            tiles: ['pmtiles:///data/pmtiles/prediction_t5_2024-06-18.pmtiles/{z}/{x}/{y}'],
+            tiles: [pmtilesUrl('/data/pmtiles/prediction_t5_2024-06-18.pmtiles') + '/{z}/{x}/{y}'],
             tileSize: 256,
             minzoom: 0,
             maxzoom: 7
           },
           uncertainty: {
             type: 'raster',
-            tiles: ['pmtiles:///data/pmtiles/uncertainty_t5.pmtiles/{z}/{x}/{y}'],
+            tiles: [pmtilesUrl('/data/pmtiles/uncertainty_t5.pmtiles') + '/{z}/{x}/{y}'],
             tileSize: 256,
             minzoom: 0,
             maxzoom: 7
