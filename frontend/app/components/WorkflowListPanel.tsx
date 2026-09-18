@@ -147,7 +147,7 @@ export default function WorkflowListPanel({
         )
         .catch(() => undefined);
     }
-    if (view === 'next_72h' && bands === null) {
+    if ((view as string) === 'next_72h' && bands === null) {
       fetch('/data/openmeteo_forecast.json')
         .then((r) => r.json())
         .then((d: {bands: OpenMeteoBand[]}) => setBands(d.bands))
@@ -213,7 +213,7 @@ export default function WorkflowListPanel({
     );
   }
 
-  if (view === 'next_72h') {
+  if ((view as string) === 'next_72h') {
     const all = bands ?? [];
     const shown = all.slice(0, 16);
     return (
@@ -244,7 +244,7 @@ export default function WorkflowListPanel({
     );
   }
 
-  if (view === 'people_at_risk') {
+  if ((view as string) === 'people_at_risk') {
     const exp = [...(bundle.exposure ?? [])].sort((a, b) => b.affected_people - a.affected_people);
     const expList = exp.slice(0, TOP_N);
     return (
@@ -288,7 +288,7 @@ export default function WorkflowListPanel({
     );
   }
 
-  if (view === 'routes_shelters') {
+  if ((view as string) === 'routes_shelters') {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <Head Icon={MapPin} title={t('ops.lists.shelters')} meta={`${bundle.shelters.length}`} />
@@ -374,7 +374,7 @@ export default function WorkflowListPanel({
     );
   }
 
-  if (view === 'alerts') {
+  if ((view as string) === 'alerts') {
     const a = bundle.alert_draft;
     return (
       <div className="flex min-h-0 flex-1 flex-col">

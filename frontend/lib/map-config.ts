@@ -17,29 +17,35 @@ export type LayerId =
 
 export type Coverage = 'global' | 'pilot' | 'national';
 
+export type LayerGroup = 'satellite' | 'flood' | 'reference';
+
 export interface LayerDef {
   id: LayerId;
   coverage: Coverage;
+  group: LayerGroup;
   // e.g. "optical/cloud-limited" gap-filler layers
   noteKey?: string;
 }
 
 export const layers: LayerDef[] = [
-  {id: 'basemap',           coverage: 'global'},
-  {id: 'mcdwd',             coverage: 'global',   noteKey: 'layers.note.gapFiller'},
-  {id: 'imerg',             coverage: 'global',   noteKey: 'layers.note.gapFiller'},
-  {id: 'gfm',               coverage: 'global',   noteKey: 'layers.note.live'},
-  {id: 'hillshade',         coverage: 'pilot'},
-  {id: 'rivers',            coverage: 'national'},
-  {id: 'flood',             coverage: 'national'},
-  {id: 'exposure',          coverage: 'national'},
-  {id: 'erosion',           coverage: 'pilot'},
-  {id: 'erosion_banklines', coverage: 'national', noteKey: 'layers.note.banklines'},
-  {id: 'prediction',        coverage: 'national'},
-  {id: 'uncertainty',       coverage: 'national', noteKey: 'layers.note.calibPending'},
-  {id: 'landslide',         coverage: 'national', noteKey: 'layers.note.cached'},
-  {id: 'tvdi',              coverage: 'national', noteKey: 'layers.note.cached'},
-  {id: 'gauges',            coverage: 'national'},
+  // Satellite
+  {id: 'basemap',           coverage: 'global',   group: 'satellite'},
+  {id: 'mcdwd',             coverage: 'global',   group: 'satellite', noteKey: 'layers.note.gapFiller'},
+  {id: 'imerg',             coverage: 'global',   group: 'satellite', noteKey: 'layers.note.gapFiller'},
+  {id: 'gfm',               coverage: 'global',   group: 'satellite', noteKey: 'layers.note.live'},
+  // Flood & exposure
+  {id: 'flood',             coverage: 'national', group: 'flood'},
+  {id: 'exposure',          coverage: 'national', group: 'flood'},
+  {id: 'prediction',        coverage: 'national', group: 'flood'},
+  {id: 'uncertainty',       coverage: 'national', group: 'flood',     noteKey: 'layers.note.calibPending'},
+  {id: 'erosion',           coverage: 'pilot',    group: 'flood'},
+  {id: 'erosion_banklines', coverage: 'national', group: 'flood',     noteKey: 'layers.note.banklines'},
+  // Reference
+  {id: 'hillshade',         coverage: 'pilot',    group: 'reference'},
+  {id: 'rivers',            coverage: 'national', group: 'reference'},
+  {id: 'gauges',            coverage: 'national', group: 'reference'},
+  {id: 'landslide',         coverage: 'national', group: 'reference', noteKey: 'layers.note.cached'},
+  {id: 'tvdi',              coverage: 'national', group: 'reference', noteKey: 'layers.note.cached'},
 ];
 
 // ---------------------------------------------------------------------------

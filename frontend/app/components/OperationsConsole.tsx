@@ -29,7 +29,6 @@ import {
   layers,
   dataFileUrl,
   pmtilesUrl,
-  type Coverage,
   type GibsLayer,
   type LayerId
 } from '@/lib/map-config';
@@ -106,11 +105,7 @@ export interface OpsMeta {
 // so no layer state can bleed between views.
 const VIEW_LAYERS: Record<WorkflowItemId, Record<LayerId, boolean>> = {
   now_flooding:   {basemap: true, mcdwd: false, imerg: false, gfm: true, hillshade: true, rivers: true, flood: true, exposure: true, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
-  next_72h:       {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: true, exposure: false, erosion: false, erosion_banklines: false, prediction: true, uncertainty: true, landslide: false, tvdi: false, gauges: false},
-  people_at_risk: {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: true, exposure: true, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
-  routes_shelters:{basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: false, exposure: false, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
   gauges:         {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: false, exposure: false, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: true},
-  alerts:         {basemap: true, mcdwd: false, imerg: false, gfm: true, hillshade: true, rivers: true, flood: true, exposure: false, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false},
   data_quality:   {basemap: true, mcdwd: false, imerg: false, gfm: false, hillshade: true, rivers: true, flood: true, exposure: false, erosion: false, erosion_banklines: false, prediction: false, uncertainty: false, landslide: false, tvdi: false, gauges: false}
 };
 
@@ -164,7 +159,7 @@ export default function OperationsConsole() {
     exposure:          true,
     erosion:           false,
     erosion_banklines: false,
-    prediction:        true,
+    prediction:        false,
     uncertainty:       false,
     landslide:         false,
     tvdi:              false,
@@ -191,7 +186,7 @@ export default function OperationsConsole() {
     () => clampGibsDate('imerg', GIBS_DEFAULT_DATE) !== GIBS_DEFAULT_DATE
   );
   const [layersOpen, setLayersOpen] = useState(false);
-  const [legendOpenMobile, setLegendOpenMobile] = useState(false);
+  const [legendOpenMobile, setLegendOpenMobile] = useState(true);
   const [forecastAvailable, setForecastAvailable] = useState(true);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const hydrated = useRef(false);
@@ -351,8 +346,8 @@ export default function OperationsConsole() {
       if (!map) return;
       const dataLayers: [string, boolean][] = [
         ['gauges', id === 'gauges'],
-        ['shelters', id === 'routes_shelters'],
-        ['routes', id === 'routes_shelters']
+        ['shelters', false],
+        ['routes', false]
       ];
       for (const [l, on] of dataLayers) {
         if (map.getLayer(l)) {
@@ -1124,36 +1119,26 @@ export default function OperationsConsole() {
 
             {mapReady && (
               <>
-                {/* State selector — desktop/tablet pill */}
-                {bp !== 'mobile' && (
+                {/* Guidance banner — top center */}
+                {view === 'now_flooding' && (
                   <motion.div
                     initial={{y: -10, opacity: 0}}
                     animate={{y: 0, opacity: 1}}
-                    transition={{delay: 0.1}}
+                    transition={{delay: 0.3}}
                     className="absolute left-1/2 top-2.5 z-20 -translate-x-1/2"
                   >
-                    <label className="glass flex min-h-[44px] items-center gap-2 rounded-full px-3 py-1.5 shadow-panel">
-                      <span className="font-mono text-[10px] uppercase tracking-widest text-mist-3">
-                        {t('ops.card.selectState')}
+                    <div className="glass flex items-center gap-2 rounded-full px-3.5 py-2 shadow-panel">
+                      <AlertTriangle size={13} className="shrink-0 text-danger" aria-hidden />
+                      <span className="text-[11px] leading-tight text-mist-2">
+                        {t('guidance.mapBanner')}
                       </span>
-                      <select
-                        value={activeState}
-                        onChange={(e) => changeState(e.target.value as StateKey)}
-                        className="max-w-state bg-transparent text-[11.5px] font-medium text-mist-1 outline-none [&>option]:bg-ink-2"
-                      >
-                        {STATE_KEYS.map((k) => (
-                          <option key={k} value={k}>
-                            {stateLabels(t)[k]}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
+                    </div>
                   </motion.div>
                 )}
 
                 {/* Mobile: list + legend chips */}
                 {isMobile && (
-                  <div className="absolute left-2.5 top-2.5 z-20 flex flex-col gap-1.5">
+                  <div className="absolute left-2.5 top-14 z-20 flex flex-col gap-1.5">
                     <button
                       onClick={() => setSheet(sheet === 'list' ? null : 'list')}
                       className="glass flex min-h-[44px] items-center gap-1.5 rounded-lg px-2.5 py-1.5 shadow-panel"
@@ -1260,7 +1245,7 @@ export default function OperationsConsole() {
           )}
 
           {isMobile && (
-            <BottomNav active={view} onSelect={selectView} onMore={() => setSheet('more')} />
+            <BottomNav active={view} onSelect={selectView} />
           )}
         </div>
 
@@ -1474,7 +1459,7 @@ export default function OperationsConsole() {
                     {t('ops.rail.title')}
                   </div>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {(['alerts', 'data_quality'] as const).map((id) => (
+                    {(['data_quality'] as const).map((id) => (
                       <button
                         key={id}
                         onClick={() => selectView(id)}
@@ -1635,12 +1620,6 @@ function Kpi({label, value}: {label: string; value: string}) {
   );
 }
 
-const COVERAGE_LABEL: Record<Coverage, string> = {
-  global: 'coverage.global',
-  national: 'coverage.national',
-  pilot: 'coverage.pilot'
-};
-
 // Honesty chip per layer: status + color
 type HonestyStatus = 'live' | 'seeded' | 'estimate' | 'cached';
 const LAYER_HONESTY: Partial<Record<LayerId, HonestyStatus>> = {
@@ -1679,51 +1658,53 @@ function LayerSwitcher({
   imergClipped: boolean;
 }) {
   const t = useTranslations();
+  const groups: {key: string; label: string; items: typeof layers}[] = [
+    {key: 'satellite', label: t('layers.groupSatellite'), items: layers.filter(l => l.group === 'satellite')},
+    {key: 'flood', label: t('layers.groupFlood'), items: layers.filter(l => l.group === 'flood')},
+    {key: 'reference', label: t('layers.groupReference'), items: layers.filter(l => l.group === 'reference')}
+  ];
   return (
-    <div className="flex flex-col gap-2">
-      {layers.map(({id, coverage, noteKey}) => {
-        const honesty = LAYER_HONESTY[id];
-        const hs = honesty ? HONESTY_STYLE[honesty] : null;
-        return (
-          <label key={id} className="flex cursor-pointer items-start gap-2 text-[12px] text-mist-1">
-            <input
-              type="checkbox"
-              checked={visible[id]}
-              onChange={(e) => onToggle(id, e.target.checked)}
-              className="mt-0.5 h-3.5 w-3.5 accent-accent2"
-            />
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center justify-between gap-1">
-                <span className="leading-tight">{t(`layers.${id}`)}</span>
-                {hs && (
-                  <span className={`flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-widest ${hs.text}`}>
-                    <span className={`h-1.5 w-1.5 rounded-full ${hs.dot}`} />
-                    {hs.label}
+    <div className="flex flex-col gap-3">
+      {groups.map(({key, label, items}) => (
+        <div key={key}>
+          <div className="mb-1.5 font-mono text-[10px] uppercase tracking-[0.2em] text-mist-3">{label}</div>
+          <div className="flex flex-col gap-1.5">
+            {items.map(({id, noteKey}) => {
+              const honesty = LAYER_HONESTY[id];
+              const hs = honesty ? HONESTY_STYLE[honesty] : null;
+              return (
+                <label key={id} className="flex cursor-pointer items-start gap-2 text-[12px] text-mist-1">
+                  <input
+                    type="checkbox"
+                    checked={visible[id]}
+                    onChange={(e) => onToggle(id, e.target.checked)}
+                    className="mt-0.5 h-3.5 w-3.5 accent-accent2"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center justify-between gap-1">
+                      <span className="leading-tight">{t(`layers.${id}`)}</span>
+                      {hs && (
+                        <span className={`flex shrink-0 items-center gap-1 font-mono text-[10px] uppercase tracking-widest ${hs.text}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${hs.dot}`} />
+                          {hs.label}
+                        </span>
+                      )}
+                    </span>
+                    {id === 'imerg' && imergClipped && (
+                      <span className="mt-0.5 block rounded bg-est/15 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-est">
+                        {t('layers.note.capped')}
+                      </span>
+                    )}
+                    {noteKey && (
+                      <span className="mt-0.5 block font-mono text-[10px] leading-snug text-est/90">{t(noteKey)}</span>
+                    )}
                   </span>
-                )}
-              </span>
-              <span className="mt-0.5 flex flex-wrap items-center gap-1">
-                <span className="rounded bg-ink-3 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-mist-3">
-                  {t(COVERAGE_LABEL[coverage])}
-                </span>
-                {id === 'imerg' && imergClipped && (
-                  <span className="rounded bg-est/15 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-est">
-                    {t('layers.note.capped')}
-                  </span>
-                )}
-                {id === 'prediction' && (
-                  <span className="rounded bg-est/10 px-1 py-px font-mono text-[10px] uppercase tracking-widest text-est">
-                    {t('layers.note.calibPending')}
-                  </span>
-                )}
-              </span>
-              {noteKey && noteKey !== 'layers.note.calibPending' && (
-                <span className="mt-0.5 block font-mono text-[10px] leading-snug text-est/90">{t(noteKey)}</span>
-              )}
-            </span>
-          </label>
-        );
-      })}
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      ))}
       <div className="mt-1 border-t border-line pt-1.5 font-mono text-[10px] text-mist-3">
         {t('layers.basemapDate')}: {gibsDate}
       </div>

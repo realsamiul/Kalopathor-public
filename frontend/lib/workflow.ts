@@ -1,14 +1,18 @@
 export const WORKFLOW_ITEMS = [
   {id: 'now_flooding'},
-  {id: 'next_72h'},
-  {id: 'people_at_risk'},
-  {id: 'routes_shelters'},
   {id: 'gauges'},
-  {id: 'alerts'},
   {id: 'data_quality'}
 ] as const;
 
 export type WorkflowItemId = (typeof WORKFLOW_ITEMS)[number]['id'];
+
+// Legacy IDs kept as a union so existing code that references removed views
+// still compiles — they simply resolve to 'now_flooding' at runtime.
+export type LegacyViewId = WorkflowItemId | 'next_72h' | 'people_at_risk' | 'routes_shelters' | 'alerts';
+export function resolveView(id: string): WorkflowItemId {
+  if (id === 'now_flooding' || id === 'gauges' || id === 'data_quality') return id;
+  return 'now_flooding';
+}
 
 // Prediction tile dates available in public/data/pmtiles (manifest, 2024 run).
 export const PREDICTION_DATES = [
