@@ -6,50 +6,51 @@ const config: Config = {
     extend: {
       colors: {
         ink: {
-          0: 'var(--ink-0)', // deepest — map canvas
-          1: 'var(--ink-1)', // page background
-          2: 'var(--ink-2)', // panel surface
-          3: 'var(--ink-3)' // raised / hover surface
+          0: 'var(--ink-0)', // deepest — pure obsidian space dark
+          1: 'var(--ink-1)', // dark page background
+          2: 'var(--ink-2)', // iOS frosted panel surface
+          3: 'var(--ink-3)'  // elevated / active surface
         },
         line: 'var(--line)',
         'line-strong': 'var(--line-strong)',
         mist: {
-          1: 'var(--text-1)',
-          2: 'var(--text-2)',
-          3: 'var(--text-3)'
+          1: 'var(--text-1)', // #ffffff pure white
+          2: 'var(--text-2)', // #f8fafc crisp luminous off-white
+          3: 'var(--text-3)'  // #e2e8f0 crisp high-contrast white-slate
         },
-        accent: 'var(--accent)', // teal — water / primary / safe
-        accent2: 'var(--accent2)', // indigo — interactive / selection
+        accent: 'var(--accent)', // vibrant cyan — water / primary / radar
+        accent2: 'var(--accent2)', // electric indigo — interactive / neural
         ok: 'var(--ok)',
         warn: 'var(--warn)',
         danger: 'var(--danger)',
-        // high-contrast danger text (rose-200) for alerts on dark surfaces
         'danger-hi': 'var(--danger-hi)',
         est: 'var(--est)'
       },
       fontFamily: {
-        sans: ['var(--font-inter)', 'var(--font-bengali)', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-sans)', 'var(--font-inter)', 'var(--font-bengali)', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
-        bn: ['var(--font-bengali)', 'var(--font-inter)', 'sans-serif']
+        bn: ['var(--font-bengali)', 'var(--font-sans)', 'system-ui', 'sans-serif']
       },
       borderRadius: {
-        panel: '0.75rem'
+        panel: '1rem',
+        '2xl': '1rem',
+        '3xl': '1.5rem',
+        '4xl': '2rem'
       },
       boxShadow: {
-        panel: '0 8px 32px -12px rgba(0,0,0,.65), 0 2px 8px -4px rgba(0,0,0,.5)',
-        'panel-lg': '0 24px 64px -16px rgba(0,0,0,.7), 0 4px 16px -8px rgba(0,0,0,.55)'
+        panel: '0 8px 32px -8px rgba(0,0,0,.75), inset 0 1px 0 0 rgba(255,255,255,0.1)',
+        'panel-lg': '0 24px 64px -16px rgba(0,0,0,.85), inset 0 1px 0 0 rgba(255,255,255,0.14)',
+        ios: '0 12px 36px -10px rgba(0,0,0,0.8), inset 0 1px 0 0 rgba(255,255,255,0.12)',
+        'ios-glow': '0 0 35px -5px rgba(56,189,248,0.25), inset 0 1px 0 0 rgba(255,255,255,0.15)'
       },
       width: {
-        // desktop operations side panel (action card / gauge / data quality)
         panel: '380px'
       },
       maxWidth: {
         read: '46rem',
-        // overlay state-selector <select> on the ops map
         state: '180px'
       },
       maxHeight: {
-        // scrollable layer-switcher block inside the workflow rail
         layers: '42vh'
       }
     }

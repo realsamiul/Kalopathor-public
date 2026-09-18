@@ -1,14 +1,11 @@
 import localFont from 'next/font/local';
 
-// Variable fonts (wght axis) vendored from Fontsource (MIT/OFL) into public/fonts.
-// Two subsets per Latin family → next/font emits unicode-range per file.
-
-export const inter = localFont({
+export const plusJakarta = localFont({
   src: [
-    {path: '../public/fonts/InterVariable.woff2', weight: '100 900', style: 'normal'},
-    {path: '../public/fonts/InterVariable-ext.woff2', weight: '100 900', style: 'normal'}
+    {path: '../public/fonts/PlusJakartaSansVariable.woff2', weight: '200 800', style: 'normal'},
+    {path: '../public/fonts/InterVariable.woff2', weight: '100 900', style: 'normal'}
   ],
-  variable: '--font-inter',
+  variable: '--font-sans',
   display: 'swap'
 });
 
@@ -21,9 +18,15 @@ export const jetbrains = localFont({
   display: 'swap'
 });
 
-export const bengali = localFont({
-  src: '../public/fonts/NotoSansBengaliVariable.woff2',
-  weight: '100 900',
+export const anekBangla = localFont({
+  src: [
+    {path: '../public/fonts/AnekBanglaVariable.woff2', weight: '100 800', style: 'normal'},
+    {path: '../public/fonts/NotoSansBengaliVariable.woff2', weight: '100 900', style: 'normal'}
+  ],
   variable: '--font-bengali',
   display: 'swap'
 });
+
+// Backwards compatibility aliases
+export const inter = plusJakarta;
+export const bengali = anekBangla;

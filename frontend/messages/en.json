@@ -1,5 +1,5 @@
 {
-    "nav": {
+  "nav": {
     "story": "The Story",
     "operations": "Operations",
     "more": "More",
@@ -307,12 +307,37 @@
     "integrity2Desc": "One district fully real beats twenty half-real. Depth over breadth, on purpose.",
     "integrity3Title": "EVIDENCE TRAIL",
     "integrity3Desc": "Every advisory links back to its SAR pass, model version and provenance.",
-    "credits": "NASA GIBS · Copernicus GFM · FFWC · HRSL · MoDMR context"
+    "credits": "NASA GIBS · Copernicus GFM · FFWC · HRSL · MoDMR context",
+    "platformTitle": "Platform Architecture & 3D Interactive Pipeline",
+    "platformSub": "Scroll to explore the 6 operational phases — from 700km orbital radar capture to automated bilingual early warnings.",
+    "channelsTitle": "6-Channel Neural Decomposition Matrix",
+    "channelsSub": "Every pixel is a 6-channel fused vector of microwave physics, terrain elevation, relative hydrology, and temporal change.",
+    "ledgerTitle": "Model Benchmark Ledger & Validation Gates",
+    "ledgerSub": "Strict 3-part promotion gates prevent false certainty. Only models that pass Feni holdout and negative-control FPR reach ops.",
+    "exposureTitle": "National Inundation & District Vulnerability",
+    "exposureSub": "21,954 km² mapped across all 8 divisions with high-resolution WorldPop 2024 population overlay.",
+    "gaugesTitle": "FFWC Hydrological Gauge Telemetry",
+    "gaugesSub": "115 physical river gauges integrated in real-time, validating satellite observations against river flood crests.",
+    "capTitle": "Automated CAP 1.2 Dispatch & G3 Corroboration",
+    "capSub": "OASIS standard emergency alerts synthesized with multi-sensor corroboration. Strict review_required gates ensure reliability.",
+    "honestyTitle": "The Honesty Doctrine & Calibration Disclosure",
+    "honestySub": "Full transparent disclosure: why uncalibrated confidence bands were audited to 0/10 and how we ensure zero false alarms.",
+    "stageNum": "STAGE {num}",
+    "ctaLaunch": "Launch Operations Console",
+    "cta3D": "Explore 3D Platform",
+    "ctaLedger": "Validation Ledger",
+    "opsModel": "OPS MODEL: d3v4.2",
+    "feniHoldout": "Feni Holdout IoU: 0.5338",
+    "resMeters": "30m Spatial Resolution",
+    "polygonsCount": "1,199 Polygons",
+    "areaKm2": "21,954 km² Flooded",
+    "peopleExposed": "20.5M Exposed",
+    "gaugesCount": "115 Gauges"
   },
   "guidance": {
     "mapBanner": "Red areas show satellite-detected flooding. Tap a polygon for details.",
     "polygonDate": "Detected {date}",
-    "polygonArea": "{area} km\u00b2 flooded",
+    "polygonArea": "{area} km² flooded",
     "polygonPeople": "{people} people at risk",
     "tapDetails": "Tap for details"
   },

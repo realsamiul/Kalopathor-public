@@ -3,35 +3,38 @@
 @tailwind utilities;
 
 /* ---------------------------------------------------------------------------
-   Design tokens — single source of truth. Tailwind mirrors these (theme.extend).
-   Dark ops-console palette: ink surfaces, slate lines, mist text,
-   teal (water/safe), indigo (interactive), amber (warn/estimate), rose (danger).
+   Design tokens — iOS-styled muted dark theme & crisp white fonts always.
+   Obsidian surfaces, translucent hairline borders, 100% white primary text,
+   subtle cyan/indigo neon accents, Apple-grade frosted glass materials.
 --------------------------------------------------------------------------- */
 :root {
-  --ink-0: #070b12;
-  --ink-1: #0a0f18;
-  --ink-2: #0e1522;
-  --ink-3: #16203255;
+  /* iOS Muted Dark Obsidian Surfaces */
+  --ink-0: #030712;
+  --ink-1: #070b14;
+  --ink-2: #0e1526;
+  --ink-3: #182338;
 
-  --line: rgba(148, 163, 184, 0.11);
-  --line-strong: rgba(148, 163, 184, 0.24);
+  /* Translucent Apple-style hairline borders */
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
 
-  --text-1: #e8edf6;
-  --text-2: #a7b0c2;
-  --text-3: #6d7891;
+  /* WHITE FONTS ALWAYS — pure white & high-contrast luminous whites */
+  --text-1: #ffffff;
+  --text-2: #f8fafc;
+  --text-3: #e2e8f0;
 
-  --accent: #2dd4bf;
-  --accent2: #818cf8;
-  --ok: #2dd4bf;
-  --warn: #f59e0b;
-  --danger: #f43f5e;
-  /* rose-200 — danger text that keeps AA contrast on ink surfaces */
-  --danger-hi: #fecaca;
-  --est: #fbbf24;
+  /* iOS Muted Neon Accents */
+  --accent: #38bdf8;   /* Sky / Cyan — radar microwave / active water */
+  --accent2: #818cf8;  /* Electric Indigo — neural channels / intelligence */
+  --ok: #34d399;       /* Emerald — nominal telemetry / safe route */
+  --warn: #fbbf24;     /* Amber — review required / seeded warning */
+  --danger: #f43f5e;   /* Coral Rose — catastrophic inundation / danger */
+  --danger-hi: #ffffff;/* White font always on danger surfaces */
+  --est: #fbbf24;      /* Estimate amber */
 
-  /* panel shadows — must match tailwind.config `boxShadow.panel*` */
-  --shadow-panel: 0 8px 32px -12px rgba(0, 0, 0, 0.65), 0 2px 8px -4px rgba(0, 0, 0, 0.5);
-  --shadow-panel-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7), 0 4px 16px -8px rgba(0, 0, 0, 0.55);
+  /* iOS Frosted Glass Depth Shadows */
+  --shadow-panel: 0 8px 32px -8px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+  --shadow-panel-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
 
   color-scheme: dark;
 }
@@ -44,21 +47,22 @@ body {
 body {
   background: var(--ink-0);
   color: var(--text-1);
-  font-family: var(--font-inter), var(--font-bengali), system-ui, sans-serif;
+  font-family: var(--font-sans), var(--font-bengali), system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   font-feature-settings: 'cv11', 'ss01';
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
 }
 
 ::selection {
-  background: rgba(45, 212, 191, 0.28);
+  background: rgba(56, 189, 248, 0.35);
+  color: #ffffff;
 }
 
-/* Focus visibility — keyboard users must never be lost */
+/* Keyboard accessibility */
 :focus-visible {
-  outline: 2px solid var(--accent2);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
-  border-radius: 4px;
+  border-radius: 8px;
 }
 :focus:not(:focus-visible) {
   outline: none;
@@ -70,26 +74,40 @@ body {
 }
 
 .bn {
-  font-family: var(--font-bengali), var(--font-inter), sans-serif;
+  font-family: var(--font-bengali), var(--font-sans), sans-serif;
 }
 
-/* Glass panel surface used by all floating UI */
+/* Modern iOS Frosted Glass Components */
 @layer components {
   .glass {
-    background: rgba(10, 15, 24, 0.82);
+    background: rgba(14, 21, 38, 0.65);
     border: 1px solid var(--line);
-    backdrop-filter: blur(14px) saturate(1.2);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(24px) saturate(190%);
+    -webkit-backdrop-filter: blur(24px) saturate(190%);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
   .glass-strong {
-    background: rgba(10, 15, 24, 0.92);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(18px) saturate(1.25);
-    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    background: rgba(9, 14, 26, 0.84);
+    border: 1px solid var(--line-strong);
+    backdrop-filter: blur(32px) saturate(200%);
+    -webkit-backdrop-filter: blur(32px) saturate(200%);
+    box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.14);
+  }
+  .glass-card {
+    background: rgba(14, 21, 38, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 12px 36px -10px rgba(0, 0, 0, 0.75), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.85), inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
   }
 }
 
-/* Safe-area helpers (notch / home indicator) */
+/* Safe-area helpers */
 .pt-safe {
   padding-top: env(safe-area-inset-top);
 }
@@ -100,21 +118,24 @@ body {
   padding-left: env(safe-area-inset-left);
 }
 
-/* Slim scrollbars */
+/* Slim modern iOS scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2a3550 transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
 }
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 *::-webkit-scrollbar-track {
   background: transparent;
 }
 *::-webkit-scrollbar-thumb {
-  background: #2a3550;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 9999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 .no-scrollbar {
   scrollbar-width: none;
@@ -123,9 +144,7 @@ body {
   display: none;
 }
 
-/* ---------------------------------------------------------------------------
-   Range inputs (timeline scrubbers) — styled track + thumb per accent
---------------------------------------------------------------------------- */
+/* Range input scrubber */
 input[type='range'].scrub {
   -webkit-appearance: none;
   appearance: none;
@@ -136,13 +155,13 @@ input[type='range'].scrub {
 }
 input[type='range'].scrub::-webkit-slider-runnable-track {
   height: 4px;
-  border-radius: 2px;
+  border-radius: 9999px;
   background: linear-gradient(
     to right,
     var(--thumb) 0%,
     var(--thumb) var(--fill, 50%),
-    #243049 var(--fill, 50%),
-    #243049 100%
+    rgba(255, 255, 255, 0.12) var(--fill, 50%),
+    rgba(255, 255, 255, 0.12) 100%
   );
 }
 input[type='range'].scrub::-webkit-slider-thumb {
@@ -152,157 +171,58 @@ input[type='range'].scrub::-webkit-slider-thumb {
   height: 14px;
   width: 14px;
   border-radius: 50%;
-  background: var(--thumb);
-  border: 2px solid var(--ink-1);
-  box-shadow: 0 0 0 1px var(--thumb), 0 0 12px color-mix(in srgb, var(--thumb) 55%, transparent);
+  background: #ffffff;
+  border: 2px solid var(--thumb);
+  box-shadow: 0 0 10px var(--thumb);
   transition: transform 0.12s ease;
 }
 input[type='range'].scrub:active::-webkit-slider-thumb {
   transform: scale(1.25);
 }
-input[type='range'].scrub::-moz-range-track {
-  height: 4px;
-  border-radius: 2px;
-  background: #243049;
-}
-input[type='range'].scrub::-moz-range-progress {
-  height: 4px;
-  border-radius: 2px;
-  background: var(--thumb);
-}
-input[type='range'].scrub::-moz-range-thumb {
-  height: 12px;
-  width: 12px;
-  border-radius: 50%;
-  background: var(--thumb);
-  border: 2px solid var(--ink-1);
-  box-shadow: 0 0 0 1px var(--thumb);
-}
-.scrub-teal {
-  --thumb: var(--accent);
-}
-.scrub-amber {
-  --thumb: var(--warn);
-}
-input[type='range'].scrub:disabled {
-  opacity: 0.35;
-  cursor: not-allowed;
-}
 
-/* ---------------------------------------------------------------------------
-   MapLibre chrome — restyled to the glass language
---------------------------------------------------------------------------- */
-.maplibregl-map {
-  font-family: var(--font-inter), sans-serif;
-  background: var(--ink-0);
-}
-.maplibregl-canvas-container.maplibregl-interactive {
-  cursor: grab;
-}
-.maplibregl-canvas-container.maplibregl-interactive:active {
-  cursor: grabbing;
-}
-.maplibregl-ctrl-group {
-  background: rgba(10, 15, 24, 0.85) !important;
-  border: 1px solid var(--line);
-  border-radius: 10px !important;
-  backdrop-filter: blur(10px);
-  overflow: hidden;
-  box-shadow: 0 4px 16px -6px rgba(0, 0, 0, 0.6);
-}
-.maplibregl-ctrl-group button {
-  filter: invert(0.85) saturate(0.3);
-  width: 30px;
-  height: 30px;
-}
-.maplibregl-ctrl-group button:hover {
-  background: rgba(148, 163, 184, 0.12);
-}
-.maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--line);
-}
-.maplibregl-ctrl-attrib {
-  background: rgba(10, 15, 24, 0.7) !important;
-  border-radius: 8px 0 0 0;
-  backdrop-filter: blur(8px);
-  font-size: 10px !important;
-  color: var(--text-3) !important;
-}
-.maplibregl-ctrl-attrib a {
-  color: var(--text-3) !important;
-}
-.maplibregl-ctrl-scale {
-  background: rgba(10, 15, 24, 0.6) !important;
-  border-color: var(--line-strong) !important;
-  border-top: none;
-  color: var(--text-2) !important;
-  font-family: var(--font-mono), monospace;
-  font-size: 10px;
-}
-.maplibregl-popup-content {
-  background: var(--ink-2);
-  color: var(--text-1);
-  border: 1px solid var(--line-strong);
-  border-radius: 10px;
-  font-family: var(--font-inter), sans-serif;
-  box-shadow: var(--shadow-panel-lg);
-}
-.maplibregl-popup-tip {
-  border-top-color: var(--ink-2) !important;
-}
-
-/* ---------------------------------------------------------------------------
-   Motion
---------------------------------------------------------------------------- */
+/* Pulse animation */
 @keyframes pulse-dot {
   0%,
   100% {
     opacity: 1;
-    box-shadow: 0 0 6px currentColor;
+    box-shadow: 0 0 8px currentColor;
   }
   50% {
     opacity: 0.45;
-    box-shadow: 0 0 1px currentColor;
+    box-shadow: 0 0 2px currentColor;
   }
 }
 .pulse-dot {
   animation: pulse-dot 2.2s ease-in-out infinite;
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* MapLibre dark styling */
+.maplibregl-map {
+  font-family: var(--font-sans), sans-serif;
+  background: var(--ink-0);
 }
-.fade-up {
-  animation: fade-up 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+.maplibregl-ctrl-group {
+  background: rgba(14, 21, 38, 0.85) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.75);
 }
-
-@keyframes drift {
-  0% {
-    transform: scale(1.02) translate3d(0, 0, 0);
-  }
-  50% {
-    transform: scale(1.1) translate3d(-1.2%, -0.8%, 0);
-  }
-  100% {
-    transform: scale(1.02) translate3d(0, 0, 0);
-  }
+.maplibregl-ctrl-group button {
+  filter: invert(0.9) saturate(0.2);
+  width: 32px;
+  height: 32px;
 }
-.drift {
-  animation: drift 70s ease-in-out infinite;
+.maplibregl-popup-content {
+  background: var(--ink-2);
+  color: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  font-family: var(--font-sans), sans-serif;
+  box-shadow: var(--shadow-panel-lg);
 }
 
-/* Reduced motion: this reset only governs stylesheet-driven animation
-   (CSS keyframes + utility transitions). framer-motion handles its own
-   reduced-motion via <MotionConfig reducedMotion="user"> (see app layout),
-   so JS-driven springs stay coherent with the OS preference instead of being
-   clipped by a universal !important rule. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
