@@ -35,3 +35,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env*
+# Large data files — served from GCS CDN (NEXT_PUBLIC_TILES_BASE)
+public/data/*.geojson
+public/data/*.tif
