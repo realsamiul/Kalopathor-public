@@ -333,7 +333,7 @@ export default function OperationsConsole() {
     if (id === 'exposure' && on) {
       const src = map.getSource('exposure') as GeoJSONSource | undefined;
       if (src) {
-        fetch('/data/exposure_districts.geojson')
+        fetch(dataFileUrl('/data/exposure_districts.geojson'))
           .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`exposure ${r.status}`))))
           .then((fc) => src.setData(fc))
           .catch((err) => logger.error('exposure load failed', err));
@@ -537,7 +537,7 @@ export default function OperationsConsole() {
           },
           rivers: {
             type: 'geojson',
-            data: '/data/rivers_bgd.geojson'
+            data: dataFileUrl('/data/rivers_bgd.geojson')
           },
           flood: {
             type: 'vector',
@@ -554,11 +554,11 @@ export default function OperationsConsole() {
           },
           erosion: {
             type: 'geojson',
-            data: '/data/erosion_layer.geojson'
+            data: dataFileUrl('/data/erosion_layer.geojson')
           },
           erosion_banklines: {
             type: 'geojson',
-            data: '/data/erosion_banklines.geojson'
+            data: dataFileUrl('/data/erosion_banklines.geojson')
           },
           prediction: {
             type: 'raster',
