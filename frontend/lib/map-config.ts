@@ -81,7 +81,7 @@ export const GIBS_LAYERS: Record<
 };
 
 // Most recent date verified to have VIIRS TrueColor over Bangladesh.
-export const GIBS_DEFAULT_DATE = '2026-09-17';
+export const GIBS_DEFAULT_DATE = '2026-09-22';
 // SAR pass date of the national detection set (quick-jump target).
 export const GIBS_EVENT_DATE = '2024-08-12';
 // Haor and Jamuna events
@@ -90,7 +90,7 @@ export const GIBS_JAMUNA_DATE = '2022-06-16';
 
 // Scrubber window: [START .. END], step 1 day.
 export const GIBS_DATE_START = '2024-06-01';
-export const GIBS_DATE_END   = '2026-09-17';
+export const GIBS_DATE_END   = '2026-09-22';
 
 export function clampGibsDate(layer: GibsLayer, date: string): string {
   const cap = GIBS_LAYERS[layer].maxDate;
@@ -112,7 +112,7 @@ export function gibsDatesBetween(start: string, end: string): string[] {
 export const GIBS_DATES = gibsDatesBetween(GIBS_DATE_START, GIBS_DATE_END);
 
 // Layer-specific tile matrix sets
-// VIIRS/MCDWD use "250m" epsg4326 grid; IMERG uses "2km" grid
+// VIIRS basemap uses native WebMercator; MCDWD uses "250m" epsg4326 grid; IMERG uses "2km" grid
 type TileMatrix = '250m' | '2km';
 const LAYER_MATRIX: Record<GibsLayer, TileMatrix> = {
   basemap: '250m',
@@ -140,6 +140,12 @@ export function gibsTileUrl(
 ): string {
   const {product, ext} = GIBS_LAYERS[layer];
   const effective = clampGibsDate(layer, date);
+
+  // Basemap VIIRS TrueColor uses native EPSG:3857 WebMercator
+  if (layer === 'basemap') {
+    return `https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/${product}/default/${effective}/GoogleMapsCompatible_Level9/${z}/${y}/${x}.${ext}`;
+  }
+
   const matrix = LAYER_MATRIX[layer];
   const DIMS = matrix === '2km' ? DIMS_2km : DIMS_250m;
   const maxLevel = matrix === '2km' ? 7 : 8;
@@ -169,15 +175,11 @@ export function gibsProtocolUrl(layer: GibsLayer, date: string): string {
   return `gibs://${layer}/${date}/{z}/{x}/{y}`;
 }
 
-// Shared basemap grade — the landing hero map and the operations console must
-// render identical satellite truth (single source of truth for the grade).
+// Shared basemap grade — vivid, crisp satellite reality with natural contrast
 export const BASEMAP_RASTER_PAINT = {
-  'raster-saturation': -0.3,
-  'raster-brightness-min': 0.7,
-  'raster-brightness-max': 0.85,
-  'raster-contrast': 1.00,
-  'raster-hue-rotate': -5,
-  'raster-fade-duration': 0
+  'raster-saturation': 0.1,
+  'raster-contrast': 0.08,
+  'raster-fade-duration': 200
 } as const;
 
 // ---------------------------------------------------------------------------

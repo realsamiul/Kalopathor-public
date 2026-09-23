@@ -497,7 +497,7 @@ export default function OperationsConsole() {
           basemap: {
             type: 'raster',
             tiles: [gibsProtocolUrl('basemap', GIBS_DEFAULT_DATE)],
-            tileSize: 512,
+            tileSize: 256,
             minzoom: 0,
             maxzoom: 9
           },
