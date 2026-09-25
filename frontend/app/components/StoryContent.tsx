@@ -10,15 +10,9 @@ import {
   Eye,
   Radio,
   Route as RouteIcon,
-  ShieldCheck,
-  Target,
   Users,
   Waypoints,
-  GitBranch,
-  Layers,
   Cpu,
-  Database,
-  AlertTriangle,
   CheckCircle2,
   Droplets,
   ExternalLink,
@@ -29,11 +23,11 @@ import {
 const InteractiveGlobe = dynamic(() => import('./InteractiveGlobe'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-ink-0">
+    <div className="flex h-full w-full items-center justify-center bg-black">
       <div className="flex flex-col items-center gap-3">
-        <div className="h-10 w-10 animate-spin rounded-full border-2 border-accent border-t-transparent" />
-        <span className="font-mono text-[11px] uppercase tracking-widest text-mist-3">
-          Initializing 3D Orbital Matrix...
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-white border-t-transparent" />
+        <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/50">
+          Loading Orbital Matrix...
         </span>
       </div>
     </div>
@@ -41,19 +35,19 @@ const InteractiveGlobe = dynamic(() => import('./InteractiveGlobe'), {
 });
 
 const STAGES = [
-  {icon: Radio, title: 'stage1Title', desc: 'stage1Desc', sub: 'Sentinel-1 IW GRD · Dual-Pol (VV/VH) · 30m'},
-  {icon: Eye, title: 'stage2Title', desc: 'stage2Desc', sub: 'd3v4.2 U-Net · 6ch · 6.3M params · τ=0.5'},
-  {icon: Waypoints, title: 'stage3Title', desc: 'stage3Desc', sub: 'LightGBM F5 + GloFAS + Open-Meteo'},
-  {icon: Users, title: 'stage4Title', desc: 'stage4Desc', sub: 'Meta / CIESIN HRSL 30m Settlement Overlay'},
-  {icon: RouteIcon, title: 'stage5Title', desc: 'stage5Desc', sub: 'EVE Dijkstra Network · Road Breaches & Shelters'},
-  {icon: Bell, title: 'stage6Title', desc: 'stage6Desc', sub: 'OASIS CAP 1.2 Bilingual XML/JSON Protocol'}
+  {icon: Radio, title: 'stage1Title', desc: 'stage1Desc', sub: 'Sentinel-1 IW GRD · Dual-Pol (VV/VH) · 30m resolution'},
+  {icon: Eye, title: 'stage2Title', desc: 'stage2Desc', sub: 'd3v4.2 U-Net · 6.3M parameters · τ=0.5 sigmoid threshold'},
+  {icon: Waypoints, title: 'stage3Title', desc: 'stage3Desc', sub: 'LightGBM F5 Spatio-Temporal Model + GloFAS runoff integration'},
+  {icon: Users, title: 'stage4Title', desc: 'stage4Desc', sub: 'Meta / Columbia CIESIN High Resolution Settlement Layer (30m)'},
+  {icon: RouteIcon, title: 'stage5Title', desc: 'stage5Desc', sub: 'EVE Dijkstra Network · Road breaches & concrete shelter graph'},
+  {icon: Bell, title: 'stage6Title', desc: 'stage6Desc', sub: 'OASIS CAP 1.2 Digital Emergency Payload · Bilingual EN/BN'}
 ];
 
 const LAYERS = [
   {
     id: '01',
     category: 'optical',
-    categoryName: 'Satellite Optical',
+    categoryName: 'Optical Reflectance',
     title: 'NASA VIIRS TrueColor (375m)',
     nativeTerm: 'NASA GIBS VIIRS SNPP Corrected Reflectance (EPSG:3857)',
     sensor: 'Suomi NPP / VIIRS (Visible Spectrum)',
@@ -89,7 +83,7 @@ const LAYERS = [
   {
     id: '04',
     category: 'optical',
-    categoryName: 'Satellite Optical',
+    categoryName: 'Optical Reflectance',
     title: 'NASA MCDWD 2-Day Flood Composite',
     nativeTerm: 'NASA LANCE Near Real-Time MCDWD (MODIS Composite)',
     sensor: 'Terra + Aqua MODIS (NDWI / MNDWI Indices)',
@@ -125,7 +119,7 @@ const LAYERS = [
   {
     id: '07',
     category: 'exposure',
-    categoryName: 'Terrestrial & Exposure',
+    categoryName: 'Exposure & Routing',
     title: 'Population Exposure (HRSL 30m)',
     nativeTerm: 'Meta / Columbia CIESIN High Resolution Settlement Layer',
     sensor: 'Building Footprint CV + National Census Microdata',
@@ -137,7 +131,7 @@ const LAYERS = [
   {
     id: '08',
     category: 'exposure',
-    categoryName: 'Terrestrial & Exposure',
+    categoryName: 'Exposure & Routing',
     title: 'Forecast Risk Horizon (T+1 to T+7)',
     nativeTerm: 'LightGBM F5 Two-Branch Spatio-Temporal Model',
     sensor: 'GloFAS Runoff + Open-Meteo + Antecedent S1 Saturation',
@@ -149,7 +143,7 @@ const LAYERS = [
   {
     id: '09',
     category: 'exposure',
-    categoryName: 'Terrestrial & Exposure',
+    categoryName: 'Exposure & Routing',
     title: 'Evacuation Routing & Shelters (EVE)',
     nativeTerm: 'EVE (Evacuation Vector Engine) Depth-Cost Dijkstra Graph',
     sensor: 'OpenStreetMap Road Topology + LGED Shelter Inventory',
@@ -161,7 +155,7 @@ const LAYERS = [
   {
     id: '10',
     category: 'exposure',
-    categoryName: 'Terrestrial & Exposure',
+    categoryName: 'Exposure & Routing',
     title: 'CAP 1.2 Bilingual Alerting',
     nativeTerm: 'OASIS Common Alerting Protocol v1.2 (Bilingual EN/BN)',
     sensor: 'Automated 4-Gate Alert Verification Engine',
@@ -174,32 +168,23 @@ const LAYERS = [
 
 const UPGRADES = [
   {
-    badge: 'Upgrade A · Compute: 0 GPUh',
+    badge: 'UPGRADE A · ZERO GPU COMPUTE',
     title: 'CONSEMA Morphological Margin Bands',
     desc: 'Replaces the broken parametric conformal band with deterministic 2D Euclidean morphological distance transforms (scipy.ndimage.distance_transform_edt). Computes core inundation via erosion and uncertainty margins bounded by HAND gradients in <400ms on CPU.',
-    icon: CheckCircle2,
-    color: '#2dd4bf'
+    icon: CheckCircle2
   },
   {
-    badge: 'Upgrade B · Storage: Zero Dependency',
+    badge: 'UPGRADE B · ZERO DEPENDENCY',
     title: 'Channel 5 Swap to SDWI (Dual-Pol Index)',
     desc: 'Eliminates the external Google Earth Engine 80GB dry-reference requirement using SDWI = ln(10 · VV · VH) - 8. Cancels seasonal soil dielectric moisture shifts and isolates specular open water without false positive spikes.',
-    icon: Droplets,
-    color: '#818cf8'
+    icon: Droplets
   },
   {
-    badge: 'Upgrade C · Latency: ~280ms/tile',
+    badge: 'UPGRADE C · ~280ms/TILE LATENCY',
     title: 'Sub-Second CPU ONNX Export',
     desc: 'Converts the 6.3M parameter PyTorch checkpoint (d3v4.2_best.pt) into an optimized ONNX runtime graph. Cuts memory footprint from 4.2GB (PyTorch+CUDA) to <350MB on standard lightweight CPU workers.',
-    icon: Cpu,
-    color: '#fbbf24'
+    icon: Cpu
   }
-];
-
-const INTEGRITY = [
-  {title: 'integrity1Title', desc: 'integrity1Desc', color: '#fbbf24'},
-  {title: 'integrity2Title', desc: 'integrity2Desc', color: '#2dd4bf'},
-  {title: 'integrity3Title', desc: 'integrity3Desc', color: '#818cf8'}
 ];
 
 export default function StoryContent() {
@@ -223,168 +208,184 @@ export default function StoryContent() {
     : LAYERS.filter((l) => l.category === activeCategory);
 
   return (
-    <main className="relative min-h-dvh w-full overflow-x-clip bg-ink-0 text-mist-1 font-sweetsans selection:bg-accent/30 selection:text-mist-1">
-      {/* ---------------------------------------------------------- Ambient Background Glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 bg-[radial-gradient(circle_at_50%_0%,rgba(45,212,191,0.08),transparent_55%),radial-gradient(circle_at_80%_40%,rgba(129,140,248,0.05),transparent_45%),radial-gradient(circle_at_20%_80%,rgba(245,158,11,0.04),transparent_45%)]"
-      />
+    <main className="w-full bg-black font-sweetsans antialiased">
 
-      {/* ---------------------------------------------------------- HERO: 3D INTERACTIVE SWIVEL GLOBE */}
-      <section className="relative z-10 flex min-h-dvh flex-col justify-between overflow-hidden px-5 pt-8 pb-14 sm:px-8 sm:pt-10">
-        {/* Top Header Row (CYBERMIND / SPACESIS style inspired by IMG_4965 & IMG_4966) */}
-        <div className="relative z-20 mx-auto flex w-full max-w-7xl items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="font-telegraf text-[15px] font-bold tracking-[0.25em] text-mist-1 uppercase">
+      {/* =========================================================================
+          SECTION 1: HERO VIEWPORT (COSMIC BLACK · FULL 100VH VIEWPORT · 3D GLOBE)
+          ========================================================================= */}
+      <section className="relative h-screen min-h-[640px] w-full overflow-hidden bg-black text-white">
+        {/* Fullscreen 3D Starry Globe */}
+        <div className="absolute inset-0 z-0 h-full w-full">
+          <InteractiveGlobe />
+        </div>
+
+        {/* Minimalist Top App Bar (CYBERMIND / SPACESIS style inspo) */}
+        <div className="pointer-events-none relative z-20 flex w-full items-center justify-between px-6 pt-8 sm:px-12 sm:pt-10">
+          <div className="pointer-events-auto flex items-center gap-4">
+            <span className="font-telegraf text-[15px] font-bold tracking-[0.25em] text-white uppercase">
               KALOPATHOR®
             </span>
-            <span className="hidden h-4 w-px bg-line-strong sm:block" />
-            <span className="hidden font-mono text-[10.5px] uppercase tracking-[0.2em] text-accent sm:block">
+            <span className="hidden h-3.5 w-px bg-white/20 sm:block" />
+            <span className="hidden font-mono text-[10px] uppercase tracking-[0.25em] text-white/70 sm:block">
               SATELLITE-GRADE RADAR INTELLIGENCE
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <span className="glass flex items-center gap-2 rounded-full px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-widest text-mist-2">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" />
-              S1 C-BAND PASS: SEEDED
-            </span>
-          </div>
-        </div>
-
-        {/* 3D Interactive Swivel Globe in Center (Matches IMG_4967 & IMG_4965) */}
-        <div className="relative z-10 my-auto flex h-[58vh] min-h-[420px] w-full items-center justify-center sm:h-[64vh]">
-          <InteractiveGlobe />
-        </div>
-
-        {/* Bottom Hero Narrative & Big Typographic Headline */}
-        <div className="relative z-20 mx-auto flex w-full max-w-7xl flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.3em] text-accent">
-              <Sparkles size={13} />
-              <span>Monsoonal Early Warning System</span>
-            </div>
-            <h1 className="bn mt-2 text-[48px] font-black leading-[1.08] tracking-tight text-mist-1 sm:text-[72px]">
-              কালপাথর
-            </h1>
-            <p className="font-editorial text-[22px] italic text-mist-2 sm:text-[28px]">
-              &ldquo;In the monsoon of Bangladesh, radar cuts through the clouds.&rdquo;
-            </p>
-            <p className="mt-2 font-sweetsans text-[14px] leading-relaxed text-mist-3">
-              Microwave radar detection at 30m resolution — sense, forecast, route, and alert before the waters rise.
-            </p>
-          </div>
-
-          {/* Action CTAs */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="pointer-events-auto flex items-center gap-4">
             <Link
               href="/operations"
-              className="glass group flex items-center justify-center gap-2 rounded-xl border-accent/50 bg-accent/15 px-7 py-4 font-telegraf text-[14px] font-bold uppercase tracking-wider text-accent transition-all hover:bg-accent hover:text-ink-0 hover:shadow-[0_0_28px_rgba(45,212,191,0.4)]"
+              className="flex items-center gap-2 border-b border-white/40 pb-0.5 font-mono text-[11px] uppercase tracking-widest text-white transition-all hover:border-white"
             >
-              <span>Launch Operations Console</span>
-              <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
+              <span>Console</span>
+              <ArrowRight size={12} />
             </Link>
-            <a
-              href="#layers"
-              className="glass flex items-center justify-center gap-2 rounded-xl px-6 py-4 font-mono text-[12px] uppercase tracking-wider text-mist-2 transition-all hover:text-mist-1 hover:border-line-strong"
-            >
-              <Layers size={14} className="text-accent2" />
-              <span>Explore Layers</span>
-            </a>
+          </div>
+        </div>
+
+        {/* Floating Bottom Typography & Mission Statement */}
+        <div className="pointer-events-none relative z-20 flex h-[calc(100vh-140px)] w-full flex-col justify-end px-6 pb-12 sm:px-12 sm:pb-16">
+          <div className="max-w-4xl">
+            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.35em] text-white/60">
+              <Sparkles size={12} />
+              <span>Monsoonal Early Warning System · Bangladesh</span>
+            </div>
+
+            <h1 className="bn mt-3 text-[54px] font-black leading-[0.98] tracking-tight text-white sm:text-[84px] lg:text-[110px]">
+              কালপাথর
+            </h1>
+
+            <p className="font-editorial mt-3 text-[22px] italic leading-snug text-white/90 sm:text-[32px] lg:text-[38px]">
+              &ldquo;In the monsoon of Bangladesh, radar cuts through the clouds.&rdquo;
+            </p>
+
+            <p className="mt-4 max-w-2xl font-sweetsans text-[14px] leading-relaxed text-white/60 sm:text-[16px]">
+              Microwave radar detection at 30m resolution — sense, forecast, route, and alert before the waters rise.
+            </p>
+
+            <div className="pointer-events-auto mt-8 flex flex-wrap items-center gap-6">
+              <Link
+                href="/operations"
+                className="flex items-center gap-3 bg-white px-8 py-4 font-telegraf text-[13px] font-bold uppercase tracking-[0.2em] text-black transition-all hover:bg-white/90"
+              >
+                <span>Launch Operations Console</span>
+                <ArrowRight size={15} />
+              </Link>
+              <a
+                href="#footprint"
+                className="flex items-center gap-2 border-b border-white/40 pb-1 font-mono text-[11px] uppercase tracking-[0.2em] text-white/80 transition-all hover:border-white hover:text-white"
+              >
+                <span>National Telemetry</span>
+                <span className="text-[14px]">↓</span>
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- LARGE STATS STRIP (IMG_4966 STYLE: 186 p/s, 25,457) */}
-      <section className="relative z-10 border-y border-line/80 bg-ink-1/80 px-5 py-14 backdrop-blur-xl sm:px-8">
+
+      {/* =========================================================================
+          SECTION 2: NATIONAL INUNDATION FOOTPRINT (STARK WHITE · GIANT STATS)
+          ========================================================================= */}
+      <section id="footprint" className="relative z-10 w-full bg-white px-6 py-28 text-black sm:px-12 sm:py-40">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-start justify-between gap-2 border-b border-line/60 pb-5 sm:flex-row sm:items-center">
+          {/* Section Header */}
+          <div className="flex flex-col items-start justify-between gap-4 border-b border-black/15 pb-8 lg:flex-row lg:items-end">
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.25em] text-accent">
+              <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/50">
                 EVENT TELEMETRY · 12 AUGUST 2024
               </span>
-              <h2 className="font-telegraf text-[20px] font-bold text-mist-1">
+              <h2 className="font-telegraf mt-2 text-[38px] font-bold tracking-tight text-black sm:text-[54px] lg:text-[64px]">
                 National Inundation Footprint
               </h2>
             </div>
-            <div className="font-mono text-[11px] text-mist-3">
-              HOLD-OUT BENCHMARK: FENI TRIPWIRE IoU 0.5338 (d3v4.2)
+            <div className="font-mono text-[11px] tracking-wider text-black/60">
+              BENCHMARK: FENI TRIPWIRE IoU 0.5338 · OPS MODEL d3v4.2
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-6 lg:grid-cols-4">
-            <BigStatCard
+          {/* Giant Unboxed Numbers (IMG_4966 inspo: large display stats, generous spacing, pure line rules) */}
+          <div className="mt-16 grid grid-cols-1 gap-14 sm:grid-cols-2 lg:grid-cols-4">
+            <BigEditorialStat
               number={meta ? meta.polygon_count : 1199}
               unit="polygons"
               label="Detected Flood Extents"
               sub="Raw Sigmoid τ=0.5 Threshold"
-              tone="#f43f5e"
               format={fmt}
             />
-            <BigStatCard
+            <BigEditorialStat
               number={meta ? meta.total_area_km2 : 21954}
               unit="km²"
               label="Submerged Terrain"
               sub="Sentinel-1 Dual-Pol (VV/VH)"
-              tone="#f59e0b"
               format={fmt}
             />
-            <BigStatCard
+            <BigEditorialStat
               number={meta ? Math.round(meta.total_affected / 1e5) : 205}
               unit="Million"
               label="Exposed Population"
               sub="HRSL 30m Settlement Overlay"
-              tone="#2dd4bf"
               format={(n) => `${(n / 10).toFixed(1)}`}
             />
-            <BigStatCard
+            <BigEditorialStat
               number={meta ? meta.gauge_count : 115}
               unit="stations"
-              label="FFWC Telemetry Gauges"
-              sub="Real-Time River Danger Levels"
-              tone="#818cf8"
+              label="FFWC River Telemetry"
+              sub="Real-Time Stage & Danger Levels"
               format={fmt}
             />
+          </div>
+
+          <div className="mt-20 border-t border-black/15 pt-8">
+            <p className="font-editorial text-[20px] italic leading-relaxed text-black/80 sm:text-[24px]">
+              &ldquo;The August 2024 flood across Feni, Comilla, and Noakhali breached historic records. Spaceborne microwave sensors mapped 1,199 discrete inundation bodies across 21,954 square kilometers.&rdquo;
+            </p>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- 6-STAGE PIPELINE CARDS */}
-      <section className="relative z-10 px-5 py-24 sm:px-8 sm:py-32">
+
+      {/* =========================================================================
+          SECTION 3: SIX PINNED VERIFICATION STAGES (PURE BLACK · UNBOXED FLOW)
+          ========================================================================= */}
+      <section className="relative z-10 w-full bg-black px-6 py-28 text-white sm:px-12 sm:py-40">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">
-              Operational Pipeline
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+              Verification Engine
             </span>
-            <h2 className="font-telegraf mt-2 text-[32px] font-bold leading-tight text-mist-1 sm:text-[44px]">
+            <h2 className="font-telegraf mt-2 text-[38px] font-bold tracking-tight text-white sm:text-[54px] lg:text-[64px]">
               Six Pinned Verification Stages
             </h2>
-            <p className="mt-3 text-[15px] leading-relaxed text-mist-3">
-              Every stage is deterministic, versioned, and bound by the Honesty Doctrine.
+            <p className="mt-4 font-sweetsans text-[15px] leading-relaxed text-white/60 sm:text-[17px]">
+              Every operational stage is deterministic, versioned, and bound by the Honesty Doctrine.
             </p>
           </div>
 
-          <div className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {STAGES.map(({icon: Icon, title, desc, sub}, i) => (
+          <div className="mt-20 divide-y divide-white/15">
+            {STAGES.map(({title, desc, sub}, i) => (
               <div
                 key={title}
-                className="glass group relative flex flex-col justify-between overflow-hidden rounded-2xl p-7 transition-all hover:border-accent/50 hover:bg-ink-1/90"
+                className="grid grid-cols-1 items-baseline gap-4 py-10 transition-colors hover:bg-white/[0.02] sm:grid-cols-12 sm:gap-8"
               >
-                <div aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-accent/60 to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-                <div>
-                  <div className="flex items-center justify-between">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-xl border border-line bg-ink-2 text-accent">
-                      <Icon size={22} />
-                    </span>
-                    <span className="font-mono text-[11px] font-bold tracking-[0.25em] text-mist-3">
-                      STAGE 0{i + 1}
-                    </span>
-                  </div>
-                  <h3 className="font-telegraf mt-5 text-[18px] font-bold text-mist-1">{t(`landing.${title}`)}</h3>
-                  <p className="mt-1.5 font-mono text-[12px] text-accent2">{t(`landing.${desc}`)}</p>
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[12px] font-bold tracking-[0.3em] text-white/40">
+                    STAGE 0{i + 1}
+                  </span>
                 </div>
-                <div className="mt-6 border-t border-line/60 pt-4 font-mono text-[11px] text-mist-3">
-                  {sub}
+
+                <div className="sm:col-span-5">
+                  <h3 className="font-telegraf text-[22px] font-bold text-white sm:text-[26px]">
+                    {t(`landing.${title}`)}
+                  </h3>
+                  <p className="mt-1 font-mono text-[12px] uppercase tracking-wider text-white/50">
+                    {t(`landing.${desc}`)}
+                  </p>
+                </div>
+
+                <div className="sm:col-span-5">
+                  <p className="font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                    {sub}
+                  </p>
                 </div>
               </div>
             ))}
@@ -392,40 +393,43 @@ export default function StoryContent() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- 10-LAYER OPERATIONAL DIRECTORY */}
-      <section id="layers" className="relative z-10 border-t border-line/80 bg-ink-1/40 px-5 py-24 sm:px-8 sm:py-32">
+
+      {/* =========================================================================
+          SECTION 4: COMPLETE 10-LAYER SYSTEM CATALOG (STARK WHITE · EDITORIAL)
+          ========================================================================= */}
+      <section id="layers" className="relative z-10 w-full bg-white px-6 py-28 text-black sm:px-12 sm:py-40">
         <div className="mx-auto max-w-7xl">
-          <div className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-end">
+          <div className="flex flex-col items-start justify-between gap-6 border-b border-black/15 pb-10 lg:flex-row lg:items-end">
             <div>
-              <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-accent">
+              <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/50">
                 System Catalog
               </span>
-              <h2 className="font-telegraf mt-2 text-[32px] font-bold text-mist-1 sm:text-[44px]">
+              <h2 className="font-telegraf mt-2 text-[38px] font-bold tracking-tight text-black sm:text-[54px] lg:text-[64px]">
                 Complete 10-Layer Geospatial Directory
               </h2>
-              <p className="mt-2 max-w-2xl text-[14.5px] leading-relaxed text-mist-3">
+              <p className="mt-3 max-w-2xl font-sweetsans text-[15px] leading-relaxed text-black/60 sm:text-[17px]">
                 All physical sensors, optical basemaps, radar algorithms, and humanitarian exposure models in the console.
               </p>
             </div>
 
-            {/* Inspo-style Tabs */}
-            <div className="glass flex flex-wrap gap-1 rounded-xl p-1.5">
+            {/* Editorial Tab Switcher (No Boxed Buttons) */}
+            <div className="flex flex-wrap gap-5 border-b border-black/15 pb-2 font-mono text-[11px] uppercase tracking-wider">
               {(
                 [
-                  {id: 'all', label: 'All Products (10)'},
+                  {id: 'all', label: 'All (10)'},
                   {id: 'optical', label: 'Optical'},
-                  {id: 'radar', label: 'Radar Inundation'},
+                  {id: 'radar', label: 'Radar'},
                   {id: 'hydrology', label: 'Hydrology'},
-                  {id: 'exposure', label: 'Exposure & Routing'}
+                  {id: 'exposure', label: 'Exposure'}
                 ] as const
               ).map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveCategory(tab.id)}
-                  className={`rounded-lg px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-all ${
+                  className={`pb-1 transition-all ${
                     activeCategory === tab.id
-                      ? 'bg-accent text-ink-0 font-bold'
-                      : 'text-mist-3 hover:text-mist-1'
+                      ? 'border-b-2 border-black font-bold text-black'
+                      : 'text-black/40 hover:text-black'
                   }`}
                 >
                   {tab.label}
@@ -434,46 +438,50 @@ export default function StoryContent() {
             </div>
           </div>
 
-          {/* Cards Grid */}
-          <div className="mt-14 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {/* Clean Editorial List (No card boxes) */}
+          <div className="mt-16 divide-y divide-black/15">
             {filteredLayers.map((layer) => (
-              <div
-                key={layer.id}
-                className="glass-card relative flex flex-col justify-between rounded-2xl p-7 transition-all hover:border-line-strong"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="rounded-md border border-line bg-ink-2 px-2.5 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider text-accent">
-                      LAYER {layer.id} · {layer.categoryName}
-                    </span>
-                    <span className="font-mono text-[11px] text-mist-3">{layer.resolution}</span>
+              <div key={layer.id} className="grid grid-cols-1 gap-8 py-14 lg:grid-cols-12 lg:gap-12">
+                <div className="lg:col-span-3">
+                  <div className="font-mono text-[11px] font-bold tracking-[0.25em] text-black/40">
+                    LAYER {layer.id}
                   </div>
-
-                  <h3 className="font-telegraf mt-4 text-[21px] font-bold text-mist-1">{layer.title}</h3>
-                  <p className="font-mono text-[11.5px] text-accent2">{layer.nativeTerm}</p>
-
-                  <p className="font-editorial mt-4 text-[14.5px] italic leading-relaxed text-mist-2">
-                    &ldquo;{layer.quote}&rdquo;
-                  </p>
-
-                  <div className="mt-4 space-y-2 text-[13px] leading-relaxed text-mist-3">
-                    <p>
-                      <strong className="text-mist-2">Physical Basis:</strong> {layer.physicalBasis}
-                    </p>
-                    <p>
-                      <strong className="text-mist-2">Technical Implementation:</strong> {layer.specs}
-                    </p>
+                  <div className="mt-1 font-mono text-[11px] uppercase tracking-wider text-black/60">
+                    {layer.categoryName}
+                  </div>
+                  <div className="mt-4 font-mono text-[11px] text-black/50">
+                    {layer.resolution}
+                  </div>
+                  <div className="mt-1 font-mono text-[11px] text-black/50">
+                    Sensor: {layer.sensor}
                   </div>
                 </div>
 
-                <div className="mt-7 flex items-center justify-between border-t border-line/60 pt-4">
-                  <span className="font-mono text-[11px] text-mist-3">Sensor: {layer.sensor}</span>
-                  <Link
-                    href="/operations"
-                    className="flex items-center gap-1.5 font-mono text-[11.5px] font-semibold text-accent hover:underline"
-                  >
-                    View in Console <ArrowRight size={14} />
-                  </Link>
+                <div className="lg:col-span-5">
+                  <h3 className="font-telegraf text-[26px] font-bold text-black sm:text-[30px]">
+                    {layer.title}
+                  </h3>
+                  <p className="mt-1 font-mono text-[12px] text-black/60">
+                    {layer.nativeTerm}
+                  </p>
+                  <p className="font-editorial mt-5 text-[17px] italic leading-relaxed text-black/85">
+                    &ldquo;{layer.quote}&rdquo;
+                  </p>
+                </div>
+
+                <div className="space-y-4 lg:col-span-4 font-sweetsans text-[13.5px] leading-relaxed text-black/70">
+                  <div>
+                    <strong className="text-black block font-telegraf text-[12px] uppercase tracking-wider">
+                      Physical Basis
+                    </strong>
+                    <p className="mt-1">{layer.physicalBasis}</p>
+                  </div>
+                  <div>
+                    <strong className="text-black block font-telegraf text-[12px] uppercase tracking-wider">
+                      Technical Spec
+                    </strong>
+                    <p className="mt-1">{layer.specs}</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -481,80 +489,87 @@ export default function StoryContent() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- BACKEND ARCHITECTURE & ZERO-COST STORAGE */}
-      <section id="backend" className="relative z-10 px-5 py-24 sm:px-8 sm:py-32">
+
+      {/* =========================================================================
+          SECTION 5: CLOUD INFRASTRUCTURE & UPGRADES (PURE BLACK · CLEAN COLUMNS)
+          ========================================================================= */}
+      <section id="backend" className="relative z-10 w-full bg-black px-6 py-28 text-white sm:px-12 sm:py-40">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-est">
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
               Cloud Infrastructure
             </span>
-            <h2 className="font-telegraf mt-2 text-[32px] font-bold text-mist-1 sm:text-[44px]">
+            <h2 className="font-telegraf mt-2 text-[38px] font-bold tracking-tight text-white sm:text-[54px] lg:text-[64px]">
               Backend Status, Storage & Upgrades
             </h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-mist-3">
+            <p className="mt-4 font-sweetsans text-[15px] leading-relaxed text-white/60 sm:text-[17px]">
               Zero static secrets, permanent Google Cloud ADC OAuth token refresh at $0.00/mo, and automated gating transparency.
             </p>
           </div>
 
-          <div className="mt-14 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Storage Card */}
-            <div className="glass rounded-2xl p-8">
-              <div className="flex items-center gap-3.5">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/15 text-accent">
-                  <Database size={22} />
-                </span>
-                <div>
-                  <h3 className="font-telegraf text-[18px] font-bold text-mist-1">Permanent ADC OAuth Storage ($0.00/mo)</h3>
-                  <p className="font-mono text-[11px] text-mist-3">project-300d4e0e-5c73-49bf-b8a</p>
-                </div>
+          <div className="mt-20 grid grid-cols-1 gap-14 border-t border-white/15 pt-12 lg:grid-cols-2">
+            {/* Storage Column */}
+            <div>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-white/50">
+                INFRASTRUCTURE 01
               </div>
-
-              <p className="mt-5 text-[14px] leading-relaxed text-mist-2">
-                Google Cloud organization policy enforces <code className="rounded bg-ink-2 px-1.5 py-0.5 font-mono text-[12px] text-mist-1">disableServiceAccountKeyCreation</code>. The pipeline authenticates through a verified ADC token refresh loop:
+              <h3 className="font-telegraf mt-2 text-[26px] font-bold text-white">
+                Permanent ADC OAuth Storage ($0.00/mo)
+              </h3>
+              <p className="mt-1 font-mono text-[11.5px] text-white/60">
+                GCP Project: project-300d4e0e-5c73-49bf-b8a
               </p>
 
-              <div className="mt-5 space-y-2.5 rounded-xl border border-line bg-ink-2/60 p-4 font-mono text-[11px]">
-                <div className="flex justify-between text-mist-2">
+              <p className="mt-6 font-sweetsans text-[14.5px] leading-relaxed text-white/75">
+                Google Cloud organization policy enforces <code className="bg-white/10 px-1.5 py-0.5 font-mono text-[12px] text-white">disableServiceAccountKeyCreation</code>. The pipeline authenticates through a verified ADC token refresh loop:
+              </p>
+
+              <div className="mt-8 space-y-3 border-t border-white/15 pt-6 font-mono text-[12px]">
+                <div className="flex justify-between text-white/60">
                   <span>ADC Identity:</span>
-                  <span className="text-mist-1">monarqlabs@gmail.com</span>
+                  <span className="text-white">monarqlabs@gmail.com</span>
                 </div>
-                <div className="flex justify-between text-mist-2">
+                <div className="flex justify-between text-white/60">
                   <span>Token Cycle:</span>
-                  <span className="text-accent">Auto-refreshing short-lived bearer</span>
+                  <span className="text-white">Auto-refreshing short-lived bearer</span>
                 </div>
-                <div className="flex justify-between text-mist-2">
+                <div className="flex justify-between text-white/60">
                   <span>GCS Bucket:</span>
-                  <span className="text-mist-1">gs://monarqlabs-gemini-workspace/kalopathor/</span>
+                  <span className="text-white">gs://monarqlabs-gemini-workspace/kalopathor/</span>
                 </div>
-                <div className="flex justify-between text-mist-2">
+                <div className="flex justify-between text-white/60">
                   <span>Compute Cost:</span>
-                  <span className="font-bold text-accent">$0.00 / month</span>
+                  <span className="font-bold text-white">$0.00 / month</span>
                 </div>
               </div>
             </div>
 
             {/* Why Live Loop was Paused */}
-            <div className="glass rounded-2xl p-8">
-              <div className="flex items-center gap-3.5">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-warn/15 text-warn">
-                  <AlertTriangle size={22} />
-                </span>
-                <div>
-                  <h3 className="font-telegraf text-[18px] font-bold text-mist-1">Why Live Sentinel-1 Loop (B) Was Paused</h3>
-                  <p className="font-mono text-[11px] text-warn">Strict Honesty Gating Standby</p>
-                </div>
+            <div>
+              <div className="font-mono text-[11px] font-bold uppercase tracking-[0.25em] text-white/50">
+                HONESTY GATING 02
               </div>
+              <h3 className="font-telegraf mt-2 text-[26px] font-bold text-white">
+                Why Live Sentinel-1 Loop Was Paused
+              </h3>
+              <p className="mt-1 font-mono text-[11.5px] text-white/60">
+                Operational Safety & Calibration Gate
+              </p>
 
-              <div className="mt-5 space-y-3.5 text-[13.5px] leading-relaxed text-mist-2">
-                <div className="rounded-lg border border-line/70 bg-ink-2/40 p-4">
-                  <strong className="text-mist-1">1. Broken Conformal Calibration (A1 Gate):</strong>
-                  <p className="mt-1 text-mist-3">
+              <div className="mt-6 space-y-6 font-sweetsans text-[14.5px] leading-relaxed text-white/75">
+                <div>
+                  <strong className="text-white block font-telegraf text-[15px]">
+                    1. Broken Conformal Calibration (A1 Gate):
+                  </strong>
+                  <p className="mt-1.5 text-white/60">
                     One-sided lower quantile regression on binary masks produced a tautological coverage (0/10 publishable deciles). Under the Honesty Doctrine, automated advisories with uncalibrated percentages are blocked.
                   </p>
                 </div>
-                <div className="rounded-lg border border-line/70 bg-ink-2/40 p-4">
-                  <strong className="text-mist-1">2. Channel 5 Dry-Reference Soil Moisture Shift:</strong>
-                  <p className="mt-1 text-mist-3">
+                <div>
+                  <strong className="text-white block font-telegraf text-[15px]">
+                    2. Channel 5 Dry-Reference Soil Moisture Shift:
+                  </strong>
+                  <p className="mt-1.5 text-white/60">
                     Automated dry-season mosaics raised Negative Control False Positive Rate from 0.335 to 0.611. Live triggers were safely paused until the index upgrade.
                   </p>
                 </div>
@@ -562,25 +577,27 @@ export default function StoryContent() {
             </div>
           </div>
 
-          {/* 3 Low/Zero Compute Upgrades */}
-          <div className="mt-10">
-            <h3 className="font-mono text-[12px] uppercase tracking-[0.25em] text-accent">
-              Immediate Low/Zero-Compute Upgrades
+          {/* Upgrades */}
+          <div className="mt-24 border-t border-white/15 pt-12">
+            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+              Immediate Upgrades
+            </span>
+            <h3 className="font-telegraf mt-2 text-[28px] font-bold text-white sm:text-[34px]">
+              Three Ready-to-Deploy Zero-Compute Upgrades
             </h3>
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
+
+            <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-3">
               {UPGRADES.map((u) => (
-                <div key={u.title} className="glass-card rounded-2xl p-6">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className="rounded-full px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider"
-                      style={{background: `${u.color}15`, color: u.color, border: `1px solid ${u.color}35`}}
-                    >
-                      {u.badge}
-                    </span>
-                    <u.icon size={18} style={{color: u.color}} />
+                <div key={u.title} className="border-t border-white/20 pt-6">
+                  <div className="font-mono text-[10px] font-bold tracking-[0.25em] text-white/50 uppercase">
+                    {u.badge}
                   </div>
-                  <h4 className="font-telegraf mt-4 text-[17px] font-bold text-mist-1">{u.title}</h4>
-                  <p className="mt-2 text-[13px] leading-relaxed text-mist-3">{u.desc}</p>
+                  <h4 className="font-telegraf mt-3 text-[19px] font-bold text-white">
+                    {u.title}
+                  </h4>
+                  <p className="mt-3 font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                    {u.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -588,107 +605,112 @@ export default function StoryContent() {
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- HONESTY DOCTRINE MATRIX */}
-      <section className="relative z-10 border-t border-line/80 bg-ink-1/60 px-5 py-24 sm:px-8 sm:py-32 backdrop-blur-xl">
+
+      {/* =========================================================================
+          SECTION 6: THE HONESTY DOCTRINE (STARK WHITE · OPEN EDITORIAL RULES)
+          ========================================================================= */}
+      <section className="relative z-10 w-full bg-white px-6 py-28 text-black sm:px-12 sm:py-40">
         <div className="mx-auto max-w-7xl">
           <div className="max-w-3xl">
-            <span className="font-mono text-[11px] uppercase tracking-[0.3em] text-est">
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/50">
               {t('landing.integritySub')}
             </span>
-            <h2 className="font-telegraf mt-2 text-[32px] font-bold text-mist-1 sm:text-[44px]">
+            <h2 className="font-telegraf mt-2 text-[38px] font-bold tracking-tight text-black sm:text-[54px] lg:text-[64px]">
               {t('landing.integrityTitle')}
             </h2>
-            <p className="mt-2 text-[15px] leading-relaxed text-mist-3">
+            <p className="mt-3 font-sweetsans text-[15px] leading-relaxed text-black/60 sm:text-[17px]">
               In life-safety systems, transparency is non-negotiable.
             </p>
           </div>
 
-          <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-            {INTEGRITY.map(({title, desc, color}) => (
-              <div
-                key={title}
-                className="glass rounded-2xl p-7 transition-all"
-                style={{boxShadow: `inset 0 1px 0 ${color}22`}}
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{background: color, boxShadow: `0 0 12px ${color}aa`}} />
-                  <span className="font-mono text-[11px] font-bold uppercase tracking-[0.2em]" style={{color}}>
-                    {t(`landing.${title}`)}
-                  </span>
-                </div>
-                <p className="mt-4 text-[14px] leading-relaxed text-mist-2">{t(`landing.${desc}`)}</p>
+          <div className="mt-16 grid grid-cols-1 gap-12 border-t border-black/15 pt-12 md:grid-cols-3">
+            <div>
+              <div className="font-mono text-[11px] font-bold tracking-[0.25em] text-black uppercase">
+                {t('landing.integrity1Title')}
               </div>
-            ))}
+              <p className="mt-4 font-sweetsans text-[14.5px] leading-relaxed text-black/75">
+                {t('landing.integrity1Desc')}
+              </p>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] font-bold tracking-[0.25em] text-black uppercase">
+                {t('landing.integrity2Title')}
+              </div>
+              <p className="mt-4 font-sweetsans text-[14.5px] leading-relaxed text-black/75">
+                {t('landing.integrity2Desc')}
+              </p>
+            </div>
+            <div>
+              <div className="font-mono text-[11px] font-bold tracking-[0.25em] text-black uppercase">
+                {t('landing.integrity3Title')}
+              </div>
+              <p className="mt-4 font-sweetsans text-[14.5px] leading-relaxed text-black/75">
+                {t('landing.integrity3Desc')}
+              </p>
+            </div>
           </div>
 
-          {/* Detailed Commitments */}
-          <div className="glass mt-6 overflow-hidden rounded-2xl border border-line p-7">
-            <h3 className="font-mono text-[11px] uppercase tracking-[0.25em] text-mist-3">
-              Ethical Gating Matrix
-            </h3>
-            <div className="mt-5 grid grid-cols-1 gap-5 text-[13.5px] sm:grid-cols-2 lg:grid-cols-4">
-              <div className="border-l-2 border-est pl-3.5">
-                <strong className="text-mist-1">No Ghost Data</strong>
-                <p className="mt-1 text-mist-3">Replay data labeled SEEDED DATA in amber; never silent green.</p>
+          <div className="mt-20 border-t border-black/15 pt-10">
+            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-black/40">
+              Operational Commitments
+            </span>
+            <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <strong className="font-telegraf text-[15px] font-bold text-black block">No Ghost Data</strong>
+                <p className="mt-1 font-sweetsans text-[13px] text-black/70">Replay data labeled SEEDED DATA; never disguised as live telemetry.</p>
               </div>
-              <div className="border-l-2 border-accent pl-3.5">
-                <strong className="text-mist-1">No False Guarantees</strong>
-                <p className="mt-1 text-mist-3">Timestamps carry &quot;estimate · pending recalibration&quot;.</p>
+              <div>
+                <strong className="font-telegraf text-[15px] font-bold text-black block">No False Guarantees</strong>
+                <p className="mt-1 font-sweetsans text-[13px] text-black/70">Timestamps carry &quot;estimate · pending recalibration&quot;.</p>
               </div>
-              <div className="border-l-2 border-accent2 pl-3.5">
-                <strong className="text-mist-1">Independent Auditing</strong>
-                <p className="mt-1 text-mist-3">Every advisory links to raw satellite pass timestamps & model version.</p>
+              <div>
+                <strong className="font-telegraf text-[15px] font-bold text-black block">Independent Auditing</strong>
+                <p className="mt-1 font-sweetsans text-[13px] text-black/70">Every advisory links directly to raw satellite pass timestamps & model version.</p>
               </div>
-              <div className="border-l-2 border-danger pl-3.5">
-                <strong className="text-mist-1">Depth Over Breadth</strong>
-                <p className="mt-1 text-mist-3">Feni pilot fully real before scaling national breadth.</p>
+              <div>
+                <strong className="font-telegraf text-[15px] font-bold text-black block">Depth Over Breadth</strong>
+                <p className="mt-1 font-sweetsans text-[13px] text-black/70">Feni benchmark validated before expanding to national breadth.</p>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------- FOOTER */}
-      <footer className="relative z-10 border-t border-line/80 px-5 py-12 sm:px-8">
-        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+
+      {/* =========================================================================
+          SECTION 7: FOOTER (PURE BLACK · STRICTLY MONOCHROME)
+          ========================================================================= */}
+      <footer className="relative z-10 w-full border-t border-white/15 bg-black px-6 py-16 text-white sm:px-12">
+        <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-3">
-              <span className="bn text-[20px] font-bold text-mist-1">কালপাথর</span>
-              <span className="font-telegraf text-[13px] font-bold tracking-[0.25em] text-accent uppercase">
+              <span className="bn text-[22px] font-bold text-white">কালপাথর</span>
+              <span className="font-telegraf text-[13px] font-bold tracking-[0.25em] text-white uppercase">
                 Kalopathor
               </span>
             </div>
-            <p className="mt-1 font-mono text-[11px] text-mist-3">
+            <p className="mt-1 font-mono text-[11px] text-white/50">
               {t('landing.credits')}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-6">
-            <Link
-              href="/operations"
-              className="flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-accent hover:underline"
-            >
-              <GitBranch size={13} />
+          <div className="flex flex-wrap items-center gap-8 font-mono text-[11px] uppercase tracking-widest text-white/70">
+            <Link href="/operations" className="transition-colors hover:text-white">
               {t('nav.operations')}
             </Link>
-            <Link
-              href="/approval"
-              className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-mist-2 hover:text-mist-1 hover:underline"
-            >
-              <ShieldCheck size={13} />
+            <Link href="/approval" className="transition-colors hover:text-white">
               CAP Review
             </Link>
             <a
               href="https://github.com/realsamiul/Kalopathor-public"
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-mist-2 hover:text-mist-1 hover:underline"
+              className="flex items-center gap-1 transition-colors hover:text-white"
             >
-              <ExternalLink size={13} />
-              GitHub
+              <span>GitHub</span>
+              <ExternalLink size={11} />
             </a>
-            <span className="flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-widest text-mist-3">
-              <Target size={13} />
+            <span className="text-white/40">
               {t('ops.utc')}
             </span>
           </div>
@@ -698,19 +720,17 @@ export default function StoryContent() {
   );
 }
 
-function BigStatCard({
+function BigEditorialStat({
   number,
   unit,
   label,
   sub,
-  tone,
   format
 }: {
   number: number;
   unit: string;
   label: string;
   sub: string;
-  tone: string;
   format: (n: number) => string;
 }) {
   const [shown, setShown] = useState(0);
@@ -746,18 +766,15 @@ function BigStatCard({
   }, [number]);
 
   return (
-    <div ref={ref} className="glass rounded-2xl p-6 transition-all hover:border-line-strong">
+    <div ref={ref} className="border-t border-black/20 pt-6">
       <div className="flex items-baseline gap-2">
-        <span
-          className="font-mono text-[36px] font-black leading-none tracking-tight sm:text-[44px]"
-          style={{color: tone}}
-        >
+        <span className="font-mono text-[52px] font-black leading-none tracking-tight text-black sm:text-[64px] lg:text-[76px]">
           {format(shown)}
         </span>
-        <span className="font-mono text-[13px] uppercase text-mist-3">{unit}</span>
+        <span className="font-mono text-[13px] uppercase text-black/50">{unit}</span>
       </div>
-      <div className="font-telegraf mt-3 text-[14px] font-bold text-mist-1">{label}</div>
-      <div className="mt-1 font-mono text-[10.5px] text-mist-3">{sub}</div>
+      <div className="font-telegraf mt-3 text-[16px] font-bold text-black">{label}</div>
+      <div className="mt-1 font-mono text-[11px] text-black/50">{sub}</div>
     </div>
   );
 }
