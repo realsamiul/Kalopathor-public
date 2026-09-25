@@ -165,13 +165,32 @@ export default function ActionCard({
         <VoiceSummary state={state} modelMeta={modelMeta} />
       ) : (
         <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-3 py-4 sm:px-4">
-          <div
-            className="flex w-fit items-center gap-2 self-start rounded-md border px-2.5 py-1.5"
-            style={{borderColor: `${meta.color}66`, background: `${meta.color}14`}}
-          >
-            <ConfidenceGlyph cls={state.confidenceClass} color={meta.color} />
-            <span className="text-[11.5px] font-semibold uppercase tracking-wider" style={{color: meta.color}}>
-              {t(meta.labelKey)}
+          <div className="flex flex-wrap items-center gap-2">
+            <div
+              className="flex w-fit items-center gap-2 rounded-md border px-2.5 py-1.5"
+              style={{borderColor: `${meta.color}66`, background: `${meta.color}14`}}
+            >
+              <ConfidenceGlyph cls={state.confidenceClass} color={meta.color} />
+              <span className="text-[11.5px] font-semibold uppercase tracking-wider" style={{color: meta.color}}>
+                {t(meta.labelKey)}
+              </span>
+            </div>
+
+            {/* Peril Severity Scorecard Badge */}
+            <span className="flex items-center gap-1 rounded-md border border-danger/40 bg-danger/15 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-danger">
+              <span className="h-1.5 w-1.5 rounded-full bg-danger animate-pulse" />
+              {state.affectedPeople >= 100000
+                ? 'CRITICAL · LVL 5'
+                : state.affectedPeople >= 30000
+                  ? 'SEVERE · LVL 4'
+                  : state.affectedPeople >= 5000
+                    ? 'ELEVATED · LVL 3'
+                    : 'MODERATE · LVL 2'}
+            </span>
+
+            {/* Honesty Provenance Tag */}
+            <span className="rounded border border-line bg-ink-2 px-2 py-1 font-mono text-[9.5px] uppercase tracking-wider text-mist-3">
+              {modelMeta?.model ?? 'd3v4.2'} (τ={modelMeta?.tau ?? 0.5})
             </span>
           </div>
 

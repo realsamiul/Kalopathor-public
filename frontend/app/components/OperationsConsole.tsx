@@ -60,7 +60,7 @@ import ActionCard, {type ModelMeta} from './ActionCard';
 import WorkflowListPanel from './WorkflowListPanel';
 import DataQualityPanel from './DataQualityPanel';
 import GaugeDrawer, {type GaugeFeatureProps} from './GaugeDrawer';
-import {AlertTriangle, Droplets, List, MapPinned, RefreshCw, X} from 'lucide-react';
+import {AlertTriangle, Check, Droplets, List, MapPinned, RefreshCw, X} from 'lucide-react';
 
 const EMPTY_FC: GeoJSON.FeatureCollection = {type: 'FeatureCollection', features: []};
 
@@ -189,7 +189,41 @@ export default function OperationsConsole() {
   const [legendOpenMobile, setLegendOpenMobile] = useState(true);
   const [forecastAvailable, setForecastAvailable] = useState(true);
   const [sheet, setSheet] = useState<SheetKind>(null);
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitPos, setSplitPos] = useState(50);
+  const [shareToast, setShareToast] = useState(false);
   const hydrated = useRef(false);
+
+  // Split-curtain pointer dragging
+  const handleSplitPointerDown = useCallback((e: React.PointerEvent) => {
+    e.preventDefault();
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!mapContainer.current) return;
+      const rect = mapContainer.current.getBoundingClientRect();
+      const x = moveEvent.clientX - rect.left;
+      const pct = Math.max(5, Math.min(95, (x / rect.width) * 100));
+      setSplitPos(pct);
+    };
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+    };
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+  }, []);
+
+  // Deep-link copy & toast
+  const handleShareView = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2500);
+    }).catch(() => {
+      setShareToast(true);
+      setTimeout(() => setShareToast(false), 2500);
+    });
+  }, []);
 
   // Refs so stable map event handlers can read the latest render state.
   const isDesktopRef = useRef(isDesktop);
@@ -871,9 +905,31 @@ export default function OperationsConsole() {
       if (readyRef.current) return;
       readyRef.current = true;
       setMapReady(true);
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const lat = params.get('lat');
+        const lon = params.get('lon');
+        const z = params.get('z');
+        if (lat && lon) {
+          map.jumpTo({center: [parseFloat(lon), parseFloat(lat)], zoom: z ? parseFloat(z) : 8});
+        }
+        if (params.get('split') === '1') {
+          setSplitMode(true);
+        }
+      }
     };
     map.on('load', markReady);
     map.on('render', markReady);
+    map.on('moveend', () => {
+      if (typeof window === 'undefined') return;
+      const c = map.getCenter();
+      const z = map.getZoom();
+      const params = new URLSearchParams(window.location.search);
+      params.set('lat', c.lat.toFixed(4));
+      params.set('lon', c.lng.toFixed(4));
+      params.set('z', z.toFixed(2));
+      window.history.replaceState(null, '', `?${params.toString()}`);
+    });
     setTimeout(markReady, 15000);
 
     // Event handlers are registered up-front; MapLibre dispatches them only
@@ -1087,10 +1143,30 @@ export default function OperationsConsole() {
         stats={stats}
         healthMode={freshness?.mode ?? 'seeded'}
         gfmVisible={visible.gfm}
+        splitMode={splitMode}
         onGfmToggle={() => setLayerVisible('gfm', !visible.gfm)}
+        onSplitToggle={() => setSplitMode((s) => !s)}
+        onShare={handleShareView}
         onOpenMenu={() => setSheet('more')}
         showMenu={isMobile}
       />
+
+      {/* Share View Floating Toast Notification */}
+      <AnimatePresence>
+        {shareToast && (
+          <motion.div
+            initial={{opacity: 0, y: -16}}
+            animate={{opacity: 1, y: 0}}
+            exit={{opacity: 0, y: -16}}
+            className="pointer-events-none absolute left-1/2 top-16 z-50 -translate-x-1/2 rounded-lg border border-accent/40 bg-ink-0/95 px-4 py-2 shadow-panel-lg backdrop-blur"
+          >
+            <div className="flex items-center gap-2 font-mono text-[11px] text-accent">
+              <Check size={13} aria-hidden />
+              <span>View coordinates & state copied to clipboard</span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative flex min-h-0 flex-1">
         {/* Left rail: full (desktop) / icon-only (tablet) */}
@@ -1116,6 +1192,29 @@ export default function OperationsConsole() {
         <div className="relative flex min-w-0 flex-1 flex-col">
           <div className="relative min-h-0 flex-1">
             <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
+
+            {/* Split-Curtain Comparison Swipe Divider */}
+            {splitMode && (
+              <div className="pointer-events-none absolute inset-0 z-20 select-none">
+                <div className="pointer-events-auto absolute left-4 top-3 rounded-md border border-white/20 bg-ink-0/85 px-3 py-1 font-mono text-[10.5px] uppercase tracking-wider text-mist-1 shadow-panel backdrop-blur">
+                  ◀ Optical (NASA VIIRS)
+                </div>
+                <div className="pointer-events-auto absolute right-4 top-3 rounded-md border border-accent/40 bg-ink-0/85 px-3 py-1 font-mono text-[10.5px] uppercase tracking-wider text-accent shadow-panel backdrop-blur">
+                  SAR Radar (d3v4.2) ▶
+                </div>
+
+                <div
+                  className="pointer-events-auto absolute bottom-0 top-0 cursor-ew-resize select-none"
+                  style={{left: `${splitPos}%`, transform: 'translateX(-50%)'}}
+                  onPointerDown={handleSplitPointerDown}
+                >
+                  <div className="h-full w-[2px] bg-accent shadow-[0_0_12px_#2dd4bf]" />
+                  <div className="absolute left-1/2 top-1/2 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-accent bg-ink-1 text-[11px] text-accent shadow-panel-lg transition-transform hover:scale-110">
+                    ◀▶
+                  </div>
+                </div>
+              </div>
+            )}
 
             {mapReady && (
               <>

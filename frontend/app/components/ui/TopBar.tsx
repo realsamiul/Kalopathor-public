@@ -1,7 +1,8 @@
 'use client';
 
 import {useTranslations} from 'next-intl';
-import {Droplets, Menu} from 'lucide-react';
+import {Check, Columns, Droplets, Menu, Share2} from 'lucide-react';
+import {useState} from 'react';
 
 export interface TopStats {
   sar: string;
@@ -14,7 +15,10 @@ export default function TopBar({
   eventName,
   stats,
   gfmVisible,
+  splitMode,
   onGfmToggle,
+  onSplitToggle,
+  onShare,
   onOpenMenu,
   showMenu
 }: {
@@ -22,12 +26,28 @@ export default function TopBar({
   stats: TopStats;
   healthMode: 'seeded' | 'live';
   gfmVisible: boolean;
+  splitMode?: boolean;
   onGfmToggle: () => void;
+  onSplitToggle?: () => void;
+  onShare?: () => void;
   onOpenMenu: () => void;
   /** mobile: show the menu button (sheet) instead of inline stats */
   showMenu: boolean;
 }) {
   const t = useTranslations();
+  const [copied, setCopied] = useState(false);
+
+  const handleShare = () => {
+    if (onShare) {
+      onShare();
+    } else {
+      if (typeof window !== 'undefined') {
+        navigator.clipboard.writeText(window.location.href);
+      }
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2200);
+  };
 
   return (
     <header className="relative z-30 flex h-12 shrink-0 items-center gap-2 border-b border-white/10 bg-black px-2.5 text-white sm:h-14 sm:gap-3 sm:px-4">
@@ -53,6 +73,24 @@ export default function TopBar({
 
       {/* Right cluster */}
       <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        {/* Split-Curtain Swipe Mode Toggle */}
+        {onSplitToggle && (
+          <button
+            onClick={onSplitToggle}
+            aria-pressed={splitMode}
+            title="Toggle Split-Curtain Comparison (Optical vs SAR Radar)"
+            className={`hidden min-h-[36px] items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors sm:flex ${
+              splitMode
+                ? 'border-accent bg-accent/20 text-accent font-bold shadow-[0_0_12px_rgba(45,212,191,0.35)]'
+                : 'border-white/20 text-white/70 hover:border-white/50 hover:text-white'
+            }`}
+          >
+            <Columns size={12} aria-hidden />
+            <span>{splitMode ? 'Swipe Active' : 'Swipe Split'}</span>
+          </button>
+        )}
+
+        {/* GFM Live Flood Toggle */}
         <button
           onClick={onGfmToggle}
           aria-pressed={gfmVisible}
@@ -65,6 +103,20 @@ export default function TopBar({
         >
           <Droplets size={12} aria-hidden />
           GFM
+        </button>
+
+        {/* Deep Link Share Button */}
+        <button
+          onClick={handleShare}
+          title="Copy Link with active coordinates and state"
+          className={`flex min-h-[36px] items-center gap-1.5 rounded-md border px-2.5 py-1 font-mono text-[10px] uppercase tracking-wider transition-colors ${
+            copied
+              ? 'border-accent bg-accent/20 text-accent font-bold'
+              : 'border-white/20 text-white/70 hover:border-white/50 hover:text-white'
+          }`}
+        >
+          {copied ? <Check size={12} className="text-accent" /> : <Share2 size={12} />}
+          <span className="hidden sm:inline">{copied ? 'Copied' : 'Share'}</span>
         </button>
 
         {showMenu && (

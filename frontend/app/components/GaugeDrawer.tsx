@@ -1,7 +1,7 @@
 'use client';
 
 import {useTranslations} from 'next-intl';
-import {Gauge as GaugeIcon, RefreshCw, X} from 'lucide-react';
+import {Gauge as GaugeIcon, RefreshCw, TrendingDown, TrendingUp, X} from 'lucide-react';
 import {useEffect, useRef, useState} from 'react';
 import {logger} from '@/lib/logger';
 
@@ -31,10 +31,8 @@ export interface GaugeFeatureProps {
   as_of: string;
 }
 
-const PAD = {l: 36, r: 12, t: 14, b: 26};
+const PAD = {l: 36, r: 16, t: 16, b: 26};
 
-// Responsive chart box: fill the sheet width, keep a readable aspect on
-// narrow phones instead of shrinking to a sliver.
 function chartDims(width: number): {W: number; H: number} {
   const W = Math.max(240, Math.round(width));
   const H = Math.max(150, Math.min(230, Math.round(W * 0.55)));
@@ -74,6 +72,7 @@ export default function GaugeDrawer({
   const t = useTranslations();
   const [series, setSeries] = useState<GaugeSeries[] | null>(hydroCache);
   const [failed, setFailed] = useState(false);
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   useEffect(() => {
     if (!hydroCache) loadSeries(setSeries, () => setFailed(true));
@@ -86,7 +85,6 @@ export default function GaugeDrawer({
     loadSeries(setSeries, () => setFailed(true));
   };
 
-  // Measure the chart container so the SVG viewBox tracks sheet width.
   const chartWrap = useRef<HTMLDivElement>(null);
   const [wrapW, setWrapW] = useState(340);
   useEffect(() => {
@@ -102,6 +100,8 @@ export default function GaugeDrawer({
 
   const data = series?.find((s) => s.station === gauge.station);
   const danger = gauge.danger_level_m ?? data?.danger_level_m ?? null;
+  const warning = danger !== null ? danger - 0.5 : null;
+
   const tone =
     gauge.status === 'danger'
       ? {text: '#f43f5e', bg: 'rgba(244,63,94,.12)', border: 'rgba(244,63,94,.4)'}
@@ -109,67 +109,156 @@ export default function GaugeDrawer({
         ? {text: '#f59e0b', bg: 'rgba(245,158,11,.12)', border: 'rgba(245,158,11,.4)'}
         : {text: '#2dd4bf', bg: 'rgba(45,212,191,.12)', border: 'rgba(45,212,191,.4)'};
 
+  // Compute 24h tendency if data points available
+  let tendency: {delta: number; isUp: boolean} | null = null;
+  if (data && data.points.length >= 2) {
+    const pts = data.points;
+    const pCurrent = pts[pts.length - 1].level_m;
+    const pPrev = pts[pts.length - 2].level_m;
+    const delta = pCurrent - pPrev;
+    tendency = {delta, isUp: delta >= 0};
+  }
+
   let chart: React.ReactNode = null;
   if (data && data.points.length > 1) {
     const pts = data.points;
-    const levels = [...pts.map((p) => p.level_m), danger].filter((v): v is number => v != null);
+    const levels = [...pts.map((p) => p.level_m), danger, warning].filter((v): v is number => v != null);
     const min = Math.min(...levels) - 0.5;
     const max = Math.max(...levels) + 0.5;
     const x = (i: number) => PAD.l + (i / Math.max(1, pts.length - 1)) * (W - PAD.l - PAD.r);
     const y = (v: number) => PAD.t + ((max - v) / (max - min)) * (H - PAD.t - PAD.b);
+
     const obs = pts.filter((p) => p.source === 'observed');
     const fc = pts.filter((p) => p.source !== 'observed');
     const obsPath = pathFor(obs.length > 1 ? obs : pts, (i) => x(pts.indexOf(obs[i] ?? pts[Math.min(i, pts.length - 1)])), y);
     const fcPath = pathFor(fc, (i) => x(pts.indexOf(fc[i])), y);
-    // area under the observed line
+
     const obsIdxs = pts.map((p, i) => (p.source === 'observed' ? i : -1)).filter((i) => i >= 0);
     const lastIdx = obsIdxs[obsIdxs.length - 1] ?? pts.length - 1;
     const areaPath =
       obsIdxs.length > 1
         ? `${obsIdxs.map((i, k) => `${k === 0 ? 'M' : 'L'}${x(i).toFixed(1)},${y(pts[i].level_m).toFixed(1)}`).join(' ')} L${x(lastIdx).toFixed(1)},${y(min).toFixed(1)} L${x(obsIdxs[0]).toFixed(1)},${y(min).toFixed(1)} Z`
         : '';
-    const labelStep = Math.max(1, Math.floor(pts.length / 8));
+    const labelStep = Math.max(1, Math.floor(pts.length / 7));
+
+    const activePt = hoverIdx !== null && pts[hoverIdx] ? pts[hoverIdx] : null;
+    const activeX = hoverIdx !== null ? x(hoverIdx) : null;
+    const activeY = activePt ? y(activePt.level_m) : null;
+
+    const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clientX = e.clientX - rect.left;
+      const normalizedX = (clientX / rect.width) * W;
+      const clampedX = Math.max(PAD.l, Math.min(W - PAD.r, normalizedX));
+      const ratio = (clampedX - PAD.l) / (W - PAD.l - PAD.r);
+      const nearestIdx = Math.round(ratio * (pts.length - 1));
+      setHoverIdx(Math.max(0, Math.min(pts.length - 1, nearestIdx)));
+    };
 
     chart = (
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label={t('gauge.title')}>
-        <defs>
-          <linearGradient id="gauge-area" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {Array.from({length: 5}, (_, i) => {
-          const v = min + ((max - min) / 4) * i;
-          const yy = y(v);
-          return (
-            <g key={i}>
-              <line x1={PAD.l} x2={W - PAD.r} y1={yy} y2={yy} stroke="rgba(148,163,184,.12)" strokeWidth="1" />
-              <text x={PAD.l - 5} y={yy + 3} textAnchor="end" fill="#6d7891" fontSize="9" fontFamily="var(--font-mono), monospace">
-                {v.toFixed(1)}
+      <div className="relative">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="w-full cursor-crosshair select-none"
+          role="img"
+          aria-label={t('gauge.title')}
+          onPointerMove={handlePointerMove}
+          onPointerLeave={() => setHoverIdx(null)}
+        >
+          <defs>
+            <linearGradient id="gauge-area" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#2dd4bf" stopOpacity="0.28" />
+              <stop offset="60%" stopColor="#2dd4bf" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#2dd4bf" stopOpacity="0" />
+            </linearGradient>
+            <filter id="gauge-glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="2" result="glow" />
+              <feComposite in="SourceGraphic" in2="glow" operator="over" />
+            </filter>
+          </defs>
+
+          {/* Grid lines */}
+          {Array.from({length: 5}, (_, i) => {
+            const v = min + ((max - min) / 4) * i;
+            const yy = y(v);
+            return (
+              <g key={i}>
+                <line x1={PAD.l} x2={W - PAD.r} y1={yy} y2={yy} stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="3 3" />
+                <text x={PAD.l - 6} y={yy + 3} textAnchor="end" fill="rgba(255,255,255,0.4)" fontSize="9" fontFamily="var(--font-mono), monospace">
+                  {v.toFixed(1)}
+                </text>
+              </g>
+            );
+          })}
+
+          {/* Danger zone shading */}
+          {danger !== null && (
+            <>
+              <rect x={PAD.l} y={PAD.t} width={W - PAD.l - PAD.r} height={Math.max(0, y(danger) - PAD.t)} fill="rgba(244,63,94,0.08)" />
+              <line x1={PAD.l} x2={W - PAD.r} y1={y(danger)} y2={y(danger)} stroke="#f43f5e" strokeWidth="1.5" strokeDasharray="5 3" />
+              <text x={W - PAD.r - 2} y={y(danger) - 4} textAnchor="end" fill="#f43f5e" fontSize="9" fontWeight="bold" fontFamily="var(--font-mono), monospace">
+                {t('gauge.danger')} {danger.toFixed(2)}m
               </text>
+            </>
+          )}
+
+          {/* Warning Level reference line */}
+          {warning !== null && warning < (danger ?? 999) && (
+            <>
+              <line x1={PAD.l} x2={W - PAD.r} y1={y(warning)} y2={y(warning)} stroke="#f59e0b" strokeWidth="1" strokeDasharray="2 3" opacity="0.7" />
+              <text x={W - PAD.r - 2} y={y(warning) + 9} textAnchor="end" fill="#f59e0b" fontSize="8" fontFamily="var(--font-mono), monospace" opacity="0.8">
+                WL {warning.toFixed(2)}m
+              </text>
+            </>
+          )}
+
+          {/* Gradient area */}
+          {areaPath && <path d={areaPath} fill="url(#gauge-area)" />}
+
+          {/* Observed path */}
+          {obs.length > 0 && (
+            <path d={obsPath} fill="none" stroke="#2dd4bf" strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round" filter="url(#gauge-glow)" />
+          )}
+
+          {/* Forecast path */}
+          {fc.length > 0 && (
+            <path d={fcPath} fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="4 3" strokeLinejoin="round" />
+          )}
+
+          {/* Active Hover Crosshair */}
+          {activeX !== null && activeY !== null && activePt && (
+            <g>
+              <line x1={activeX} x2={activeX} y1={PAD.t} y2={H - PAD.b} stroke="rgba(255,255,255,0.4)" strokeWidth="1" strokeDasharray="2 2" />
+              <circle cx={activeX} cy={activeY} r="4.5" fill="#2dd4bf" stroke="#101216" strokeWidth="2" />
+              <circle cx={activeX} cy={activeY} r="8" fill="rgba(45,212,191,0.25)" />
             </g>
-          );
-        })}
-        {areaPath && <path d={areaPath} fill="url(#gauge-area)" />}
-        {danger !== null && (
-          <>
-            <rect x={PAD.l} y={PAD.t} width={W - PAD.l - PAD.r} height={Math.max(0, y(danger) - PAD.t)} fill="rgba(244,63,94,.05)" />
-            <line x1={PAD.l} x2={W - PAD.r} y1={y(danger)} y2={y(danger)} stroke="#ef4444" strokeWidth="1.4" strokeDasharray="5 3" />
-            <text x={W - PAD.r - 2} y={y(danger) - 4} textAnchor="end" fill="#f43f5e" fontSize="9" fontFamily="var(--font-mono), monospace">
-              {t('gauge.danger')} {danger.toFixed(1)}
-            </text>
-          </>
+          )}
+
+          {/* Date tick labels */}
+          {pts.map((p, i) =>
+            i % labelStep === 0 || i === pts.length - 1 ? (
+              <text key={p.date + i} x={x(i)} y={H - 8} textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize="9" fontFamily="var(--font-mono), monospace">
+                {p.date.slice(5)}
+              </text>
+            ) : null
+          )}
+        </svg>
+
+        {/* Floating Tooltip Box */}
+        {activePt && (
+          <div className="pointer-events-none absolute left-3 top-2 rounded-md border border-white/15 bg-black/85 px-2.5 py-1 text-[11px] backdrop-blur-md shadow-lg">
+            <div className="flex items-center gap-2 font-mono">
+              <span className="text-white/60">{activePt.date}</span>
+              <span className="font-bold text-accent">{activePt.level_m.toFixed(2)}m</span>
+              {danger !== null && (
+                <span className={`text-[10px] ${activePt.level_m >= danger ? 'text-danger font-bold' : 'text-mist-3'}`}>
+                  ({activePt.level_m >= danger ? '+' : ''}{(activePt.level_m - danger).toFixed(2)}m DL)
+                </span>
+              )}
+            </div>
+          </div>
         )}
-        {obs.length > 0 && <path d={obsPath} fill="none" stroke="#2dd4bf" strokeWidth="2" strokeLinejoin="round" />}
-        {fc.length > 0 && <path d={fcPath} fill="none" stroke="#f59e0b" strokeWidth="2" strokeDasharray="3 2" strokeLinejoin="round" />}
-        {pts.map((p, i) =>
-          i % labelStep === 0 ? (
-            <text key={p.date} x={x(i)} y={H - 8} textAnchor="middle" fill="#6d7891" fontSize="9" fontFamily="var(--font-mono), monospace">
-              {p.date.slice(5)}
-            </text>
-          ) : null
-        )}
-      </svg>
+      </div>
     );
   } else if (data) {
     chart = <p className="text-[11.5px] text-mist-3">{t('gauge.insufficient')}</p>;
@@ -202,12 +291,20 @@ export default function GaugeDrawer({
               {gauge.district ? ` · ${gauge.district}` : ''}
             </p>
           </div>
-          <span
-            className="shrink-0 rounded-md border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest"
-            style={{color: tone.text, background: tone.bg, borderColor: tone.border}}
-          >
-            {t(`ops.lists.gaugeStatus.${gauge.status ?? 'normal'}`)}
-          </span>
+          <div className="flex flex-col items-end gap-1">
+            <span
+              className="shrink-0 rounded-md border px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-widest"
+              style={{color: tone.text, background: tone.bg, borderColor: tone.border}}
+            >
+              {t(`ops.lists.gaugeStatus.${gauge.status ?? 'normal'}`)}
+            </span>
+            {tendency && (
+              <span className={`flex items-center gap-1 font-mono text-[10px] ${tendency.isUp ? 'text-danger' : 'text-accent'}`}>
+                {tendency.isUp ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                {tendency.isUp ? '+' : ''}{tendency.delta.toFixed(2)}m / 24h
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -251,7 +348,6 @@ export default function GaugeDrawer({
               </button>
             </div>
           ) : !series ? (
-            // loading skeleton — pulsing axes placeholder, same aspect as the chart
             <div className="animate-pulse" aria-hidden>
               <div className="flex min-h-[150px] flex-col justify-between gap-3 px-1 py-2" style={{height: H - 8}}>
                 <div className="h-px w-full bg-line" />
