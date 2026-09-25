@@ -30,7 +30,10 @@ const config: Config = {
       fontFamily: {
         sans: ['var(--font-inter)', 'var(--font-bengali)', 'system-ui', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
-        bn: ['var(--font-bengali)', 'var(--font-inter)', 'sans-serif']
+        bn: ['var(--font-bengali)', 'var(--font-inter)', 'sans-serif'],
+        telegraf: ['Telegraf', 'var(--font-inter)', 'sans-serif'],
+        editorial: ['Editorial New', 'Georgia', 'serif'],
+        sweetsans: ['Sweet Sans Pro', 'var(--font-inter)', 'sans-serif']
       },
       borderRadius: {
         panel: '0.75rem'
