@@ -75,7 +75,6 @@ export default function InteractiveGlobe() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
-    renderer.domElement.style.touchAction = 'none';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -232,8 +231,11 @@ export default function InteractiveGlobe() {
     orbitMesh.rotation.y = Math.PI / 5;
     globeGroup.add(orbitMesh);
 
-    // 10. Smooth Touch & Pointer Swivel Handling
+    // 10. Non-Blocking Touch & Pointer Swivel (Allows smooth native vertical scrolling)
     let isDragging = false;
+    let isHorizontalDrag = false;
+    let startX = 0;
+    let startY = 0;
     let prevX = 0;
     let prevY = 0;
     let velX = 0;
@@ -241,24 +243,24 @@ export default function InteractiveGlobe() {
     let autoRotate = true;
     let resumeTimeout: NodeJS.Timeout | null = null;
 
-    const startInteraction = (clientX: number, clientY: number) => {
+    // Desktop Mouse Drag
+    const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
       autoRotate = false;
       if (resumeTimeout) clearTimeout(resumeTimeout);
-      prevX = clientX;
-      prevY = clientY;
+      prevX = e.clientX;
+      prevY = e.clientY;
       velX = 0;
       velY = 0;
     };
 
-    const moveInteraction = (clientX: number, clientY: number) => {
+    const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
-      const dx = clientX - prevX;
-      const dy = clientY - prevY;
-      prevX = clientX;
-      prevY = clientY;
+      const dx = e.clientX - prevX;
+      const dy = e.clientY - prevY;
+      prevX = e.clientX;
+      prevY = e.clientY;
 
-      // Sensitivity factor
       velX = dx * 0.0055;
       velY = dy * 0.0055;
 
@@ -269,7 +271,7 @@ export default function InteractiveGlobe() {
       }
     };
 
-    const endInteraction = () => {
+    const onMouseUp = () => {
       if (!isDragging) return;
       isDragging = false;
       resumeTimeout = setTimeout(() => {
@@ -277,50 +279,74 @@ export default function InteractiveGlobe() {
       }, 3000);
     };
 
-    // Mouse / Pointer events
-    const onPointerDown = (e: PointerEvent) => {
-      startInteraction(e.clientX, e.clientY);
-      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-    };
-
-    const onPointerMove = (e: PointerEvent) => {
-      if (!isDragging) return;
-      moveInteraction(e.clientX, e.clientY);
-    };
-
-    const onPointerUp = (e: PointerEvent) => {
-      endInteraction();
-      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
-    };
-
-    // Touch events for ultra-smooth mobile tracking
+    // Mobile Touch Drag (Passive: allows vertical page scroll freely)
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
-        startInteraction(e.touches[0].clientX, e.touches[0].clientY);
+        isDragging = true;
+        isHorizontalDrag = false;
+        autoRotate = false;
+        if (resumeTimeout) clearTimeout(resumeTimeout);
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        prevX = startX;
+        prevY = startY;
+        velX = 0;
+        velY = 0;
       }
     };
 
     const onTouchMove = (e: TouchEvent) => {
-      if (isDragging && e.touches.length === 1) {
-        moveInteraction(e.touches[0].clientX, e.touches[0].clientY);
-        e.preventDefault(); // Prevent page scroll when swiveling globe
+      if (!isDragging || e.touches.length !== 1) return;
+      const curX = e.touches[0].clientX;
+      const curY = e.touches[0].clientY;
+      const dx = curX - prevX;
+      const dy = curY - prevY;
+
+      if (!isHorizontalDrag) {
+        const totalDx = Math.abs(curX - startX);
+        const totalDy = Math.abs(curY - startY);
+        // If horizontal movement is prominent, swivel globe; otherwise let page scroll
+        if (totalDx > 6 && totalDx > totalDy * 0.8) {
+          isHorizontalDrag = true;
+        } else if (totalDy > 8) {
+          isDragging = false;
+          autoRotate = true;
+          return;
+        }
+      }
+
+      if (isHorizontalDrag) {
+        prevX = curX;
+        prevY = curY;
+        velX = dx * 0.006;
+        velY = dy * 0.006;
+
+        if (globeGroupRef.current) {
+          globeGroupRef.current.rotation.y += velX;
+          globeGroupRef.current.rotation.x += velY;
+          globeGroupRef.current.rotation.x = Math.max(-1.1, Math.min(1.1, globeGroupRef.current.rotation.x));
+        }
       }
     };
 
     const onTouchEnd = () => {
-      endInteraction();
+      isDragging = false;
+      isHorizontalDrag = false;
+      resumeTimeout = setTimeout(() => {
+        autoRotate = true;
+      }, 3000);
     };
 
     const dom = renderer.domElement;
-    dom.addEventListener('pointerdown', onPointerDown);
-    dom.addEventListener('pointermove', onPointerMove);
-    dom.addEventListener('pointerup', onPointerUp);
-    dom.addEventListener('pointercancel', onPointerUp);
+    dom.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
 
+    // Passive touch listeners ensure 100% native frictionless vertical scrolling
     dom.addEventListener('touchstart', onTouchStart, {passive: true});
-    dom.addEventListener('touchmove', onTouchMove, {passive: false});
-    dom.addEventListener('touchend', onTouchEnd, {passive: true});
-    dom.addEventListener('touchcancel', onTouchEnd, {passive: true});
+    window.addEventListener('touchmove', onTouchMove, {passive: true});
+    window.addEventListener('touchend', onTouchEnd, {passive: true});
+    window.addEventListener('touchcancel', onTouchEnd, {passive: true});
 
     // 11. Animation Loop with smooth inertial damping
     let animationFrameId = 0;
@@ -361,15 +387,14 @@ export default function InteractiveGlobe() {
       cancelAnimationFrame(animationFrameId);
       if (resumeTimeout) clearTimeout(resumeTimeout);
 
-      dom.removeEventListener('pointerdown', onPointerDown);
-      dom.removeEventListener('pointermove', onPointerMove);
-      dom.removeEventListener('pointerup', onPointerUp);
-      dom.removeEventListener('pointercancel', onPointerUp);
+      dom.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
 
       dom.removeEventListener('touchstart', onTouchStart);
-      dom.removeEventListener('touchmove', onTouchMove);
-      dom.removeEventListener('touchend', onTouchEnd);
-      dom.removeEventListener('touchcancel', onTouchEnd);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
 
       window.removeEventListener('resize', handleResize);
 
@@ -395,7 +420,7 @@ export default function InteractiveGlobe() {
   return (
     <div
       ref={containerRef}
-      className="h-full w-full select-none cursor-grab active:cursor-grabbing touch-none flex items-center justify-center overflow-hidden"
+      className="h-full w-full select-none cursor-grab active:cursor-grabbing flex items-center justify-center overflow-hidden"
     />
   );
 }
