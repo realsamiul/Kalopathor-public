@@ -8,17 +8,17 @@
    teal (water/safe), indigo (interactive), amber (warn/estimate), rose (danger).
 --------------------------------------------------------------------------- */
 :root {
-  --ink-0: #070b12;
-  --ink-1: #0a0f18;
-  --ink-2: #0e1522;
-  --ink-3: #16203255;
+  --ink-0: #101216;
+  --ink-1: #16181d;
+  --ink-2: #1e2128;
+  --ink-3: rgba(255, 255, 255, 0.05);
 
-  --line: rgba(148, 163, 184, 0.11);
-  --line-strong: rgba(148, 163, 184, 0.24);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.16);
 
-  --text-1: #e8edf6;
-  --text-2: #a7b0c2;
-  --text-3: #6d7891;
+  --text-1: #f3f4f6;
+  --text-2: #a1a1aa;
+  --text-3: #71717a;
 
   --accent: #2dd4bf;
   --accent2: #818cf8;
@@ -30,8 +30,8 @@
   --est: #fbbf24;
 
   /* panel shadows — must match tailwind.config `boxShadow.panel*` */
-  --shadow-panel: 0 8px 32px -12px rgba(0, 0, 0, 0.65), 0 2px 8px -4px rgba(0, 0, 0, 0.5);
-  --shadow-panel-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7), 0 4px 16px -8px rgba(0, 0, 0, 0.55);
+  --shadow-panel: 0 12px 36px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --shadow-panel-lg: 0 24px 64px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08);
 
   color-scheme: dark;
 }
@@ -76,16 +76,25 @@ body {
 /* Glass panel surface used by all floating UI */
 @layer components {
   .glass {
-    background: rgba(10, 15, 24, 0.82);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(14px) saturate(1.2);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    background: rgba(22, 24, 29, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   }
   .glass-strong {
-    background: rgba(10, 15, 24, 0.92);
-    border: 1px solid var(--line);
-    backdrop-filter: blur(18px) saturate(1.25);
-    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    background: rgba(26, 28, 35, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    box-shadow: 0 12px 40px -8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  }
+  .glass-card {
+    background: linear-gradient(135deg, rgba(30, 33, 40, 0.65) 0%, rgba(20, 22, 27, 0.75) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
   }
 }
 

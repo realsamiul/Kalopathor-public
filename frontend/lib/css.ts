@@ -8,5 +8,5 @@ export function cssVar(name: string, fallback: string): string {
 
 /** Token-backed map ink color (--ink-0); hex fallback matches globals.css. */
 export function ink0(): string {
-  return cssVar('--ink-0', '#070b12');
+  return cssVar('--ink-0', '#101216');
 }
