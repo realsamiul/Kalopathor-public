@@ -8,7 +8,7 @@ import MotionProvider from '@/app/components/providers/MotionProvider';
 import '../globals.css';
 
 export const metadata: Metadata = {
-  title: 'কালপাথর · Kalopathor — Bangladesh Flood Intelligence',
+  title: 'KALOPATHOR — Bangladesh Flood Intelligence',
   description:
     'Flood forecasting and satellite monitoring operations console for Bangladesh.',
   appleWebApp: {

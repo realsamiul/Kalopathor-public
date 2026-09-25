@@ -657,9 +657,8 @@ export default function StoryContent() {
         <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-8 sm:flex-row sm:items-center">
           <div>
             <div className="flex items-center gap-3">
-              <span className="bn text-[22px] font-bold text-white">কালপাথর</span>
-              <span className="font-telegraf text-[13px] font-bold tracking-[0.25em] text-white uppercase">
-                Kalopathor
+              <span className="font-telegraf text-[17px] font-bold tracking-[0.25em] text-white uppercase sm:text-[19px]">
+                KALOPATHOR®
               </span>
             </div>
             <p className="mt-1 font-mono text-[11px] text-white/50">
