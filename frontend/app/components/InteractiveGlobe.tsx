@@ -1,9 +1,7 @@
 'use client';
 
-import React, {useEffect, useRef, useState, useCallback} from 'react';
+import React, {useEffect, useRef} from 'react';
 import * as THREE from 'three';
-import {motion} from 'framer-motion';
-import {Compass, Radio, Eye, Layers} from 'lucide-react';
 
 interface PointCoordinate {
   lat: number;
@@ -44,22 +42,10 @@ function createArcCurve(p1: THREE.Vector3, p2: THREE.Vector3, maxHeight: number)
 
 export default function InteractiveGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [selectedPoint, setSelectedPoint] = useState<PointCoordinate | null>(SPATIAL_POINTS[0]);
-  const [isInteracting, setIsInteracting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'radar' | 'telemetry' | 'orbit'>('radar');
-
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const globeGroupRef = useRef<THREE.Group | null>(null);
-
-  const focusOnBangladesh = useCallback(() => {
-    if (!globeGroupRef.current) return;
-    const targetY = -((90.4 + 90) * (Math.PI / 180));
-    const targetX = 23.8 * (Math.PI / 180);
-    globeGroupRef.current.rotation.y = targetY;
-    globeGroupRef.current.rotation.x = targetX * 0.45;
-  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -71,33 +57,33 @@ export default function InteractiveGlobe() {
 
     const width = container.clientWidth;
     const height = container.clientHeight;
-    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 2000);
-    camera.position.set(0, 0, 290);
+    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 2000);
+    camera.position.set(0, 0, 300);
     cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, powerPreference: 'high-performance'});
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.25;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // 2. Starfield Particle Background
-    const starCount = 1600;
+    const starCount = 2000;
     const starGeo = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
-      starPositions[i] = (Math.random() - 0.5) * 1800;
-      starPositions[i + 1] = (Math.random() - 0.5) * 1800;
-      starPositions[i + 2] = -200 + (Math.random() - 0.5) * 1400;
+      starPositions[i] = (Math.random() - 0.5) * 2000;
+      starPositions[i + 1] = (Math.random() - 0.5) * 2000;
+      starPositions[i + 2] = -200 + (Math.random() - 0.5) * 1600;
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMat = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 1.2,
+      size: 1.25,
       transparent: true,
-      opacity: 0.65
+      opacity: 0.75
     });
     const starPoints = new THREE.Points(starGeo, starMat);
     scene.add(starPoints);
@@ -109,9 +95,9 @@ export default function InteractiveGlobe() {
 
     // Initial orientation facing Bangladesh
     globeGroup.rotation.y = -((90.4 + 90) * (Math.PI / 180));
-    globeGroup.rotation.x = 0.2;
+    globeGroup.rotation.x = 0.22;
 
-    const GLOBE_RADIUS = 92;
+    const GLOBE_RADIUS = 88;
 
     // 4. Texture Loader with earth-dark
     const textureLoader = new THREE.TextureLoader();
@@ -125,7 +111,7 @@ export default function InteractiveGlobe() {
       roughness: 0.7,
       metalness: 0.15,
       color: 0xffffff,
-      emissive: 0x050811,
+      emissive: 0x080e1b,
       emissiveIntensity: 0.5
     });
     const globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
@@ -145,7 +131,7 @@ export default function InteractiveGlobe() {
         varying vec3 vNormal;
         void main() {
           float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-          gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * intensity * 0.7;
+          gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0) * intensity * 0.75;
         }
       `,
       blending: THREE.AdditiveBlending,
@@ -159,11 +145,11 @@ export default function InteractiveGlobe() {
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
     scene.add(ambientLight);
 
-    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 2.0);
+    const directionalLight1 = new THREE.DirectionalLight(0xffffff, 2.2);
     directionalLight1.position.set(220, 160, 200);
     scene.add(directionalLight1);
 
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.8);
+    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.85);
     directionalLight2.position.set(-200, -120, -150);
     scene.add(directionalLight2);
 
@@ -249,7 +235,6 @@ export default function InteractiveGlobe() {
     const onPointerDown = (e: PointerEvent) => {
       isDragging = true;
       autoRotate = false;
-      setIsInteracting(true);
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
       velX = 0;
@@ -276,7 +261,6 @@ export default function InteractiveGlobe() {
     const onPointerUp = () => {
       isDragging = false;
       setTimeout(() => {
-        setIsInteracting(false);
         autoRotate = true;
       }, 3500);
     };
@@ -303,9 +287,7 @@ export default function InteractiveGlobe() {
         }
       }
 
-      // Gentle starfield drift
       starPoints.rotation.y += 0.0001;
-
       renderer.render(scene, camera);
     };
     animate();
@@ -348,113 +330,9 @@ export default function InteractiveGlobe() {
   }, []);
 
   return (
-    <div className="relative h-full w-full select-none overflow-hidden">
-      {/* Three.js Canvas */}
-      <div
-        ref={containerRef}
-        className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
-      />
-
-      {/* Floating HUD over Globe (Strictly White & Black Typography, No Boxes) */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-6 sm:p-12">
-        {/* Top Floating Telemetry & Reset Tool */}
-        <div className="flex items-start justify-between">
-          <div className="pointer-events-auto flex items-center gap-3">
-            <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.3em] text-white/90">
-              3D ORBITAL MATRIX · 360° SWIVEL
-            </span>
-          </div>
-
-          <button
-            onClick={focusOnBangladesh}
-            title="Re-center on Bangladesh"
-            className="pointer-events-auto flex items-center gap-2 border-b border-white/30 pb-1 font-mono text-[11px] uppercase tracking-widest text-white transition-all hover:border-white"
-          >
-            <Compass size={13} />
-            <span>Center Bengal Basin</span>
-          </button>
-        </div>
-
-        {/* Central Gesture Cue (Fades on drag) */}
-        {!isInteracting && (
-          <motion.div
-            initial={{opacity: 0}}
-            animate={{opacity: 1}}
-            transition={{duration: 1, delay: 0.5}}
-            className="pointer-events-none absolute bottom-32 left-1/2 -translate-x-1/2 text-center"
-          >
-            <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
-              Drag to swivel globe · Real-time C-Band radar pass
-            </span>
-          </motion.div>
-        )}
-
-        {/* Bottom Floating Stats & Inspector (Clean Minimalist Line Layout) */}
-        <div className="flex flex-col items-start justify-between gap-6 md:flex-row md:items-end">
-          {/* Active Sensor Node Text */}
-          <div className="pointer-events-auto max-w-md">
-            <div className="flex items-center gap-3 text-white">
-              <Radio size={13} className="text-white/80" />
-              <span className="font-telegraf text-[14px] font-bold uppercase tracking-wider text-white">
-                {selectedPoint?.name}
-              </span>
-              <span className="font-mono text-[10px] text-white/50">
-                {selectedPoint?.lat.toFixed(2)}°N, {selectedPoint?.lng.toFixed(2)}°E
-              </span>
-            </div>
-            <p className="mt-1 font-sweetsans text-[13px] text-white/70">
-              {selectedPoint?.detail}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-3">
-              {SPATIAL_POINTS.map((pt) => (
-                <button
-                  key={pt.name}
-                  onClick={() => setSelectedPoint(pt)}
-                  className={`pb-0.5 font-mono text-[10px] uppercase tracking-wider transition-all ${
-                    selectedPoint?.name === pt.name
-                      ? 'border-b border-white text-white font-bold'
-                      : 'text-white/40 hover:text-white'
-                  }`}
-                >
-                  {pt.name.split(' ')[0]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Quick Filter Switcher */}
-          <div className="pointer-events-auto flex items-center gap-5 border-b border-white/20 pb-1">
-            <button
-              onClick={() => setActiveTab('radar')}
-              className={`flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider transition-all ${
-                activeTab === 'radar' ? 'text-white font-bold border-b-2 border-white pb-1 -mb-1.5' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              <Eye size={12} />
-              Radar S1
-            </button>
-            <button
-              onClick={() => setActiveTab('telemetry')}
-              className={`flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider transition-all ${
-                activeTab === 'telemetry' ? 'text-white font-bold border-b-2 border-white pb-1 -mb-1.5' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              <Radio size={12} />
-              Telemetry
-            </button>
-            <button
-              onClick={() => setActiveTab('orbit')}
-              className={`flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider transition-all ${
-                activeTab === 'orbit' ? 'text-white font-bold border-b-2 border-white pb-1 -mb-1.5' : 'text-white/40 hover:text-white'
-              }`}
-            >
-              <Layers size={12} />
-              Orbit
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div
+      ref={containerRef}
+      className="h-full w-full select-none cursor-grab active:cursor-grabbing"
+    />
   );
 }
