@@ -5,17 +5,21 @@ import dynamic from 'next/dynamic';
 import {useTranslations} from 'next-intl';
 import Link from 'next/link';
 import {
+  Activity,
   ArrowRight,
   Bell,
+  CheckCircle2,
+  Columns,
+  Cpu,
+  Droplets,
+  ExternalLink,
   Eye,
   Radio,
   Route as RouteIcon,
+  Share2,
+  ShieldCheck,
   Users,
-  Waypoints,
-  Cpu,
-  CheckCircle2,
-  Droplets,
-  ExternalLink
+  Waypoints
 } from 'lucide-react';
 
 const InteractiveGlobe = dynamic(() => import('./InteractiveGlobe'), {
@@ -59,7 +63,7 @@ const LAYERS = [
     resolution: '30m · 6–12 Day Orbit Revisit',
     physicalBasis: 'Active microwave pulses penetrate monsoonal cloud decks. Smooth standing water acts as a specular reflector, bouncing radar energy away from the antenna (dark signature).',
     quote: 'When torrential rain obscures the delta for weeks, radar sees in the dark, mapping flooded paddies and submerged homesteads at 30-meter precision.',
-    specs: 'd3v4.2 U-Net (EfficientNet-B0, 6ch, τ=0.5). 1,199 polygons across 21,954 km² (Feni benchmark IoU 0.5338).'
+    specs: 'd3v4.2 U-Net (EfficientNet-B0, 6ch, τ=0.5). 1,199 polygons across 21,954 km² with interactive Split-Curtain swipe against NASA VIIRS optical baseline.'
   },
   {
     id: '03',
@@ -107,7 +111,7 @@ const LAYERS = [
     resolution: 'Point Telemetry · 3-Hour Update Cycle',
     physicalBasis: 'Physical water level gauges measuring river stage height relative to Public Works Datum (PWD) and historical Danger Levels.',
     quote: 'The ground-truth pulse of the rivers anchoring satellite inferences with observed stage hydrographs.',
-    specs: 'Interactive hydrographs displaying observed stage, 24h tendency, and danger threshold margins.'
+    specs: 'Interactive SVG hydrographs with 24h rising/falling rate, danger thresholds, and real-time pointer crosshair tracking across 115 national stations.'
   },
   {
     id: '07',
@@ -311,6 +315,174 @@ export default function StoryContent() {
                 sub="Real-Time Stage & Danger Levels"
                 format={fmt}
               />
+            </div>
+          </div>
+
+          {/* Console Capabilities Showcase */}
+          <div className="mt-28 border-t border-white/15 pt-16">
+            <div>
+              <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-accent">
+                SPATIAL INTELLIGENCE & TELEMETRY
+              </span>
+              <h3 className="font-telegraf mt-2 text-[28px] font-bold text-white sm:text-[36px]">
+                Operations Console Capabilities
+              </h3>
+              <p className="mt-3 max-w-3xl font-sweetsans text-[14.5px] leading-relaxed text-white/70 sm:text-[16px]">
+                Engineered for disaster management operators, hydrologists, and emergency dispatchers requiring sub-kilometer precision and honest uncertainty disclosure.
+              </p>
+            </div>
+
+            <div className="mt-12 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4">
+              <div className="border-t border-white/20 pt-6">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
+                  <Columns size={13} />
+                  <span>SWIPE COMPARISON</span>
+                </div>
+                <h4 className="font-telegraf mt-3 text-[19px] font-bold text-white">
+                  Split-Curtain Optical vs Radar Wipe
+                </h4>
+                <p className="mt-3 font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                  Compare NASA VIIRS 375m TrueColor pre-flood optical imagery directly against Sentinel-1 30m microwave SAR flood detection. Drag the curtain divider anywhere on the canvas to distinguish turbid rivers from flash-inundated agricultural fields.
+                </p>
+              </div>
+
+              <div className="border-t border-white/20 pt-6">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
+                  <Activity size={13} />
+                  <span>RIVER TELEMETRY</span>
+                </div>
+                <h4 className="font-telegraf mt-3 text-[19px] font-bold text-white">
+                  115 FFWC Telemetry Hydrographs
+                </h4>
+                <p className="mt-3 font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                  Hover over any gauging station on the Jamuna, Meghna, Padma, or Surma rivers to inspect 24-hour rate of rise (<span className="text-accent font-mono">▲ Rising</span> / <span className="text-white/60 font-mono">▼ Falling</span>), peak crest records, and Danger Level margins.
+                </p>
+              </div>
+
+              <div className="border-t border-white/20 pt-6">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
+                  <ShieldCheck size={13} />
+                  <span>ACTIONABLE IMPACT</span>
+                </div>
+                <h4 className="font-telegraf mt-3 text-[19px] font-bold text-white">
+                  Multi-Hazard Peril Scorecards
+                </h4>
+                <p className="mt-3 font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                  Every detected flood polygon features a unified severity badge (Critical Lvl 5 to Moderate Lvl 2), exposed union demographics, severed transport infrastructure, and verified shelter routing.
+                </p>
+              </div>
+
+              <div className="border-t border-white/20 pt-6">
+                <div className="flex items-center gap-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-accent">
+                  <Share2 size={13} />
+                  <span>COORDINATION</span>
+                </div>
+                <h4 className="font-telegraf mt-3 text-[19px] font-bold text-white">
+                  URL Deep-Linking & Real-Time Sync
+                </h4>
+                <p className="mt-3 font-sweetsans text-[13.5px] leading-relaxed text-white/70">
+                  Synchronize viewports, layer configurations, and active polygons directly into shareable URLs to coordinate emergency response personnel with zero ambiguity.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* The Operator Playbook */}
+          <div className="mt-28 border-t border-white/15 pt-16">
+            <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
+              <div>
+                <span className="font-mono text-[10px] uppercase tracking-[0.35em] text-white/50">
+                  MISSION WORKFLOW
+                </span>
+                <h3 className="font-telegraf mt-2 text-[28px] font-bold text-white sm:text-[36px]">
+                  How to Use the Operations Console
+                </h3>
+              </div>
+              <div className="font-mono text-[11px] text-white/50">
+                5-STEP RAPID SITUATIONAL ASSESSMENT
+              </div>
+            </div>
+
+            <div className="mt-12 divide-y divide-white/15">
+              <div className="grid grid-cols-1 items-baseline gap-4 py-8 sm:grid-cols-12 sm:gap-8">
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-accent">
+                    STEP 01
+                  </span>
+                </div>
+                <div className="sm:col-span-4">
+                  <h4 className="font-telegraf text-[20px] font-bold text-white">
+                    Inspect Inundation Extents
+                  </h4>
+                </div>
+                <div className="sm:col-span-6 font-sweetsans text-[13.5px] leading-relaxed text-white/75">
+                  Pan and zoom across Bangladesh on the MapLibre GL radar map. Click any red flood polygon or choose from the top affected regions list in the rail to open the Action Card showing exposed population and model provenance.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-baseline gap-4 py-8 sm:grid-cols-12 sm:gap-8">
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-accent">
+                    STEP 02
+                  </span>
+                </div>
+                <div className="sm:col-span-4">
+                  <h4 className="font-telegraf text-[20px] font-bold text-white">
+                    Engage Split-Curtain Swipe
+                  </h4>
+                </div>
+                <div className="sm:col-span-6 font-sweetsans text-[13.5px] leading-relaxed text-white/75">
+                  Click the <strong className="text-white font-mono text-[12px]">Swipe Split</strong> button in the top navigation bar. Drag the interactive divider bar across the map to compare the NASA VIIRS TrueColor optical ground truth on the left against the Sentinel-1 SAR microwave radar layer on the right.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-baseline gap-4 py-8 sm:grid-cols-12 sm:gap-8">
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-accent">
+                    STEP 03
+                  </span>
+                </div>
+                <div className="sm:col-span-4">
+                  <h4 className="font-telegraf text-[20px] font-bold text-white">
+                    Interrogate River Gauges
+                  </h4>
+                </div>
+                <div className="sm:col-span-6 font-sweetsans text-[13.5px] leading-relaxed text-white/75">
+                  Select <strong className="text-white font-mono text-[12px]">Gauges</strong> in the left workflow rail. Click any of the 115 national telemetry stations (red = danger, amber = warning, teal = normal) to inspect responsive SVG hydrographs with 24-hour rate of rise and flood crest telemetry.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-baseline gap-4 py-8 sm:grid-cols-12 sm:gap-8">
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-accent">
+                    STEP 04
+                  </span>
+                </div>
+                <div className="sm:col-span-4">
+                  <h4 className="font-telegraf text-[20px] font-bold text-white">
+                    Plan Evacuation & Shelters
+                  </h4>
+                </div>
+                <div className="sm:col-span-6 font-sweetsans text-[13.5px] leading-relaxed text-white/75">
+                  When viewing an active flood incident, the console calculates Dijkstra depth-cost evacuation routes to designated elevated concrete shelters, warning operators if primary arterial roads are severed by standing water.
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 items-baseline gap-4 py-8 sm:grid-cols-12 sm:gap-8">
+                <div className="sm:col-span-2">
+                  <span className="font-mono text-[11px] font-bold tracking-[0.3em] text-accent">
+                    STEP 05
+                  </span>
+                </div>
+                <div className="sm:col-span-4">
+                  <h4 className="font-telegraf text-[20px] font-bold text-white">
+                    Review Alerts & Share View
+                  </h4>
+                </div>
+                <div className="sm:col-span-6 font-sweetsans text-[13.5px] leading-relaxed text-white/75">
+                  Review bilingual OASIS CAP 1.2 digital emergency alerts gated by multi-sensor verification. Click <strong className="text-white font-mono text-[12px]">Share</strong> in the top bar to copy a precision deep link with exact coordinates and layers for inter-agency coordination.
+                </div>
+              </div>
             </div>
           </div>
         </div>
