@@ -7,7 +7,7 @@ interface PointCoordinate {
   lat: number;
   lng: number;
   name: string;
-  type: 'hub' | 'sensor' | 'pass';
+  type: 'hub' | 'sensor';
   detail: string;
 }
 
@@ -51,39 +51,49 @@ export default function InteractiveGlobe() {
     const container = containerRef.current;
     if (!container) return;
 
-    // 1. Scene, Camera, Renderer
+    // 1. Dimensions and responsive camera distance
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    const aspect = width / height;
+
+    const GLOBE_RADIUS = 76;
+    const getCameraZ = (a: number) => (a < 1 ? (GLOBE_RADIUS * 3.3) / a : 275);
+
     const scene = new THREE.Scene();
     sceneRef.current = scene;
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 2000);
-    camera.position.set(0, 0, 300);
+    const camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 2500);
+    camera.position.set(0, 0, getCameraZ(aspect));
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({antialias: true, alpha: true, powerPreference: 'high-performance'});
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: true,
+      powerPreference: 'high-performance'
+    });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.2;
+    renderer.domElement.style.touchAction = 'none';
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // 2. Starfield Particle Background
-    const starCount = 2000;
+    const starCount = 1800;
     const starGeo = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starCount * 3);
     for (let i = 0; i < starCount * 3; i += 3) {
-      starPositions[i] = (Math.random() - 0.5) * 2000;
-      starPositions[i + 1] = (Math.random() - 0.5) * 2000;
-      starPositions[i + 2] = -200 + (Math.random() - 0.5) * 1600;
+      starPositions[i] = (Math.random() - 0.5) * 2200;
+      starPositions[i + 1] = (Math.random() - 0.5) * 2200;
+      starPositions[i + 2] = -250 + (Math.random() - 0.5) * 1800;
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
     const starMat = new THREE.PointsMaterial({
       color: 0xffffff,
-      size: 1.25,
+      size: 1.2,
       transparent: true,
-      opacity: 0.75
+      opacity: 0.7
     });
     const starPoints = new THREE.Points(starGeo, starMat);
     scene.add(starPoints);
@@ -93,13 +103,11 @@ export default function InteractiveGlobe() {
     scene.add(globeGroup);
     globeGroupRef.current = globeGroup;
 
-    // Initial orientation facing Bangladesh
+    // Initial orientation facing Bengal Basin
     globeGroup.rotation.y = -((90.4 + 90) * (Math.PI / 180));
     globeGroup.rotation.x = 0.22;
 
-    const GLOBE_RADIUS = 88;
-
-    // 4. Texture Loader with earth-dark
+    // 4. Earth Texture
     const textureLoader = new THREE.TextureLoader();
     const earthTexture = textureLoader.load('/data/earth-dark.jpg', () => {
       renderer.render(scene, camera);
@@ -111,13 +119,13 @@ export default function InteractiveGlobe() {
       roughness: 0.7,
       metalness: 0.15,
       color: 0xffffff,
-      emissive: 0x080e1b,
+      emissive: 0x060b17,
       emissiveIntensity: 0.5
     });
     const globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
     globeGroup.add(globeMesh);
 
-    // 5. Outer Atmospheric Halo
+    // 5. Outer Atmospheric Glow
     const atmosphereGeometry = new THREE.SphereGeometry(GLOBE_RADIUS * 1.025, 48, 48);
     const atmosphereMaterial = new THREE.ShaderMaterial({
       vertexShader: `
@@ -141,8 +149,8 @@ export default function InteractiveGlobe() {
     const atmosphereMesh = new THREE.Mesh(atmosphereGeometry, atmosphereMaterial);
     globeGroup.add(atmosphereMesh);
 
-    // 6. Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+    // 6. Lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
     const directionalLight1 = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -160,13 +168,13 @@ export default function InteractiveGlobe() {
     SPATIAL_POINTS.forEach((pt) => {
       const pos = latLngToVector3(pt.lat, pt.lng, GLOBE_RADIUS, 0.8);
 
-      const markerGeom = new THREE.SphereGeometry(pt.type === 'hub' ? 1.6 : 1.1, 16, 16);
+      const markerGeom = new THREE.SphereGeometry(pt.type === 'hub' ? 1.5 : 1.0, 16, 16);
       const markerMat = new THREE.MeshBasicMaterial({color: 0xffffff});
       const markerMesh = new THREE.Mesh(markerGeom, markerMat);
       markerMesh.position.copy(pos);
       markersGroup.add(markerMesh);
 
-      const ringGeom = new THREE.RingGeometry(1.8, 2.5, 32);
+      const ringGeom = new THREE.RingGeometry(1.6, 2.3, 32);
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         side: THREE.DoubleSide,
@@ -204,7 +212,7 @@ export default function InteractiveGlobe() {
       globeGroup.add(line);
     });
 
-    // 9. Polar Orbit
+    // 9. Polar Orbit Ring
     const orbitRadius = GLOBE_RADIUS * 1.24;
     const orbitCurve = new THREE.EllipseCurve(0, 0, orbitRadius, orbitRadius * 0.96, 0, 2 * Math.PI, false, 0);
     const orbitPoints = orbitCurve.getPoints(100);
@@ -224,32 +232,35 @@ export default function InteractiveGlobe() {
     orbitMesh.rotation.y = Math.PI / 5;
     globeGroup.add(orbitMesh);
 
-    // 10. Drag & Momentum
+    // 10. Smooth Touch & Pointer Swivel Handling
     let isDragging = false;
-    let prevMouseX = 0;
-    let prevMouseY = 0;
+    let prevX = 0;
+    let prevY = 0;
     let velX = 0;
     let velY = 0;
     let autoRotate = true;
+    let resumeTimeout: NodeJS.Timeout | null = null;
 
-    const onPointerDown = (e: PointerEvent) => {
+    const startInteraction = (clientX: number, clientY: number) => {
       isDragging = true;
       autoRotate = false;
-      prevMouseX = e.clientX;
-      prevMouseY = e.clientY;
+      if (resumeTimeout) clearTimeout(resumeTimeout);
+      prevX = clientX;
+      prevY = clientY;
       velX = 0;
       velY = 0;
     };
 
-    const onPointerMove = (e: PointerEvent) => {
+    const moveInteraction = (clientX: number, clientY: number) => {
       if (!isDragging) return;
-      const dx = e.clientX - prevMouseX;
-      const dy = e.clientY - prevMouseY;
-      prevMouseX = e.clientX;
-      prevMouseY = e.clientY;
+      const dx = clientX - prevX;
+      const dy = clientY - prevY;
+      prevX = clientX;
+      prevY = clientY;
 
-      velX = dx * 0.005;
-      velY = dy * 0.005;
+      // Sensitivity factor
+      velX = dx * 0.0055;
+      velY = dy * 0.0055;
 
       if (globeGroupRef.current) {
         globeGroupRef.current.rotation.y += velX;
@@ -258,19 +269,60 @@ export default function InteractiveGlobe() {
       }
     };
 
-    const onPointerUp = () => {
+    const endInteraction = () => {
+      if (!isDragging) return;
       isDragging = false;
-      setTimeout(() => {
+      resumeTimeout = setTimeout(() => {
         autoRotate = true;
-      }, 3500);
+      }, 3000);
+    };
+
+    // Mouse / Pointer events
+    const onPointerDown = (e: PointerEvent) => {
+      startInteraction(e.clientX, e.clientY);
+      (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDragging) return;
+      moveInteraction(e.clientX, e.clientY);
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      endInteraction();
+      (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    };
+
+    // Touch events for ultra-smooth mobile tracking
+    const onTouchStart = (e: TouchEvent) => {
+      if (e.touches.length === 1) {
+        startInteraction(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (isDragging && e.touches.length === 1) {
+        moveInteraction(e.touches[0].clientX, e.touches[0].clientY);
+        e.preventDefault(); // Prevent page scroll when swiveling globe
+      }
+    };
+
+    const onTouchEnd = () => {
+      endInteraction();
     };
 
     const dom = renderer.domElement;
     dom.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
+    dom.addEventListener('pointermove', onPointerMove);
+    dom.addEventListener('pointerup', onPointerUp);
+    dom.addEventListener('pointercancel', onPointerUp);
 
-    // 11. Animation Loop
+    dom.addEventListener('touchstart', onTouchStart, {passive: true});
+    dom.addEventListener('touchmove', onTouchMove, {passive: false});
+    dom.addEventListener('touchend', onTouchEnd, {passive: true});
+    dom.addEventListener('touchcancel', onTouchEnd, {passive: true});
+
+    // 11. Animation Loop with smooth inertial damping
     let animationFrameId = 0;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -279,8 +331,8 @@ export default function InteractiveGlobe() {
         if (autoRotate && globeGroupRef.current) {
           globeGroupRef.current.rotation.y += 0.0016;
         } else if (globeGroupRef.current) {
-          velX *= 0.94;
-          velY *= 0.94;
+          velX *= 0.93;
+          velY *= 0.93;
           globeGroupRef.current.rotation.y += velX;
           globeGroupRef.current.rotation.x += velY;
           globeGroupRef.current.rotation.x = Math.max(-1.1, Math.min(1.1, globeGroupRef.current.rotation.x));
@@ -297,7 +349,9 @@ export default function InteractiveGlobe() {
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
       const h = container.clientHeight;
-      cameraRef.current.aspect = w / h;
+      const newAspect = w / h;
+      cameraRef.current.aspect = newAspect;
+      cameraRef.current.position.z = getCameraZ(newAspect);
       cameraRef.current.updateProjectionMatrix();
       rendererRef.current.setSize(w, h);
     };
@@ -305,9 +359,18 @@ export default function InteractiveGlobe() {
 
     return () => {
       cancelAnimationFrame(animationFrameId);
+      if (resumeTimeout) clearTimeout(resumeTimeout);
+
       dom.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
+      dom.removeEventListener('pointermove', onPointerMove);
+      dom.removeEventListener('pointerup', onPointerUp);
+      dom.removeEventListener('pointercancel', onPointerUp);
+
+      dom.removeEventListener('touchstart', onTouchStart);
+      dom.removeEventListener('touchmove', onTouchMove);
+      dom.removeEventListener('touchend', onTouchEnd);
+      dom.removeEventListener('touchcancel', onTouchEnd);
+
       window.removeEventListener('resize', handleResize);
 
       scene.traverse((obj) => {
@@ -332,7 +395,7 @@ export default function InteractiveGlobe() {
   return (
     <div
       ref={containerRef}
-      className="h-full w-full select-none cursor-grab active:cursor-grabbing"
+      className="h-full w-full select-none cursor-grab active:cursor-grabbing touch-none flex items-center justify-center overflow-hidden"
     />
   );
 }
