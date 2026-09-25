@@ -46,6 +46,7 @@ export default function InteractiveGlobe() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const globeGroupRef = useRef<THREE.Group | null>(null);
+  const globeMeshRef = useRef<THREE.Mesh | null>(null);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -106,7 +107,7 @@ export default function InteractiveGlobe() {
     globeGroup.rotation.y = -((90.4 + 90) * (Math.PI / 180));
     globeGroup.rotation.x = 0.22;
 
-    // 4. Earth Texture
+    // 4. Earth Texture & Mesh
     const textureLoader = new THREE.TextureLoader();
     const earthTexture = textureLoader.load('/data/earth-dark.jpg', () => {
       renderer.render(scene, camera);
@@ -122,6 +123,7 @@ export default function InteractiveGlobe() {
       emissiveIntensity: 0.5
     });
     const globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
+    globeMeshRef.current = globeMesh;
     globeGroup.add(globeMesh);
 
     // 5. Outer Atmospheric Glow
@@ -231,7 +233,20 @@ export default function InteractiveGlobe() {
     orbitMesh.rotation.y = Math.PI / 5;
     globeGroup.add(orbitMesh);
 
-    // 10. Non-Blocking Touch & Pointer Swivel (Allows smooth native vertical scrolling)
+    // 10. Raycasting Precision: SWIVEL ONLY DIRECTLY ON THE GLOBE
+    const raycaster = new THREE.Raycaster();
+    const pointerVector = new THREE.Vector2();
+
+    const isPointerDirectlyOnGlobe = (clientX: number, clientY: number): boolean => {
+      if (!container || !cameraRef.current || !globeMeshRef.current) return false;
+      const rect = container.getBoundingClientRect();
+      pointerVector.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointerVector.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointerVector, cameraRef.current);
+      const intersects = raycaster.intersectObject(globeMeshRef.current);
+      return intersects.length > 0;
+    };
+
     let isDragging = false;
     let isHorizontalDrag = false;
     let startX = 0;
@@ -243,9 +258,23 @@ export default function InteractiveGlobe() {
     let autoRotate = true;
     let resumeTimeout: NodeJS.Timeout | null = null;
 
+    // Hover effect: grab cursor ONLY when hovering directly on the globe
+    const onMouseMoveHover = (e: MouseEvent) => {
+      if (isDragging) return;
+      if (isPointerDirectlyOnGlobe(e.clientX, e.clientY)) {
+        renderer.domElement.style.cursor = 'grab';
+      } else {
+        renderer.domElement.style.cursor = 'default';
+      }
+    };
+
     // Desktop Mouse Drag
     const onMouseDown = (e: MouseEvent) => {
+      // ONLY start swiveling if clicking directly on the globe!
+      if (!isPointerDirectlyOnGlobe(e.clientX, e.clientY)) return;
+
       isDragging = true;
+      renderer.domElement.style.cursor = 'grabbing';
       autoRotate = false;
       if (resumeTimeout) clearTimeout(resumeTimeout);
       prevX = e.clientX;
@@ -255,7 +284,10 @@ export default function InteractiveGlobe() {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+      if (!isDragging) {
+        onMouseMoveHover(e);
+        return;
+      }
       const dx = e.clientX - prevX;
       const dy = e.clientY - prevY;
       prevX = e.clientX;
@@ -274,20 +306,30 @@ export default function InteractiveGlobe() {
     const onMouseUp = () => {
       if (!isDragging) return;
       isDragging = false;
+      renderer.domElement.style.cursor = 'default';
       resumeTimeout = setTimeout(() => {
         autoRotate = true;
       }, 3000);
     };
 
-    // Mobile Touch Drag (Passive: allows vertical page scroll freely)
+    // Mobile Touch: Swivel ONLY when touching directly on the globe; everywhere else scrolls page!
     const onTouchStart = (e: TouchEvent) => {
       if (e.touches.length === 1) {
+        const tX = e.touches[0].clientX;
+        const tY = e.touches[0].clientY;
+
+        // If touch is NOT directly on the globe, let natural page scroll take over
+        if (!isPointerDirectlyOnGlobe(tX, tY)) {
+          isDragging = false;
+          return;
+        }
+
         isDragging = true;
         isHorizontalDrag = false;
         autoRotate = false;
         if (resumeTimeout) clearTimeout(resumeTimeout);
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
+        startX = tX;
+        startY = tY;
         prevX = startX;
         prevY = startY;
         velX = 0;
@@ -305,10 +347,10 @@ export default function InteractiveGlobe() {
       if (!isHorizontalDrag) {
         const totalDx = Math.abs(curX - startX);
         const totalDy = Math.abs(curY - startY);
-        // If horizontal movement is prominent, swivel globe; otherwise let page scroll
-        if (totalDx > 6 && totalDx > totalDy * 0.8) {
+        // On globe, allow swiveling if gesture is rotational/horizontal; if pure vertical flick, release to page scroll
+        if (totalDx > 6 && totalDx > totalDy * 0.75) {
           isHorizontalDrag = true;
-        } else if (totalDy > 8) {
+        } else if (totalDy > 10) {
           isDragging = false;
           autoRotate = true;
           return;
@@ -342,13 +384,13 @@ export default function InteractiveGlobe() {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // Passive touch listeners ensure 100% native frictionless vertical scrolling
+    // Passive touch listeners ensure 100% native frictionless vertical scrolling everywhere
     dom.addEventListener('touchstart', onTouchStart, {passive: true});
     window.addEventListener('touchmove', onTouchMove, {passive: true});
     window.addEventListener('touchend', onTouchEnd, {passive: true});
     window.addEventListener('touchcancel', onTouchEnd, {passive: true});
 
-    // 11. Animation Loop with smooth inertial damping
+    // 11. Animation Loop
     let animationFrameId = 0;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -420,7 +462,7 @@ export default function InteractiveGlobe() {
   return (
     <div
       ref={containerRef}
-      className="h-full w-full select-none cursor-grab active:cursor-grabbing flex items-center justify-center overflow-hidden"
+      className="h-full w-full select-none flex items-center justify-center overflow-hidden"
     />
   );
 }
